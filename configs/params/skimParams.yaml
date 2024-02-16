@@ -1,0 +1,25 @@
+skimParams:
+    FatJet:
+        pt: 200
+        eta: 2.4
+        particleNet_mass: {low: 50, high: 200}
+        jetId: 2
+        
+    Jet:
+        pt: 30
+        eta: 2.4
+        puId: 4
+        jetId: 2
+        is_lep_cleaned: {muon: True, electron: True}
+    Electron:
+        pt: 30
+        eta: 2.5
+        sip3d: 4
+        cutBasedNoIso: 4
+        miniPFRelIso_all: 0.1
+    Muon:
+        pt: 30
+        eta: 2.4
+        mediumId: 1
+        sip3d: 4
+        miniPFRelIso_all: 0.2
