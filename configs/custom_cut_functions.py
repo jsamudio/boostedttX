@@ -28,13 +28,23 @@ def event_selection(events, params, year, sample, **kwargs):
     return ak.where(ak.is_one(mask), False, mask)
 
 event_selection = Cut(
-        name = "eventSelection"
+        name = "eventSelection",
         params = {},
         function = event_selection,
 )
 
-###FIXME customize what is a good lepton since we use some additional variables.
-def lepton_selection(events, lepton_flavour, params):
+def calc_cutBasedNoIso(events, params):
+    bmap = events['Electron']['Electron_vidNestedWPBitmap']
+    bmapCount = bmap.counts
+    flatbit = bmap.flatten()
+    flatbit = np.array(flatbit)
+    noiso_storage = (flatbit >> 0) & 7
+    for i in [3, 6, 9, 12, 15, 18, 24, 27]:
+        noiso_storage = np.minimum(noiso_storage, flatbit >> i & 7)
+    cutbasednoiso = ak.unflatten(noiso_storage, bmapcount)
+    return cutbasednoiso
+
+def lep_sel(events, lepton_flavour, params):
 
     leptons = events[lepton_flavour]
     cuts = params.object_preselection[lepton_flavour]
@@ -43,19 +53,18 @@ def lepton_selection(events, lepton_flavour, params):
     passes_pt = leptons.pt > cuts["pt"]
 
     if lepton_flavour == "Electron":
-        # Requirements on SuperCluster eta, isolation and id
-        etaSC = abs(leptons.deltaEtaSC + leptons.eta)
-        passes_SC = np.invert((etaSC >= 1.4442) & (etaSC <= 1.5660))
-        passes_iso = leptons.pfRelIso03_all < cuts["iso"]
-        passes_id = leptons[cuts['id']] == True
+        passes_sip3d = leptons.sip3d < cuts['sip3d']
+        passes_cutbasedNoIso = leptons.cutBasedNoIso >= cuts['cutBasedNoIso']
+        passes_iso = leptons.miniPFRelIso_all < cuts['iso']
 
-        good_leptons = passes_eta & passes_pt & passes_SC & passes_iso & passes_id
+        good_leptons = passes_eta & passes_pt & passes_sip3d & passes_cutBasedNoIso & passes_iso
 
     elif lepton_flavour == "Muon":
         # Requirements on isolation and id
-        passes_iso = leptons.pfRelIso04_all < cuts["iso"]
-        passes_id = leptons[cuts['id']] == True
+        passes_iso = leptons.miniPFRelIso_all < cuts["iso"]
+        passes_id = leptons.mediumId >= cuts['id']
+        passes_sip3d = leptons.sip3d < cuts['sip3d']
 
-        good_leptons = passes_eta & passes_pt & passes_iso & passes_id
+        good_leptons = passes_eta & passes_pt & passes_iso & passes_id & passes_sip3d
 
     return leptons[good_leptons]

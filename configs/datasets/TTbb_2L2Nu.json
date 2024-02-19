@@ -11,12 +11,12 @@
             "size": "8815670913"
         },
         "files": [
-            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/E109A217-CFF7-BE4F-A6B1-53F4EEDE4266.root",
-            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/063C483B-AB4A-1742-916A-69DAB9746EF7.root",
-            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/1CD0B4E2-FB48-CB4E-A2B9-8E324CD8194E.root",
-            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/5BF0747D-7E4D-104F-AA27-53C6CC412D2D.root",
-            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/A6B11D2D-C66C-554C-B325-B7AB2F2A8F54.root",
-            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/B4627E89-E8E1-F24D-A312-0E3B65C216A3.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/E109A217-CFF7-BE4F-A6B1-53F4EEDE4266.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/063C483B-AB4A-1742-916A-69DAB9746EF7.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/1CD0B4E2-FB48-CB4E-A2B9-8E324CD8194E.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/5BF0747D-7E4D-104F-AA27-53C6CC412D2D.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/A6B11D2D-C66C-554C-B325-B7AB2F2A8F54.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/B4627E89-E8E1-F24D-A312-0E3B65C216A3.root",
             "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/B7D4A3BB-B6B4-AC41-BE70-B252104139F6.root"
         ]
     }
