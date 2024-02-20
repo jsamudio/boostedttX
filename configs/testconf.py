@@ -28,10 +28,11 @@ parameters = defaults.merge_parameters_from_files(default_parameters,
 cfg = Configurator(
         parameters = parameters,
         datasets = {
-            "jsons": [f"{localdir}/datasets/ttHTobb_M125.json"
+            "jsons": [f"{localdir}/datasets/ttHTobb_M125.json",
+                      f"{localdir}/datasets/TTZToBB.json"
                 ],
             "filter": {
-                "samples": ["ttHTobb"],
+                "samples": ["ttHTobb", "TTZToBB"],
                 "samples_exclude": [],
                 "year": ['2017']
                 }
@@ -40,8 +41,11 @@ cfg = Configurator(
         workflow = ZHbbBaseProcessor,
 
         skim = [precut],
-        preselections = [],
-        categories = {},
+        preselections = [event_selection],
+        categories = {
+            "baseline": [],
+            "btag_mask": [btag_mask]
+            },
         weights = {
             "common": {
                 "inclusive": ["genWeight", "lumi", "XS", "pileup"],
@@ -57,7 +61,13 @@ cfg = Configurator(
         variables = {
             **muon_hists(coll="MuonGood", pos=0),
             **ele_hists(coll="ElectronGood", pos=0),
-            **count_hist(name="nElectronGood", coll="ElectronGood", bins=3, start=0, stop=3)
+            **count_hist(name="nElectronGood", coll="ElectronGood", bins=3, start=0, stop=3),
+            **count_hist(name="nJetGood", coll="JetGood", bins=8, start=0, stop=8),
+            **count_hist(name="nbJetGood", coll="bJetGood", bins=8, start=0, stop=8),
+            **count_hist(name="nFatJetGood", coll="FatJetGood", bins=8, start=0, stop=8),
+            **count_hist(name="nLeptonGood", coll="LeptonGood", bins=3, start=0, stop=3),
+            **fatjet_hists(coll="FatJetGood", fields=["particleNet_mass", 'pt'], pos=0),
+            "mAK8" : HistConf([Axis(coll="FatJetGood", field="particleNet_mass", bins = 100, start=0, stop=200, label=r"$M_{pNet}$ [GeV]")])
         }
         )
 
