@@ -10,7 +10,7 @@ from pocket_coffea.lib.objects import (
     btagging,
     get_dilepton,
 )
-from custom_cut_functions import calc_cutBasedNoIso, lep_sel
+from custom_cut_functions import soft_lep_sel, lep_sel
 
 class ZHbbBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
@@ -28,16 +28,24 @@ class ZHbbBaseProcessor (BaseProcessorABC):
     '''
 
     #def define_common_variables_before_presel(self, variation):
-        #self.events["Electron_cutBasedNoIso"] = calc_cutBasedNoIso(self.events, self.params)
+        #self.events['Electron_cutBasedNoIso'] = calc_cutBasedNoIso(self.events, self.params)
 
     def apply_object_preselection(self, variation):
         #soft e, e, soft mu, mu, jet, fatjet
-        #self.events['MuonGood'] = lep_sel(self.events, "Muon", self.params)
-        self.events['MuonGood'] = self.events.Muon
 
-        #self.events['ElectronGood'] = lep_sel(self.events, "Electron", self.params)
+        # Just needed for plotting
+        electron_etaSC = self.events.Electron.eta + self.events.Electron.deltaEtaSC
+        self.events["Electron"] = ak.with_field(
+            self.events.Electron, electron_etaSC, "etaSC"
+        )
+
+        self.events['MuonGood'] = lep_sel(self.events, "Muon", self.params)
+        self.events['SoftMuonGood'] = soft_lep_sel(self.events, "Muon", self.params)
+        self.events['ElectronGood'] = lep_sel(self.events, "Electron", self.params)
+        self.events['SoftElectronGood'] = soft_lep_sel(self.events, "Electron", self.params)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)
+        self.events['nElectronGood'] = ak.num(self.events.ElectronGood)
 
 

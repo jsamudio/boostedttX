@@ -55,7 +55,9 @@ cfg = Configurator(
             }
         },
         variables = {
-            **muon_hists(coll="MuonGood", pos=0)
+            **muon_hists(coll="MuonGood", pos=0),
+            **ele_hists(coll="ElectronGood", pos=0),
+            **count_hist(name="nElectronGood", coll="ElectronGood", bins=3, start=0, stop=3)
         }
         )
 

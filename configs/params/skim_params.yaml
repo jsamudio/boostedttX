@@ -1,4 +1,4 @@
-skimParams:
+skim_params:
     FatJet:
         pt: 200
         eta: 2.4
@@ -16,10 +16,12 @@ skimParams:
         eta: 2.5
         sip3d: 4
         cutBasedNoIso: 4
-        miniPFRelIso_all: 0.1
+        softCutBasedNoIso: 1
+        iso: 0.1
     Muon:
         pt: 30
         eta: 2.4
-        mediumId: 1
+        id: 1
+        softId: 1
         sip3d: 4
-        miniPFRelIso_all: 0.2
+        iso: 0.2
