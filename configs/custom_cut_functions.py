@@ -4,12 +4,12 @@ from pocket_coffea.lib.cut_definition import Cut
 def precut(events, params, year, sample, **kwargs):
     #Precut Mask
     mask = (
-            (events['nMuon'] + events['nElectron'] >= 1) &
-            (events['nJet'] >= 5) &
-            (events['nFatJet'] >= 1) &
-            (events['MET_pt'] >= 20) )
+            (ak.num(events.Muon) + ak.num(events.Electron) >= 1) &
+            (ak.num(events.Jet) >= 5) &
+            (ak.num(events.FatJet) >= 1) )
+            #(events['MET_pt'] >= 20) )
     # Pad None values with False
-    return ak.where(ak.is_one(mask), False, mask)
+    return ak.where(ak.is_none(mask), False, mask)
 
 precut = Cut(
         name = "preSkimCut",

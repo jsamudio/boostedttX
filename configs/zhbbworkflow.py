@@ -33,7 +33,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
     def apply_object_preselection(self, variation):
         #soft e, e, soft mu, mu, jet, fatjet
         #self.events['MuonGood'] = lep_sel(self.events, "Muon", self.params)
-        self.events['MuonGood'] = []
+        self.events['MuonGood'] = self.events.Muon
 
         #self.events['ElectronGood'] = lep_sel(self.events, "Electron", self.params)
 

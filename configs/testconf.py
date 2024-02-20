@@ -39,7 +39,7 @@ cfg = Configurator(
 
         workflow = ZHbbBaseProcessor,
 
-        skim = [],
+        skim = [precut],
         preselections = [],
         categories = {},
         weights = {
@@ -54,7 +54,9 @@ cfg = Configurator(
                 }
             }
         },
-        variables = {}
+        variables = {
+            **muon_hists(coll="MuonGood", pos=0)
+        }
         )
 
 run_options = {
