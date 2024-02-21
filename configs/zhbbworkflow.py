@@ -11,6 +11,8 @@ from pocket_coffea.lib.objects import (
     get_dilepton,
 )
 from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel
+from custom_cut_functions import sortbyscore
+from cand_helper import zh_helper
 
 class ZHbbBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
@@ -38,6 +40,11 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events['JetGood'], self.jetGoodMask = jet_selection(self.events, "Jet", self.params, "LeptonGood")
         self.events['FatJetGood'] = fatjet_sel(self.events, self.params, "LeptonGood")
         self.events['bJetGood'] = bjet_sel(self.events.JetGood, self.params)
+
+    def process_extra_after_presel(self, variation):
+        self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "particleNetMD_Xbb")
+        ### Add function to implement combinatorics now that we have the sorted list
+        zh_helper(self.events)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

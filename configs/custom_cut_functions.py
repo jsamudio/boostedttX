@@ -42,6 +42,10 @@ event_selection = Cut(
         function = event_selection,
 )
 
+'''
+btag mask
+'''
+
 def btag_mask(events, params, year, sample, **kwargs):
     mask = ((events.nbJetGood >= 2))
     return ak.where(ak.is_none(mask), False, mask)
@@ -51,3 +55,10 @@ btag_mask = Cut(
         params = {},
         function = btag_mask,
 )
+
+'''
+Helper function to sort jets by highest Xbb score
+'''
+
+def sortbyscore(coll, score):
+    return coll[ak.argsort(coll[score], axis=1, ascending=False)]

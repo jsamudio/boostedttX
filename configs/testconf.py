@@ -59,15 +59,16 @@ cfg = Configurator(
             }
         },
         variables = {
-            **muon_hists(coll="MuonGood", pos=0),
-            **ele_hists(coll="ElectronGood", pos=0),
-            **count_hist(name="nElectronGood", coll="ElectronGood", bins=3, start=0, stop=3),
-            **count_hist(name="nJetGood", coll="JetGood", bins=8, start=0, stop=8),
-            **count_hist(name="nbJetGood", coll="bJetGood", bins=8, start=0, stop=8),
-            **count_hist(name="nFatJetGood", coll="FatJetGood", bins=8, start=0, stop=8),
-            **count_hist(name="nLeptonGood", coll="LeptonGood", bins=3, start=0, stop=3),
-            **fatjet_hists(coll="FatJetGood", fields=["particleNet_mass", 'pt'], pos=0),
-            "mAK8" : HistConf([Axis(coll="FatJetGood", field="particleNet_mass", bins = 100, start=0, stop=200, label=r"$M_{pNet}$ [GeV]")])
+            #**muon_hists(coll="MuonGood", pos=0),
+            #**ele_hists(coll="ElectronGood", pos=0),
+            #**count_hist(name="nElectronGood", coll="ElectronGood", bins=3, start=0, stop=3),
+            #**count_hist(name="nJetGood", coll="JetGood", bins=8, start=0, stop=8),
+            #**count_hist(name="nbJetGood", coll="bJetGood", bins=8, start=0, stop=8),
+            #**count_hist(name="nFatJetGood", coll="FatJetGood", bins=8, start=0, stop=8),
+            #**count_hist(name="nLeptonGood", coll="LeptonGood", bins=3, start=0, stop=3),
+            "mAK8" : HistConf([Axis(coll="FatJetGood", field="particleNet_mass", bins = 100, start=0, stop=200, label=r"$M_{pNet}$ [GeV]")]),
+            "zhbbtag" : HistConf([Axis(coll="FatJetGood", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
+            "zhbbtag_sorted" : HistConf([Axis(coll="FatJetSorted", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)])
         }
         )
 
