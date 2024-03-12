@@ -2,7 +2,11 @@
 Contains pocket-coffea version of the boosted ttX analysis
 
 # Run analysis on `lxplus`
-Copy repo preferably onto EOS area for storage concerns
+Copy repo preferably onto EOS area for storage concerns. Then activate proxy to access datasets.
+
+```bash
+voms-proxy-init --voms cms
+```
 
 No need to install anything, just run in an apptainer with:
 
@@ -15,7 +19,7 @@ apptainer shell --bind /afs -B /cvmfs/cms.cern.ch \
 ### Build datasets using European sources:
 
 ```bash
-build_datasets.py --cfg datasets/datasets_definitions.json -o -rs 'T[123]_(FR|IT|DE|BE|CH|UK)_\w+'
+build_datasets.py --cfg datasets/datasets_definitions.json -o -rs 'T[123]_(FR|IT|DE|BE|UK)_\w+'
 ```
 
 ### Run local test of processor:
@@ -26,5 +30,5 @@ runner.py --cfg testconf.py --test -o .
 
 ### Make test plots:
 ```bash
-make_plots.py -i output_all.coffea --cfg parameters_dump.yaml -o plots --overwrite
+make_plots.py -i output_all.coffea --cfg parameters_dump.yaml -o plots --overwrite -op params/plotting_style.yaml
 ```

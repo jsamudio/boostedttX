@@ -97,3 +97,10 @@ b-tagging
 
 def bjet_sel(Jet, params):
     return Jet[Jet.btagDeepFlavB > params.object_preselection['btag']['wp']]
+
+'''
+q-selection (AK4 below btag WP)
+'''
+
+def qjet_sel(Jet, params):
+    return Jet[Jet.btagDeepFlavB < params.object_preselection['btag']['wp']]

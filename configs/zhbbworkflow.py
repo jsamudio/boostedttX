@@ -10,7 +10,7 @@ from pocket_coffea.lib.objects import (
     btagging,
     get_dilepton,
 )
-from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel
+from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel
 from custom_cut_functions import sortbyscore
 from cand_helper import zh_helper
 
@@ -40,6 +40,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events['JetGood'], self.jetGoodMask = jet_selection(self.events, "Jet", self.params, "LeptonGood")
         self.events['FatJetGood'] = fatjet_sel(self.events, self.params, "LeptonGood")
         self.events['bJetGood'] = bjet_sel(self.events.JetGood, self.params)
+        self.events['qJetGood'] = qjet_sel(self.events.JetGood, self.params)
 
     def process_extra_after_presel(self, variation):
         self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "particleNetMD_Xbb")
