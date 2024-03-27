@@ -13,7 +13,7 @@ from pocket_coffea.lib.objects import (
 from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel
 from custom_cut_functions import sortbyscore
 from cand_helper import zh_helper
-from genmatcher import match_gen_lep
+from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
 
 class ZHbbBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
@@ -48,6 +48,9 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         ### Add function to implement combinatorics now that we have the sorted list
         zh_helper(self.events)
         match_gen_lep(self.events)
+        # need to only run this one on TT
+        match_gen_tt(self.events)
+        match_gen_sig(self.events)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

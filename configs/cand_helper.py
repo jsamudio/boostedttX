@@ -125,7 +125,7 @@ def zh_helper(events):
 
     close_b = b_dRsort_vec[ind_close_b]
 
-    events["ZH_closeb_invM"] = (ZHCand + close_b).mass
+    events["ZH_closeb_invM"] = ak.flatten((ZHCand + close_b).mass)
 
     b_pt_ptsort, b_eta_ptsort, b_phi_ptsort, b_mass_ptsort, b_btag_ptsort = [make_ptsorted_arr(ZHCand, bjet, "gt", proc) for proc in [bjet.pt, bjet.eta, bjet.phi, bjet.mass, bjet.btagDeepFlavB]]
     b_ptsort_vec = zip_4vec(b_pt_ptsort, b_eta_ptsort, b_phi_ptsort, b_mass_ptsort)
@@ -144,8 +144,8 @@ def zh_helper(events):
 
     ZH_l_invM = (ZHCand + lep).mass #might need this to be specifically pNet mass
 
-    events["ZH_l_dr"] = ZH_l_dr
-    events["ZH_l_invM"] = ZH_l_invM
+    events["ZH_l_dr"] = ak.flatten(ZH_l_dr)
+    events["ZH_l_invM"] = ak.flatten(ZH_l_invM)
 
     # Leading-Subleading (pt) b and q combinations
 
@@ -209,14 +209,14 @@ def zh_helper(events):
     events["l_b2_mtb"] = l_b2_mtb
     # Combinations involving ZH and leading(subleading) b and q
 
-    events["outZH_b1_pt"] = leading_b.pt
-    events["outZH_b2_pt"] = subLeading_b.pt
-    events["outZH_b1_score"] = leading_b_btag
-    events["outZH_b2_score"] = subLeading_b_btag
-    events["outZH_q1_pt"] = leading_q.pt
-    events["outZH_q2_pt"] = subLeading_q.pt
-    events["outZH_q1_score"] = leading_q_btag
-    events["outZH_q2_score"] = subLeading_q_btag
+    events["outZH_b1_pt"] = ak.flatten(leading_b.pt)
+    events["outZH_b2_pt"] = ak.flatten(subLeading_b.pt)
+    events["outZH_b1_score"] = ak.flatten(leading_b_btag)
+    events["outZH_b2_score"] = ak.flatten(subLeading_b_btag)
+    events["outZH_q1_pt"] = ak.flatten(leading_q.pt)
+    events["outZH_q2_pt"] = ak.flatten(subLeading_q.pt)
+    events["outZH_q1_score"] = ak.flatten(leading_q_btag)
+    events["outZH_q2_score"] = ak.flatten(subLeading_q_btag)
 
     b1_q_dr = deltaR(leading_b, q_ptsort_vec)
     b2_q_dr = deltaR(subLeading_b, q_ptsort_vec)
@@ -224,8 +224,8 @@ def zh_helper(events):
     events["outZH_b1_q_mindr"] = ak.min(ak.where(b1_q_dr == np.nan, np.inf, b1_q_dr), axis=1)
     events["outZH_b2_q_mindr"] = ak.min(ak.where(b2_q_dr == np.nan, np.inf, b2_q_dr), axis=1)
 
-    events["l_b1_mtb"] = l_b1_mtb
-    events["l_b2_mtb"] = l_b2_mtb
+    events["l_b1_mtb"] = ak.flatten(l_b1_mtb)
+    events["l_b2_mtb"] = ak.flatten(l_b2_mtb)
 
     # q near b
     q_pt_b1dRsort, q_eta_b1dRsort, q_phi_b1dRsort, q_mass_b1dRsort = [make_dRsorted_arr(leading_b, qjet, "gt", proc) for proc in [qjet.pt, qjet.eta, qjet.phi, qjet.mass]]
@@ -244,7 +244,7 @@ def zh_helper(events):
 
     subNearb1_q = q_b1dRsort_vec[ind_subNearb1_q]
 
-    events["outZH_q_q_dr_nearb1"] = deltaR(nearb1_q, subNearb1_q)
+    events["outZH_q_q_dr_nearb1"] = ak.flatten(deltaR(nearb1_q, subNearb1_q))
 
     ind_nearb2_q = ak.argmax(ak.nan_to_num(q_pt_b2dRsort, nan=-1), axis = 1, keepdims=True)
 
@@ -254,28 +254,28 @@ def zh_helper(events):
 
     subNearb2_q = q_b2dRsort_vec[ind_subNearb2_q]
 
-    events["outZH_q_q_dr_nearb2"] = deltaR(nearb2_q, subNearb2_q)
+    events["outZH_q_q_dr_nearb2"] = ak.flatten(deltaR(nearb2_q, subNearb2_q))
 
-    events["outZH_qq_M_nearb1"] = (nearb1_q + subNearb1_q).mass
-    events["outZH_qq_M_nearb2"] = (nearb2_q + subNearb2_q).mass
-    events["outZH_b1q_M"] = (leading_b + nearb1_q).mass
-    events["outZH_b1q_M"] = (subLeading_b + nearb2_q).mass
+    events["outZH_qq_M_nearb1"] = ak.flatten((nearb1_q + subNearb1_q).mass)
+    events["outZH_qq_M_nearb2"] = ak.flatten((nearb2_q + subNearb2_q).mass)
+    events["outZH_b1q_M"] = ak.flatten((leading_b + nearb1_q).mass)
+    events["outZH_b1q_M"] = ak.flatten((subLeading_b + nearb2_q).mass)
 
     b1qq = (leading_b + nearb1_q + subNearb1_q)
     b2qq = (subLeading_b + nearb2_q + subNearb2_q)
 
-    events["outZH_b1_qq_dr"] = deltaR(leading_b, (nearb1_q + subNearb1_q))
-    events["outZH_b2_qq_dr"] = deltaR(subLeading_b, (nearb2_q + subNearb2_q))
-    events["outZH_b1qq_M"] = b1qq.mass
-    events["outZH_b2qq_M"] = b2qq.mass
-    events["ZH_b1qq_dr"] = deltaR(ZHCand, b1qq)
-    events["ZH_b2qq_dr"] = deltaR(ZHCand, b2qq)
+    events["outZH_b1_qq_dr"] = ak.flatten(deltaR(leading_b, (nearb1_q + subNearb1_q)))
+    events["outZH_b2_qq_dr"] = ak.flatten(deltaR(subLeading_b, (nearb2_q + subNearb2_q)))
+    events["outZH_b1qq_M"] = ak.flatten(b1qq.mass)
+    events["outZH_b2qq_M"] = ak.flatten(b2qq.mass)
+    events["ZH_b1qq_dr"] = ak.flatten(deltaR(ZHCand, b1qq))
+    events["ZH_b2qq_dr"] = ak.flatten(deltaR(ZHCand, b2qq))
 
     lbb1qq = (lep + leading_b + subLeading_b + nearb1_q + subNearb1_q)
     lbb2qq = (lep + leading_b + subLeading_b + nearb2_q + subNearb2_q)
 
-    events["ZH_lbb1qq_dr"] = deltaR(ZHCand, lbb1qq)
-    events["ZH_lbb2qq_dr"] = deltaR(ZHCand, lbb2qq)
+    events["ZH_lbb1qq_dr"] = ak.flatten(deltaR(ZHCand, lbb1qq))
+    events["ZH_lbb2qq_dr"] = ak.flatten(deltaR(ZHCand, lbb2qq))
 
     ZH_b_dr = deltaR(ZHCand, bjet)
     ZH_q_dr = deltaR(ZHCand, qjet)
@@ -301,17 +301,17 @@ def zh_helper(events):
 
     inZH_b = b_indRsort_vec[ind_b_inZH]
 
-    events["inZHb_outZHb_dr"] = deltaR(inZH_b, outZH_b)
+    events["inZHb_outZHb_dr"] = ak.flatten(deltaR(inZH_b, outZH_b))
 
     ht_b = ak.sum(ak.nan_to_num(b_pt_ptsort, nan=0), axis=1)
     sc_pt_outZH = ht_b + ak.sum(ak.nan_to_num(q_pt_ptsort, nan=0), axis=1) + lep.pt
     events["ht_b"] = ht_b
-    events["ht_outZH"] = sc_pt_outZH
+    events["ht_outZH"] = ak.flatten(sc_pt_outZH)
 
-    events["outZH_b12_m"] = (leading_b + subLeading_b).mass
-    events["outZH_b12_dr"] = deltaR(leading_b, subLeading_b)
-    events["nonZHbb_q1_dr"] = deltaR(ZHCand, leading_q)
-    events["nonZHbb_b1_dr"] = deltaR(ZHCand, leading_b)
+    events["outZH_b12_m"] = ak.flatten((leading_b + subLeading_b).mass)
+    events["outZH_b12_dr"] = ak.flatten(deltaR(leading_b, subLeading_b))
+    events["nonZHbb_q1_dr"] = ak.flatten(deltaR(ZHCand, leading_q))
+    events["nonZHbb_b1_dr"] = ak.flatten(deltaR(ZHCand, leading_b))
 
     events["n_ak4jets"] = ak.count(ak4.pt, axis=1)
     events["n_ak8jets"] = ak.count(ak8.pt, axis=1)

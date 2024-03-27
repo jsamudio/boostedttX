@@ -25,7 +25,9 @@ parameters = defaults.merge_parameters_from_files(default_parameters,
                                                   f"{localdir}/params/object_preselection.yaml",
                                                   f"{localdir}/params/skim_params.yaml",
                                                   update = True)
-NN_vars = ['outZH_b1_pt','outZH_b2_pt',
+NN_vars = [
+    'matchedGen_ZHbb_bb',
+    'outZH_b1_pt','outZH_b2_pt',
     'outZH_b1_score','outZH_b2_score',
     'outZH_q1_pt','outZH_q2_pt',
     'outZH_q1_score','outZH_q2_score',
@@ -65,10 +67,11 @@ cfg = Configurator(
         parameters = parameters,
         datasets = {
             "jsons": [f"{localdir}/datasets/ttHTobb_M125.json",
-                      f"{localdir}/datasets/TTZToBB.json"
+                      f"{localdir}/datasets/TTZToBB.json",
+                      f"{localdir}/datasets/TTToSemiLeptonic.json"
                 ],
             "filter": {
-                "samples": ["ttHTobb", "TTZToBB"],
+                "samples": ["ttHTobb", "TTZToBB", "TTToSemiLeptonic"],
                 "samples_exclude": [],
                 "year": ['2017']
                 }
@@ -109,11 +112,11 @@ cfg = Configurator(
         },
         columns = {
             "common": {
-                "inclusive": [],
+                "inclusive": [ColOut("events", NN_vars)],
                 "bycategory": {}
             },
             "bysample": {
-                "ttHTobb": {"inclusive": [ColOut("events", NN_vars)]},
+                #"ttHTobb": {"inclusive": [ColOut("events", NN_vars)]},
             }
         }
         )
