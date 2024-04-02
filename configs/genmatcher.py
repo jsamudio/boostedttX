@@ -12,9 +12,16 @@ def match_gen_lep(events):
     lep_match_dr = deltaR(events.LeptonGood, events.GenPart[islep])
     events["matchedGenLep"] = (ak.sum(lep_match_dr <= 0.1, axis=1) > 0)
 
-def match_gen_tt(events):
+def match_gen_tt(events, sample):
     # first get tt type
-    #FIXME
+    if   '2L2Nu' in sample:
+        events['tt_type'] = 'Di'
+    elif 'Semi' in sample:
+        events['tt_type'] = 'Semi'
+    elif 'Had' in sample:
+        events['tt_type'] = 'Had'
+    else:
+        events['tt_type'] = 'sig'
 
     gen_id = events.GenPart.pdgId
     gen_mom = events.GenPart.genPartIdxMother
@@ -124,5 +131,6 @@ def match_gen_sig(events):
     events['matchedGen_Zqq']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isZqq,axis=1) >  0))
     #
     events['matchedGen_ZHbb_bb']  = ((events['matchedGen_ZHbb'] == 1) & (zh_matchbb  == 1))
+    print(sum(events['matchedGen_ZHbb_bb']))
     events['matchedGen_ZHbb_b']   = ((events['matchedGen_ZHbb'] == 1) & (zh_matchb   == 1))
     events['matchedGen_ZHbb_nob'] = ((events['matchedGen_ZHbb'] == 1) & (zh_nomatchb == 1))

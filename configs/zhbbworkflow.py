@@ -15,6 +15,8 @@ from custom_cut_functions import sortbyscore
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
 
+sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
+
 class ZHbbBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
         super().__init__(cfg)
@@ -49,8 +51,15 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         zh_helper(self.events)
         match_gen_lep(self.events)
         # need to only run this one on TT
-        match_gen_tt(self.events)
+        #if self._sample in sig:
         match_gen_sig(self.events)
+        self.events['process'] = 'sig'
+        #else:
+        match_gen_tt(self.events, self._sample)
+        if 'TTTo' in self._sample:
+            self.events['process'] = 'TTbar'
+        elif 'TTbb' in self._sample:
+            self.events['process'] = 'ttbb'
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

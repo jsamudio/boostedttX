@@ -200,11 +200,11 @@ def zh_helper(events):
     l_b1_mtb = calc_mtb((lep+leading_b).pt, (lep+leading_b).phi, met.pt, met.phi)
     l_b2_mtb = calc_mtb((lep+leading_b).pt, (lep+leading_b).phi, met.pt, met.phi)
 
-    events["l_b1_invM"] = l_b1_invM
-    events["l_b2_invM"] = l_b2_invM
+    events["l_b1_invM"] = ak.flatten(l_b1_invM)
+    events["l_b2_invM"] = ak.flatten(l_b2_invM)
 
-    events["l_b1_dr"] = l_b1_dr
-    events["l_b2_dr"] = l_b2_dr
+    events["l_b1_dr"] = ak.flatten(l_b1_dr)
+    events["l_b2_dr"] = ak.flatten(l_b2_dr)
 
     events["l_b2_mtb"] = l_b2_mtb
     # Combinations involving ZH and leading(subleading) b and q

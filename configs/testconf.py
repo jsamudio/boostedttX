@@ -26,7 +26,7 @@ parameters = defaults.merge_parameters_from_files(default_parameters,
                                                   f"{localdir}/params/skim_params.yaml",
                                                   update = True)
 NN_vars = [
-    'matchedGen_ZHbb_bb',
+    'process', 'matchedGen_ZHbb_bb', 'tt_type',
     'outZH_b1_pt','outZH_b2_pt',
     'outZH_b1_score','outZH_b2_score',
     'outZH_q1_pt','outZH_q2_pt',
@@ -67,11 +67,21 @@ cfg = Configurator(
         parameters = parameters,
         datasets = {
             "jsons": [f"{localdir}/datasets/ttHTobb_M125.json",
+                      f"{localdir}/datasets/ttHToNonbb_M125.json",
                       f"{localdir}/datasets/TTZToBB.json",
+                      f"{localdir}/datasets/TTZToQQ.json",
+                      f"{localdir}/datasets/TTZToLLNuNu.json",
+                      f"{localdir}/datasets/TTbb_Hadronic.json",
+                      f"{localdir}/datasets/TTbb_2L2Nu.json",
+                      f"{localdir}/datasets/TTbb_SemiLeptonic.json",
+                      f"{localdir}/datasets/TTToHadronic.json",
+                      f"{localdir}/datasets/TTTo2L2Nu.json",
                       f"{localdir}/datasets/TTToSemiLeptonic.json"
                 ],
             "filter": {
-                "samples": ["ttHTobb", "TTZToBB", "TTToSemiLeptonic"],
+                "samples": ["ttHTobb", "ttHToNonbb", "TTZToQQ", "TTZToLLNuNu", "TTZToBB",
+                    "TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu",
+                    "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic"],
                 "samples_exclude": [],
                 "year": ['2017']
                 }
