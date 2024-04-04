@@ -20,8 +20,6 @@ def match_gen_tt(events, sample):
         events['tt_type'] = 'Semi'
     elif 'Had' in sample:
         events['tt_type'] = 'Had'
-    else:
-        events['tt_type'] = 'sig'
 
     gen_id = events.GenPart.pdgId
     gen_mom = events.GenPart.genPartIdxMother
@@ -131,6 +129,5 @@ def match_gen_sig(events):
     events['matchedGen_Zqq']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isZqq,axis=1) >  0))
     #
     events['matchedGen_ZHbb_bb']  = ((events['matchedGen_ZHbb'] == 1) & (zh_matchbb  == 1))
-    print(sum(events['matchedGen_ZHbb_bb']))
     events['matchedGen_ZHbb_b']   = ((events['matchedGen_ZHbb'] == 1) & (zh_matchb   == 1))
     events['matchedGen_ZHbb_nob'] = ((events['matchedGen_ZHbb'] == 1) & (zh_nomatchb == 1))

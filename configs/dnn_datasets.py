@@ -9,6 +9,7 @@ from sklearn.preprocessing import LabelEncoder
 
 from coffea.util import load
 import argparse
+import outvars
 
 parser = argparse.ArgumentParser(description='Build datasets for NN training')
 
@@ -21,49 +22,23 @@ filein = load(args.input)
 def dnn_cut(df_):
     base_cuts = (
         (df_['n_b_outZH'] >= 2) &
-        (df_['ZH_bbvLscore'] >= 0.8)
-        )
+        (df_['ZH_bbvLscore'] >= 0.8) &
+        (df_['n_ak4jets']   >= 5)             &
+        #( (df_['isEleE']==True) | (df_['isMuonE']==True)) & # pass sim trigger
+        #(df_['passNotHadLep'] == 1) & # might add
+        (df_['ZH_pt']       >= 200)& # 200
+        (df_['MET_pt']      >= 20)            &
+        (df_['ZH_M']        >= 50)            &
+        (df_['ZH_M']        <= 200)
+    )
     return base_cuts
 
-NN_vars = [
-    'matchedGen_ZHbb_bb', 'process', 'tt_type',
-    'outZH_b1_pt','outZH_b2_pt',
-    'outZH_b1_score','outZH_b2_score',
-    'outZH_q1_pt','outZH_q2_pt',
-    'outZH_q1_score','outZH_q2_score',
-    #
-    'outZH_b1_q_mindr','outZH_b2_q_mindr',
-    'outZH_q_q_dr_nearb1','outZH_q_q_dr_nearb2',
-    'outZH_qq_M_nearb1','outZH_qq_M_nearb2',
-    'outZH_b1_qq_dr','outZH_b2_qq_dr',
-    'outZH_b1qq_M','outZH_b2qq_M',
-    'ZH_b1qq_dr','ZH_b2qq_dr',
-    'ZH_lbb1qq_dr','ZH_lbb2qq_dr',
-    'l_b2_mtb',
-    #
-    'ZH_closeb_invM',#'Zh_closeq_invM',
-    'n_ak8jets', 'n_ak4jets','n_ak8_ZHbb',
-    'outZH_max_ak8pnetMass',
-    'outZH_b12_m', 'outZH_b12_dr',
-    'ht_b', 'ht_outZH',
-    #
-    'ak4_bestb_inZH',
-    'ak4_worstb_inZH',
-    #
-    'nonZHbb_q1_dr',
-    'nonZHbb_b1_dr',
-    'inZHb_outZHb_dr',
-    #
-    'ZH_l_dr', 'ZH_l_invM',
-    'l_b1_invM','l_b2_invM',
-    'l_b1_dr','l_b2_dr',
-    #
-    'spher','aplan',
-    'n_b_inZH', 'n_q_inZH',
-    'n_b_outZH', 'n_q_outZH', "ZH_bbvLscore"]
+NN_vars = outvars.NN_vars
+sig_vars = outvars.NN_vars+outvars.sig_vars
+bkg_vars = outvars.NN_vars+outvars.bkg_vars
 
-#sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
-sig = ['ttHTobb', 'TTZToBB']
+sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
+#sig = ['ttHTobb', 'TTZToBB']
 bkg = ["TTbb_SemiLeptonic", "TTToSemiLeptonic"]
 genmatchreq = 'matchedGen_ZHbb_bb'
 
@@ -71,22 +46,20 @@ class DNN_datasets:
     #Prepare datasets for MVA training
 
     #sig = ['ttH', 'ttZ']
-    bkg = ['TTBar', 'ttbb']
+    #bkg = ['TTBar', 'ttbb']
     dnn_vars = NN_vars
-    cut_vars = []
+    cut_vars = ['process','ZH_pt','MET_pt','ZH_M', 'ZH_bbvLscore']
     output_dir = './nn_files'
 
     def __init__(self):
         self.s_df, self.b_df = self.get_sigbkg()
-        print(self.s_df[self.s_df['matchedGen_ZHbb_bb'] == True])
+        #print(self.s_df[self.s_df['matchedGen_ZHbb_bb'] == True])
         self.prep_class()
         self.sep_test_train()
 
 
     def get_sigbkg(self):
         pre_vars = self.dnn_vars + [v for v in self.cut_vars if v not in self.dnn_vars]
-
-
 
         dfList = []
 
@@ -95,11 +68,11 @@ class DNN_datasets:
         for i in sig:
             tmp = []
             for j in filein['columns'][f'{i}'].keys():
-                for var in NN_vars:
+                for var in pre_vars+[genmatchreq]:
                     inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
                     tmp.append(inner_list)
             tmp = np.transpose(np.asarray(tmp, dtype=object))
-            tmpDF = pd.DataFrame(data=tmp, columns=NN_vars)
+            tmpDF = pd.DataFrame(data=tmp, columns=pre_vars+[genmatchreq])
             dfList.append(tmpDF)
         s_df = pd.concat(dfList, ignore_index=True)
 
@@ -110,11 +83,11 @@ class DNN_datasets:
         for i in bkg:
             tmp = []
             for j in filein['columns'][f'{i}'].keys():
-                for var in NN_vars:
+                for var in pre_vars+['tt_type']:
                     inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
                     tmp.append(inner_list)
             tmp = np.transpose(np.asarray(tmp, dtype=object))
-            tmpDF = pd.DataFrame(data=tmp, columns=NN_vars)
+            tmpDF = pd.DataFrame(data=tmp, columns=pre_vars+['tt_type'])
             dfList.append(tmpDF)
         b_df = pd.concat(dfList, ignore_index=True)
 
@@ -126,17 +99,25 @@ class DNN_datasets:
         self.s_df['label'] = 2
         self.b_df['label'] = np.where(self.b_df['process'] == 'TTbar', 0, 1)
         del self.s_df[genmatchreq], self.b_df['tt_type']
-        del self.b_df[genmatchreq], self.s_df['tt_type']
+        #del self.b_df[genmatchreq], self.s_df['tt_type']
         sb_df = pd.concat([self.s_df,self.b_df])
+        #
+        #sb_df.drop(columns="process", inplace=True)
+        #sb_df = sb_df.astype(np.float64)
+        #print(sb_df.columns.to_series()[np.isinf(sb_df).any()])
+        #print(sb_df.index[np.isinf(sb_df).any(1)])
+        #print(sb_df.loc[139, sb_df.columns.to_series()[np.isinf(sb_df).any()]])
+        #
+        sb_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        sb_df.dropna(how="any", inplace=True)
+        print(sb_df)
         encoder = LabelEncoder()
         encoder.fit(sb_df['label'])
         encoded_labels = encoder.transform(sb_df['label'])
         onehot_labels = to_categorical(encoded_labels)
         sb_df['label'] = onehot_labels.tolist()
         self.sb_df = sb_df[dnn_cut(sb_df)].sample(frac=1).reset_index(drop=True) # to shuffle dataset
-        self.sb_df.fillna(value=0, inplace=True)
         print(np.unique(self.sb_df['process'],return_counts=True))
-        del self.sb_df['process']
         for v in self.cut_vars:
             if v not in self.dnn_vars:
                 del self.sb_df[v]

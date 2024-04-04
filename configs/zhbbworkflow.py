@@ -10,7 +10,7 @@ from pocket_coffea.lib.objects import (
     btagging,
     get_dilepton,
 )
-from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel
+from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo
 from custom_cut_functions import sortbyscore
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
@@ -44,26 +44,31 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events['FatJetGood'] = fatjet_sel(self.events, self.params, "LeptonGood")
         self.events['bJetGood'] = bjet_sel(self.events.JetGood, self.params)
         self.events['qJetGood'] = qjet_sel(self.events.JetGood, self.params)
+        self.events['e_softe'] = lep_softlep_combo(self.events.ElectronGood, self.events.SoftElectronGood)
+        self.events['mu_softmu'] = lep_softlep_combo(self.events.MuonGood, self.events.SoftMuonGood)
 
     def process_extra_after_presel(self, variation):
         self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "particleNetMD_Xbb")
+        #self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
+        #self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
         ### Add function to implement combinatorics now that we have the sorted list
         zh_helper(self.events)
         match_gen_lep(self.events)
-        # need to only run this one on TT
-        #if self._sample in sig:
-        match_gen_sig(self.events)
-        self.events['process'] = 'sig'
-        #else:
-        match_gen_tt(self.events, self._sample)
-        if 'TTTo' in self._sample:
-            self.events['process'] = 'TTbar'
-        elif 'TTbb' in self._sample:
-            self.events['process'] = 'ttbb'
+        if self._sample in sig:
+            match_gen_sig(self.events)
+            self.events['process'] = 'sig'
+        else:
+            match_gen_tt(self.events, self._sample)
+            if 'TTTo' in self._sample:
+                self.events['process'] = 'TTbar'
+            elif 'TTbb' in self._sample:
+                self.events['process'] = 'ttbb'
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)
         self.events['nElectronGood'] = ak.num(self.events.ElectronGood)
+        self.events['nSoftMuonGood'] = ak.num(self.events.SoftMuonGood)
+        self.events['nSoftElectronGood'] = ak.num(self.events.SoftElectronGood)
         self.events['nJetGood'] = ak.num(self.events.JetGood)
         self.events['nFatJetGood'] = ak.num(self.events.FatJetGood)
         self.events['nbJetGood'] = ak.num(self.events.bJetGood)

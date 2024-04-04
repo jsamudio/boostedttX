@@ -32,7 +32,10 @@ def event_selection(events, params, year, sample, **kwargs):
             (events.nJetGood >= 5) &
             (events.nFatJetGood >= 1) &
             (events.MET.pt > 20) &
-            (events.nElectronGood + events.nMuonGood == 1) )
+            (events.nElectronGood + events.nMuonGood == 1) &
+            (events.nSoftElectronGood < 2) &
+            (events.nSoftMuonGood < 2)
+            )
     # Pad None vlaues with False
     return ak.where(ak.is_none(mask), False, mask)
 
@@ -56,6 +59,40 @@ btag_mask = Cut(
         function = btag_mask,
 )
 
+'''
+SFOS J/Psi veto
+'''
+def vetoMu(events, params, year, sample, **kwargs):
+    OS = events.mu_softmu.charge == 0
+
+    mask = (
+        OS &
+        (events.mu_softmu.mass < 12) &
+        (events.mu_softmu.mass > 0)
+        )
+    return ak.where(ak.is_none(mask), False, ~mask)
+
+vetoMu = Cut(
+        name= "vetoMu",
+        params = {},
+        function = vetoMu,
+)
+
+def vetoE(events, params, year, sample, **kwargs):
+    OS = events.e_softe.charge == 0
+
+    mask = (
+        OS &
+        (events.e_softe.mass < 12) &
+        (events.e_softe.mass > 0)
+        )
+    return ak.where(ak.is_none(mask), False, ~mask)
+
+vetoE = Cut(
+        name= "vetoE",
+        params = {},
+        function = vetoE,
+)
 '''
 Helper function to sort jets by highest Xbb score
 '''

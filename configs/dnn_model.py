@@ -49,6 +49,51 @@ NN_vars = [
     'n_b_inZH', 'n_q_inZH',
     'n_b_outZH', 'n_q_outZH', "ZH_bbvLscore"]
 
+nodak8md_dnn_ZH_vars = [
+    # may have to get rid of due to bad p-score:
+    # n_q_outZh, l_b2_dr, n_ak4jets
+    'outZH_b1_pt','outZH_b2_pt',
+    'outZH_b1_score','outZH_b2_score',
+    'outZh_q1_pt','outZh_q2_pt',
+    'outZh_q1_btag','outZh_q2_btag',
+    #
+    'outZH_b1_q_mindr','outZH_b2_q_mindr',
+    'outZH_q_q_dr_nearb1','outZH_q_q_dr_nearb2',
+    'outZH_qq_M_nearb1','outZH_qq_M_nearb2',
+    #'outZH_b1q_M', bad p-score!
+    #'outZH_b2q_M',
+    'outZH_b1_qq_dr','outZH_b2_qq_dr',
+    'outZH_b1qq_M','outZH_b2qq_M',
+    'ZH_b1qq_dr','ZH_b2qq_dr',
+    'ZH_lbb1qq_dr','ZH_lbb2qq_dr',
+    'l_b2_mtb',
+    #
+    'Zh_closeb_invM',#'Zh_closeq_invM',
+    'n_ak8jets', 'n_ak4jets','n_ak8_Zhbb',
+    'outZh_max_ak8sdM',
+    'outZh_b12_m', 'outZh_b12_dr',
+    'ht_b', 'ht_outZh',
+    #
+    'ak4_bestb_inZH',
+    'ak4_worstb_inZH',
+    #
+    'nonZhbb_q1_dr',
+    'nonZhbb_b1_dr',
+    'inZhb_outZhb_dr',
+    #
+    'Zh_l_dr', 'Zh_l_invM_sd',
+    'l_b1_invM','l_b2_invM',
+    'l_b1_dr','l_b2_dr',
+    #
+    'spher','aplan',
+    'n_b_inZh', 'n_q_inZh',
+    'n_b_outZh', 'n_q_outZh'
+]
+
+
+withbbvl_dnn_ZHgenm_vars = nodak8md_dnn_ZH_vars+['Zh_bbvLscore']
+
+
 class DNN_model:
 
     #alpha  = cfg.dnn_ZH_alpha
@@ -319,13 +364,15 @@ def local_test(m_info, train_binary=False):
     plt.xlim(0,1)
     #plt.title(out_name)
     plt.show()
-    #plt.savefig(cfg.dnn_ZH_dir+'/test_archs/'+out_name+'.pdf')
+    plt.savefig('nn_training.pdf')
 
 
 def prep_model_data(m_info, is_binary=False):
     resetIndex = (lambda df: df.reset_index(drop=True).copy())
     #
     trainXY = pd.read_pickle('./trainXY.pkl')
+    #trainXY = pd.read_pickle('/cms/data/jsamudio/ttZh_analysis/ttZ-h_eft/DeepSleep/data/NN_files/trainXY.pkl')
+    #assert not np.any(np.isnan(trainXY))
     print(trainXY.keys())
     print(trainXY.isna().sum().head(50))
     # get val from trainXY
@@ -333,6 +380,7 @@ def prep_model_data(m_info, is_binary=False):
     trainXY = trainXY.drop(valXY.index).copy()
     #
     testXY  = pd.read_pickle('./testXY.pkl')
+    #testXY  = pd.read_pickle('/cms/data/jsamudio/ttZh_analysis/ttZ-h_eft/DeepSleep/data/NN_files/testXY.pkl')
     trainY, valY, testY = [resetIndex(df['label']) for df in [trainXY, valXY, testXY]]
     print(f"Size of : {'train':10} {'val':10} {'test':10}")
     print(f"          {len(trainY):10} {len(valY):10} {len(testY):10}")
@@ -342,6 +390,7 @@ def prep_model_data(m_info, is_binary=False):
     m_class = DNN_model(m_info['sequence'],m_info['other_settings'])
     #model = m_class.Build_Model(len(cfg.withbbvl_dnn_ZHgenm_vars), )#load_weights='ttzh_model.h5')
     dnn_vars = NN_vars
+    #dnn_vars = withbbvl_dnn_ZHgenm_vars
     #dnn_vars = cfg.reduced1p0genm_vars
     #dnn_vars = cfg.withbbvl_dnn_ZH_1p5vars
     # ===== testing binary model

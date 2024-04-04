@@ -89,6 +89,9 @@ def zh_helper(events):
     qjet = events.qJetGood
     lep = events.LeptonGood
     met = events.MET
+    events['ZH_pt'] = ZHCand.pt
+    events['ZH_M'] = ZHCand.particleNet_mass
+    events['MET_pt'] = met.pt
 
     '''
     Dirty padding and array formatting to use old SandA calculation

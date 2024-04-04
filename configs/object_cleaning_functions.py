@@ -71,6 +71,39 @@ def soft_lep_sel(events, lepton_flavour, params):
     return leptons[good_leptons]
 
 '''
+Get lep + SFOS lep
+'''
+def lep_softlep_combo(lepton, softLepton, transverse=False):
+    fields = {
+        "pt": 0.,
+        "eta": 0.,
+        "phi": 0.,
+        "mass": 0.,
+        "charge": 0.,
+    }
+
+    leptons = ak.pad_none(ak.with_name(ak.concatenate([ lepton[:, 0:2], softLepton[:, 0:2]], axis=1), "PtEtaPhiMCandidate"), 2)
+    nlep =  ak.num(leptons[~ak.is_none(leptons, axis=1)])
+    ll = leptons[:,0] + leptons[:,1]
+
+    for var in fields.keys():
+        fields[var] = ak.where(
+            (nlep == 2),
+            getattr(ll, var),
+            fields[var]
+        )
+
+    fields["deltaR"] = ak.where(
+        (nlep == 2), leptons[:,0].delta_r(leptons[:,1]), -1)
+
+    if transverse:
+        fields["eta"] = ak.zeros_like(fields["pt"])
+    dileptons = ak.zip(fields, with_name="PtEtaPhiMCandidate")
+
+    return dileptons
+
+
+'''
 FatJet
 '''
 
