@@ -47,6 +47,11 @@ def match_gen_tt(events, sample):
     events['tt_c'] = is_tt_c
     events['tt_2c'] = is_tt_2c
     events['tt_cc'] = is_tt_cc
+    if 'TTTo' in sample:
+        events['process'] = np.where(events['tt_B'] == True, 'old_tt_B', 'TTBar')
+    elif 'TTbb' in sample:
+        events['process'] = np.where(events['tt_B'] == True, 'tt_B', 'non_tt_B')
+    print(events['process'])
     print('Total',len(is_tt_B))
     print('tt+B', sum(is_tt_B))
     print('tt+b', sum(is_tt_b))

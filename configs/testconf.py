@@ -43,11 +43,73 @@ cfg = Configurator(
                       f"{localdir}/datasets/TTToSemiLeptonic.json"
                 ],
             "filter": {
-                "samples": ["ttHTobb", "ttHToNonbb", "TTZToQQ", "TTZToLLNuNu", "TTZToBB",
-                    "TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu",
-                    "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic"],
+                "samples":  [
+                            "ttHTobb",
+                            "ttHToNonbb",
+                            "TTZToQQ",
+                            "TTZToLLNuNu",
+                            "TTZToBB",
+                            "TTbb_Hadronic",
+                            "TTbb_SemiLeptonic",
+                            "TTbb_2L2Nu",
+                            "TTToHadronic",
+                            "TTTo2L2Nu",
+                            "TTToSemiLeptonic",
+                ],
                 "samples_exclude": [],
                 "year": ['2017']
+                },
+                "subsamples": {
+                    'TTbb_SemiLeptonic': {
+                        'TTbbSemiLeptonic_tt+LF'   : [get_genTtbarId_100_eq(0)],
+                        'TTbbSemiLeptonic_tt+C'    : [get_genTtbarId_100_eq([41, 42, 43, 44, 45, 46])],
+                        'TTbbSemiLeptonic_tt+B'    : [get_genTtbarId_100_eq([51, 52, 53, 54, 55, 56])],
+                    },
+                    'TTbb_Hadronic': {
+                        'TTbbHadronic_tt+LF'   : [get_genTtbarId_100_eq(0)],
+                        'TTbbHadronic_tt+C'    : [get_genTtbarId_100_eq([41, 42, 43, 44, 45, 46])],
+                        'TTbbHadronic_tt+B'    : [get_genTtbarId_100_eq([51, 52, 53, 54, 55, 56])],
+                    },
+                    'TTbb_2L2Nu': {
+                        'TTbb2L2Nu_tt+LF'   : [get_genTtbarId_100_eq(0)],
+                        'TTbb2L2Nu_tt+C'    : [get_genTtbarId_100_eq([41, 42, 43, 44, 45, 46])],
+                        'TTbb2L2Nu_tt+B'    : [get_genTtbarId_100_eq([51, 52, 53, 54, 55, 56])],
+                    },
+                    'TTToSemiLeptonic': {
+                        'TTToSemiLeptonic_tt+LF'   : [get_genTtbarId_100_eq(0)],
+                        'TTToSemiLeptonic_tt+C'    : [get_genTtbarId_100_eq([41, 42, 43, 44, 45, 46])],
+                        'TTToSemiLeptonic_tt+B'    : [get_genTtbarId_100_eq([51, 52, 53, 54, 55, 56])],
+                    },
+                    'TTToHadronic': {
+                        'TTToHadronic_tt+LF'   : [get_genTtbarId_100_eq(0)],
+                        'TTToHadronic_tt+C'    : [get_genTtbarId_100_eq([41, 42, 43, 44, 45, 46])],
+                        'TTToHadronic_tt+B'    : [get_genTtbarId_100_eq([51, 52, 53, 54, 55, 56])],
+                    },
+                    'TTTo2L2Nu': {
+                        'TTTo2L2Nu_tt+LF'   : [get_genTtbarId_100_eq(0)],
+                        'TTTo2L2Nu_tt+C'    : [get_genTtbarId_100_eq([41, 42, 43, 44, 45, 46])],
+                        'TTTo2L2Nu_tt+B'    : [get_genTtbarId_100_eq([51, 52, 53, 54, 55, 56])],
+                    },
+                    'TTZToBB' : {
+                        'genMatch'   : [genMatch],
+                        'non_genMatch'   : [non_genMatch]
+                    },
+                    'TTZToQQ' : {
+                        'genMatch'   : [genMatch],
+                        'non_genMatch'   : [non_genMatch]
+                    },
+                    'TTZToLLNuNu' : {
+                        'genMatch'   : [genMatch],
+                        'non_genMatch'   : [non_genMatch]
+                    },
+                    'ttHTobb' : {
+                        'genMatch'   : [genMatch],
+                        'non_genMatch'   : [non_genMatch]
+                    },
+                    'ttHToNonbb' : {
+                        'genMatch'   : [genMatch],
+                        'non_genMatch'   : [non_genMatch]
+                    },
                 }
             },
 
@@ -56,7 +118,6 @@ cfg = Configurator(
         skim = [precut],
         preselections = [event_selection],
         categories = {
-            "baseline": [],
             "btag_mask": [btag_mask, vetoE, vetoMu],
             },
         weights = {
@@ -82,11 +143,12 @@ cfg = Configurator(
             "mAK8" : HistConf([Axis(coll="FatJetGood", field="particleNet_mass", bins = 100, start=0, stop=200, label=r"$M_{pNet}$ [GeV]")]),
             "zhbbtag" : HistConf([Axis(coll="FatJetGood", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
             "zhbbtag_sorted" : HistConf([Axis(coll="FatJetSorted", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
+            "newgenm_NN" : HistConf([Axis(coll="events", field="newgenm_NN", bins = [0., 0.08306063, 0.43137971, 0.55986929, 0.73463416, 0.8649936, 1. ], start=0, stop=1, label=r"$DNN Score$", pos=0, underflow=False, overflow=False)]),
             "outZH_b1_pt" : HistConf([Axis(coll="events", field="outZH_b1_pt", bins = 100, start=0, stop=200, label=r"$Xbb_{pNet}$", pos=0)])
         },
         columns = {
             "common": {
-                "inclusive": {},
+                "inclusive": [ColOut("events", ["newgenm_NN", "event"])],
                 "bycategory": {}
             },
             "bysample": {
@@ -107,7 +169,8 @@ cfg = Configurator(
 
 run_options = {
         "executor"       : "dask/lxplus",
-        "env"            : "singularity",
+        "env"            : "myenv",
+        "cores"          : 4,
         "workers"        : 1,
         "scaleout"       : 50,
         "worker_image"   : "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-cc7-latest",

@@ -137,6 +137,7 @@ class DNN_model:
             epsilon = K.epsilon()
             y_pred = K.clip(y_pred, epsilon, 1. - epsilon)
             # Calculate Cross Entropy
+            print(y_pred.shape, y_true.shape)
             cross_entropy = -y_true * K.log(y_pred)
             # Calculate Focal Loss
             loss = alpha * K.pow(1 - y_pred, gamma) * cross_entropy

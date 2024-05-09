@@ -3,6 +3,7 @@ import awkward as ak
 from pocket_coffea.workflows.base import BaseProcessorABC
 from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.hist_manager import Axis
+from pocket_coffea.lib.weights_manager import WeightsManager
 from pocket_coffea.lib.objects import (
     jet_correction,
     lepton_selection,
@@ -14,6 +15,8 @@ from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_se
 from custom_cut_functions import sortbyscore
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
+import dnn_model
+from applyDNN import applyDNN
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
 
@@ -59,10 +62,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
             self.events['process'] = 'sig'
         else:
             match_gen_tt(self.events, self._sample)
-            if 'TTTo' in self._sample:
-                self.events['process'] = 'TTbar'
-            elif 'TTbb' in self._sample:
-                self.events['process'] = 'ttbb'
+        applyDNN(self.events)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

@@ -9,7 +9,7 @@ skim_params:
           value: 4
           maxpt: 50.0
     Electron:
-        pt: 30
+        pt: 35
         eta: 2.5
         sip3d: 4
         cutBasedNoIso: 4

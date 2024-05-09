@@ -37,9 +37,16 @@ NN_vars = outvars.NN_vars
 sig_vars = outvars.NN_vars+outvars.sig_vars
 bkg_vars = outvars.NN_vars+outvars.bkg_vars
 
-sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
+sig = ['ttHTobb__genMatch', 'ttHToNonbb__genMatch','TTZToBB__genMatch', 'TTZToQQ__genMatch', 'TTZToLLNuNu__genMatch']
 #sig = ['ttHTobb', 'TTZToBB']
-bkg = ["TTbb_SemiLeptonic", "TTToSemiLeptonic"]
+bkg = [
+    "TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+B",
+    "TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+LF",
+    "TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+C",
+    "TTToSemiLeptonic__TTToSemiLeptonic_tt+LF",
+    "TTToSemiLeptonic__TTToSemiLeptonic_tt+C",
+    "TTToSemiLeptonic__TTToSemiLeptonic_tt+B"
+    ]
 genmatchreq = 'matchedGen_ZHbb_bb'
 
 class DNN_datasets:
@@ -92,14 +99,16 @@ class DNN_datasets:
         b_df = pd.concat(dfList, ignore_index=True)
 
         s_df = s_df[s_df[genmatchreq] == True]
+        b_df = b_df[(b_df['process'] == 'TTBar') | (b_df['process'] == 'tt_B')]
 
         return s_df, b_df
 
     def prep_class(self):
         self.s_df['label'] = 2
-        self.b_df['label'] = np.where(self.b_df['process'] == 'TTbar', 0, 1)
+        self.b_df['label'] = np.where(self.b_df['process'] == 'TTBar', 0, 1)
         del self.s_df[genmatchreq], self.b_df['tt_type']
         #del self.b_df[genmatchreq], self.s_df['tt_type']
+        print(self.s_df)
         sb_df = pd.concat([self.s_df,self.b_df])
         #
         #sb_df.drop(columns="process", inplace=True)
@@ -111,13 +120,14 @@ class DNN_datasets:
         sb_df.replace([np.inf, -np.inf], np.nan, inplace=True)
         sb_df.dropna(how="any", inplace=True)
         print(sb_df)
+        print(sum(sb_df['process'] == 'sig'))
         encoder = LabelEncoder()
         encoder.fit(sb_df['label'])
         encoded_labels = encoder.transform(sb_df['label'])
         onehot_labels = to_categorical(encoded_labels)
         sb_df['label'] = onehot_labels.tolist()
         self.sb_df = sb_df[dnn_cut(sb_df)].sample(frac=1).reset_index(drop=True) # to shuffle dataset
-        print(np.unique(self.sb_df['process'],return_counts=True))
+        print(np.unique(self.sb_df['label'],return_counts=True))
         for v in self.cut_vars:
             if v not in self.dnn_vars:
                 del self.sb_df[v]
