@@ -1,4 +1,5 @@
 import awkward as ak
+import numpy as np
 
 from pocket_coffea.workflows.base import BaseProcessorABC
 from pocket_coffea.utils.configurator import Configurator
@@ -23,6 +24,9 @@ sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
 class ZHbbBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
         super().__init__(cfg)
+
+    def process_extra_before_skim(self):
+        self.events['sum_sign_genw'] = np.sum(np.sign(self.events['genWeight']))
 
     def apply_object_preselection(self, variation):
         #soft e, e, soft mu, mu, jet, fatjet
