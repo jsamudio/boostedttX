@@ -22,7 +22,7 @@ filein = load(args.input)
 def dnn_cut(df_):
     base_cuts = (
         (df_['n_b_outZH'] >= 2) &
-        (df_['ZH_bbvLscore'] >= 0.8) &
+        (df_['ZH_bbvLscore'] >= 0.6) &
         (df_['n_ak4jets']   >= 5)             &
         #( (df_['isEleE']==True) | (df_['isMuonE']==True)) & # pass sim trigger
         #(df_['passNotHadLep'] == 1) & # might add
@@ -40,12 +40,12 @@ bkg_vars = outvars.NN_vars+outvars.bkg_vars
 sig = ['ttHTobb__genMatch', 'ttHToNonbb__genMatch','TTZToBB__genMatch', 'TTZToQQ__genMatch', 'TTZToLLNuNu__genMatch']
 #sig = ['ttHTobb', 'TTZToBB']
 bkg = [
-    "TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+B",
-    "TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+LF",
-    "TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+C",
-    "TTToSemiLeptonic__TTToSemiLeptonic_tt+LF",
-    "TTToSemiLeptonic__TTToSemiLeptonic_tt+C",
-    "TTToSemiLeptonic__TTToSemiLeptonic_tt+B"
+    "TTbb_SemiLeptonic__tt+B",
+    #"TTbb_SemiLeptonic__tt+LF",
+    #"TTbb_SemiLeptonic__tt+C",
+    "TTToSemiLeptonic__tt+LF",
+    "TTToSemiLeptonic__tt+C",
+    #"TTToSemiLeptonic__tt+B"
     ]
 genmatchreq = 'matchedGen_ZHbb_bb'
 

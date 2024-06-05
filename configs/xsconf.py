@@ -3,13 +3,15 @@ from pocket_coffea.lib.cut_definition import Cut
 from pocket_coffea.lib.columns_manager import ColOut
 from pocket_coffea.lib.cut_functions import get_nObj_min, get_HLTsel
 from pocket_coffea.parameters.histograms import *
-import zhbbworkflow
-from zhbbworkflow import ZHbbBaseProcessor
+import xsworkflow
+from xsworkflow import XSBaseProcessor
 import outvars
+
+from pocket_coffea.parameters.cuts import passthrough
 
 import cloudpickle
 import custom_cut_functions
-cloudpickle.register_pickle_by_value(zhbbworkflow)
+cloudpickle.register_pickle_by_value(xsworkflow)
 cloudpickle.register_pickle_by_value(custom_cut_functions)
 
 from custom_cut_functions import *
@@ -45,14 +47,14 @@ cfg = Configurator(
                 ],
             "filter": {
                 "samples":  [
-                            "ttHTobb",
-                            "ttHToNonbb",
-                            "TTZToQQ",
-                            "TTZToLLNuNu",
-                            "TTZToBB",
-                            "TTbb_Hadronic",
-                            "TTbb_SemiLeptonic",
-                            "TTbb_2L2Nu",
+                            #"ttHTobb",
+                            #"ttHToNonbb",
+                            #"TTZToQQ",
+                            #"TTZToLLNuNu",
+                            #"TTZToBB",
+                            #"TTbb_Hadronic",
+                            #"TTbb_SemiLeptonic",
+                            #"TTbb_2L2Nu",
                             "TTToHadronic",
                             "TTTo2L2Nu",
                             "TTToSemiLeptonic",
@@ -114,12 +116,11 @@ cfg = Configurator(
                 }
             },
 
-        workflow = ZHbbBaseProcessor,
+        workflow = XSBaseProcessor,
 
-        skim = [precut],
-        preselections = [event_selection],
+        skim = [passthrough],
+        preselections = [passthrough],
         categories = {
-            "btag_mask": [btag_mask, vetoE, vetoMu],
             },
         weights = {
             "common": {
@@ -141,29 +142,29 @@ cfg = Configurator(
             #**count_hist(name="nbJetGood", coll="bJetGood", bins=8, start=0, stop=8),
             #**count_hist(name="nFatJetGood", coll="FatJetGood", bins=8, start=0, stop=8),
             #**count_hist(name="nLeptonGood", coll="LeptonGood", bins=3, start=0, stop=3),
-            "mAK8" : HistConf([Axis(coll="FatJetGood", field="particleNet_mass", bins = 100, start=0, stop=200, label=r"$M_{pNet}$ [GeV]")]),
-            "zhbbtag" : HistConf([Axis(coll="FatJetGood", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
-            "zhbbtag_sorted" : HistConf([Axis(coll="FatJetSorted", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
-            "newgenm_NN" : HistConf([Axis(coll="events", field="newgenm_NN", bins = [0., 0.08306063, 0.43137971, 0.55986929, 0.73463416, 0.8649936, 1. ], start=0, stop=1, label=r"$DNN Score$", pos=0, underflow=False, overflow=False)]),
-            "outZH_b1_pt" : HistConf([Axis(coll="events", field="outZH_b1_pt", bins = 100, start=0, stop=200, label=r"$Xbb_{pNet}$", pos=0)])
+            #"mAK8" : HistConf([Axis(coll="FatJetGood", field="particleNet_mass", bins = 100, start=0, stop=200, label=r"$M_{pNet}$ [GeV]")]),
+            #"zhbbtag" : HistConf([Axis(coll="FatJetGood", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
+            #"zhbbtag_sorted" : HistConf([Axis(coll="FatJetSorted", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
+            #"newgenm_NN" : HistConf([Axis(coll="events", field="newgenm_NN", bins = [0., 0.08306063, 0.43137971, 0.55986929, 0.73463416, 0.8649936, 1. ], start=0, stop=1, label=r"$DNN Score$", pos=0, underflow=False, overflow=False)]),
+            #"outZH_b1_pt" : HistConf([Axis(coll="events", field="outZH_b1_pt", bins = 100, start=0, stop=200, label=r"$Xbb_{pNet}$", pos=0)])
         },
         columns = {
             "common": {
-                "inclusive": [ColOut("events", ["newgenm_NN", "event"]+outvars.weight_vars)],
+                "inclusive": [ColOut("events", ["genWeight"])],
                 "bycategory": {}
             },
             "bysample": {
-                "ttHTobb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "ttHToNonbb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTZToQQ": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTZToBB": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                #"ttHTobb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
+                #"ttHToNonbb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
+                #"TTZToQQ": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
+                #"TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
+                #"TTZToBB": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
+                #"TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                #"TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                #"TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                #"TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                #"TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                #"TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
             }
         }
         )

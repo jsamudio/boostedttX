@@ -18,6 +18,7 @@ from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
 import dnn_model
 from applyDNN import applyDNN
+from weight_handler import calc_weight
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
 
@@ -67,6 +68,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         else:
             match_gen_tt(self.events, self._sample)
         applyDNN(self.events)
+        calc_weight(self.events, self.output, self._dataset, self.params)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

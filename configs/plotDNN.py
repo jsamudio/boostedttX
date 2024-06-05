@@ -22,7 +22,7 @@ filein = load(args.input)
 def dnn_cut(df_):
     base_cuts = (
         (df_['n_b_outZH'] >= 2) &
-        (df_['ZH_bbvLscore'] >= 0.8) &
+        (df_['ZH_bbvLscore'] >= 0.6) &
         (df_['n_ak4jets']   >= 5)             &
         #( (df_['isEleE']==True) | (df_['isMuonE']==True)) & # pass sim trigger
         #(df_['passNotHadLep'] == 1) & # might add
@@ -33,23 +33,34 @@ def dnn_cut(df_):
     )
     return base_cuts
 
+def plot_cut(df_):
+    base_cuts = (
+            (df_['ZH_pt'] > 300)     &
+            (df_['ZH_M'] > 75)       &
+            (df_['ZH_M'] < 145)      &
+            (df_['newgenm_NN'] <= 1) &
+            (df_['newgenm_NN'] > 0.)
+    )
+    return base_cuts
+
+
+
 NN_vars = outvars.NN_vars
 sig_vars = outvars.NN_vars+outvars.sig_vars
 bkg_vars = outvars.NN_vars+outvars.bkg_vars
 
 sig = ['ttHTobb__genMatch', 'ttHToNonbb__genMatch','TTZToBB__genMatch', 'TTZToQQ__genMatch', 'TTZToLLNuNu__genMatch']
-#sig = ['ttHTobb', 'TTZToBB']
-bkg = ["TTbb_Hadronic__TTbbHadronic_tt+B",
-"TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+B",
-"TTbb_2L2Nu__TTbb2L2Nu_tt+B",
-"TTToSemiLeptonic__TTToSemiLeptonic_tt+LF",
-"TTToSemiLeptonic__TTToSemiLeptonic_tt+C",
-"TTTo2L2Nu__TTTo2L2Nu_tt+LF",
-"TTTo2L2Nu__TTTo2L2Nu_tt+C",
-"TTToHadronic__TTToHadronic_tt+LF",
-"TTToHadronic__TTToHadronic_tt+C"]
+bkg = ["TTbb_Hadronic__tt+B",
+       "TTbb_SemiLeptonic__tt+B",
+       "TTbb_2L2Nu__tt+B",
+       "TTToSemiLeptonic__tt+LF",
+       "TTToSemiLeptonic__tt+C",
+       "TTTo2L2Nu__tt+LF",
+       "TTTo2L2Nu__tt+C",
+       "TTToHadronic__tt+LF",
+       "TTToHadronic__tt+C"]
 
-genmatchreq = 'matchedGen_ZHbb_bb' 
+genmatchreq = 'matchedGen_ZHbb_bb'
 
 def weighted_quantile(values, quantiles, sample_weight=None,
                       values_sorted=False, old_style=False):
@@ -93,7 +104,7 @@ class DNN_datasets:
     #sig = ['ttH', 'ttZ']
     #bkg = ['TTBar', 'ttbb']
     dnn_vars = NN_vars
-    cut_vars = ['process','ZH_pt','MET_pt','ZH_M', 'ZH_bbvLscore', 'newgenm_NN','weight']
+    cut_vars = ['process','ZH_pt','MET_pt','ZH_M', 'ZH_bbvLscore', 'newgenm_NN','norm_weight', 'genWeight']
     output_dir = './nn_files'
 
     def __init__(self):
@@ -114,15 +125,9 @@ class DNN_datasets:
             tmp = []
             for j in filein['columns'][f'{i}'].keys():
                 for var in pre_vars+[genmatchreq]:
-                    if (var == 'weight'):
-                        inner_list = [(x)/filein['sum_signOf_genweights'][f'{j}'] for x in filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'{var}'].value.tolist()]
-                        #inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'{var}'].value.tolist() * filein['sum_genweights'][f'{j}']
-                        #inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'{var}'].value.tolist()
-                    else:
-                        inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
+                    inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
                     tmp.append(inner_list)
             tmp = np.transpose(np.asarray(tmp, dtype=object))
-            #tmp = np.transpose(np.asarray(tmp))
             tmpDF = pd.DataFrame(data=tmp, columns=pre_vars+[genmatchreq])
             dfList.append(tmpDF)
         s_df = pd.concat(dfList, ignore_index=True)
@@ -135,11 +140,7 @@ class DNN_datasets:
             tmp = []
             for j in filein['columns'][f'{i}'].keys():
                 for var in pre_vars+['tt_type']:
-                    if (var == 'weight'):
-                        inner_list = [(x)/filein['sum_signOf_genweights'][f'{j}'] for x in filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'{var}'].value.tolist()]
-                        #inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'{var}'].value.tolist()
-                    else:
-                        inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
+                    inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
                     tmp.append(inner_list)
             tmp = np.transpose(np.asarray(tmp, dtype=object))
             tmpDF = pd.DataFrame(data=tmp, columns=pre_vars+['tt_type'])
@@ -154,22 +155,28 @@ class DNN_datasets:
     def plot_dnnHist(self):
         fig, ax = plt.subplots()
         print(np.unique(self.sb_df.process, return_counts=True))
+        cuts = dnn_cut(self.sb_df)
+        plotcut = plot_cut(self.sb_df)
 
         for i in self.sb_df.process.unique():
-            #norm_weight = np.asarray(self.sb_df[(self.sb_df['process']==i) & (self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.) & (self.sb_df['ZH_pt'] > 300) ]['weight'].to_numpy(), dtype = float)
-            norm_weight = np.asarray(self.sb_df[(self.sb_df['process']==i) & (self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.)]['weight'].to_numpy() * .2934 * 48900, dtype = float)
-            #ax.hist(self.sb_df['newgenm_NN'][(self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.01) & (self.sb_df['process'] == i) & (self.sb_df['ZH_pt'] > 300)], bins=self.nn_bins, stacked=False, histtype='step', range= (0,1), label=f'{i}', weights=norm_weight)
-            (n, binning, patches) = ax.hist(self.sb_df['newgenm_NN'][(self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.) & (self.sb_df['process'] == i)], bins=[0, 0.0830606, 0.43138, 0.559869, 0.734634, 0.864994, 1], stacked=False, histtype='step', range= (0,1), label=f'{i}', weights=norm_weight)
-            print(n)
+            norm_weight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['norm_weight'].to_numpy(), dtype = float)
+            weight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['genWeight'].to_numpy(), dtype = float)
+            norm_weight = norm_weight * np.sign(weight) / 1000
+            ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=self.nn_bins, stacked=False,
+                    histtype='step', range= (0,1), label=f'{i}', weights=norm_weight)
         ax.legend()
         ax.set_yscale('log')
 
         plt.savefig("testDNN.pdf")
 
     def get_NN_bins(self):
+        cuts = dnn_cut(self.sb_df)
+        genm = (self.sb_df[genmatchreq] == True)
         # currently not binning by pt...
-        nn_df = np.asarray(self.sb_df[(self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.) & (self.sb_df['ZH_pt'] < 450) & (self.sb_df['ZH_pt'] > 300)]['newgenm_NN'].to_numpy(), dtype = float)
-        norm_weight = np.asarray(self.sb_df[(self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.) & (self.sb_df['ZH_pt'] > 300) & (self.sb_df['ZH_pt'] < 450)]['weight'].to_numpy(), dtype = float)
+        nn_df = np.asarray(self.sb_df[ cuts & genm & (self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.) & (self.sb_df['ZH_pt'] < 450) & (self.sb_df['ZH_pt'] > 300)]['newgenm_NN'].to_numpy(), dtype = float)
+        norm_weight = np.asarray(self.sb_df[cuts & genm & (self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.) & (self.sb_df['ZH_pt'] > 300) & (self.sb_df['ZH_pt'] < 450)]['norm_weight'].to_numpy(), dtype = float)
+        weight = np.asarray(self.sb_df[cuts & genm & (self.sb_df['newgenm_NN'] <= 1) & (self.sb_df['newgenm_NN'] > 0.) & (self.sb_df['ZH_pt'] > 300) & (self.sb_df['ZH_pt'] < 450)]['genWeight'].to_numpy(), dtype = float)
+        norm_weight = norm_weight * np.sign(weight) / 1000
         quantiles = [0.0, .05, .25, .35, .50, .70, 1.0]
 
         nn_bins = weighted_quantile(nn_df, quantiles, norm_weight)
