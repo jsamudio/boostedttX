@@ -136,3 +136,10 @@ def match_gen_sig(events):
     events['matchedGen_ZHbb_bb']  = ((events['matchedGen_ZHbb'] == 1) & (zh_matchbb  == 1))
     events['matchedGen_ZHbb_b']   = ((events['matchedGen_ZHbb'] == 1) & (zh_matchb   == 1))
     events['matchedGen_ZHbb_nob'] = ((events['matchedGen_ZHbb'] == 1) & (zh_nomatchb == 1))
+
+    if 'TTZToQQ' in sample:
+        events['process'] = np.where(events['Zbb'] == True, 'old_ttZbb', 'ttZ')
+    elif 'TTZ' in sample:
+        events['process'] = 'ttZ'
+    elif 'ttH' in sample:
+        events['process'] = 'ttH'

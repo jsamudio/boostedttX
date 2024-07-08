@@ -148,7 +148,7 @@ class DNN_datasets:
         b_df = pd.concat(dfList, ignore_index=True)
 
         s_df = s_df[s_df[genmatchreq] == True]
-        b_df = b_df[(b_df['process'] == 'TTBar') | (b_df['process'] == 'tt_B')]
+        b_df = b_df[(b_df['process'] == 'Old_tt_B') | (b_df['process'] == 'tt_B')]
 
         return s_df, b_df
 

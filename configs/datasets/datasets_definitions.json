@@ -52,7 +52,7 @@
         "json_output": "datasets/TTZToQQ.json",
         "files":[
             { "das_names": 
-                ["/TTZToQQ_TuneCP5_13TeV_amcatnlo-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v3/NANOAODSIM"],
+                ["/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
               "metadata": {
                   "year":"2017",
                   "isMC": true,
@@ -116,7 +116,7 @@
         "json_output": "datasets/TTTo2L2Nu.json",
         "files":[
             { "das_names": 
-                ["/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+                ["/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
               "metadata": {
                   "year":"2017",
                   "isMC": true,
@@ -136,7 +136,7 @@
               "metadata": {
                   "year":"2017",
                   "isMC": true,
-                  "xsec": 1.0,
+                  "xsec": 15.577,
                   "part": ""
               }
             }
@@ -152,7 +152,7 @@
               "metadata": {
                   "year":"2017",
                   "isMC": true,
-                  "xsec": 1.0,
+                  "xsec": 14.191,
                   "part": ""
               }
             }
@@ -168,7 +168,7 @@
               "metadata": {
                   "year":"2017",
                   "isMC": true,
-                  "xsec": 1.0,
+                  "xsec": 3.299,
                   "part": ""
               }
             }

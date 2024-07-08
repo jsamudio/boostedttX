@@ -5,7 +5,7 @@ import numpy as np
 def dnn_cut(df_):
     base_cuts = (
         (df_['n_b_outZH'] >= 2) &
-        (df_['ZH_bbvLscore'] >= 0.8) &
+        (df_['ZH_bbvLscore'] >= 0.6) &
         (df_['n_ak4jets']   >= 5)             &
         #( (df_['isEleE']==True) | (df_['isMuonE']==True)) & # pass sim trigger
         #(df_['passNotHadLep'] == 1) & # might add
@@ -25,7 +25,7 @@ def applyDNN(events, model_file='newgenm_model.h5'):
     df_ = pd.DataFrame(data=data, columns = cutvars)
     resetIndex = (lambda df: df.reset_index(drop=True).copy())
     m_info = {'sequence': [['Dense', 128], ['Dense', 64], ['Dropout', 0.5]],
-              'other_settings': {'fl_a': [1, 1.5, 1], 'fl_g': 0.25, 'lr_alpha': 0.0003},
+              'other_settings': {'fl_a': [1, 1.5, 1], 'fl_g': 0.25, 'lr_alpha': 0.0002},
               'n_epochs': 150, 'batch_size': 10256}
     dnn = DNN_model(m_info['sequence'],m_info['other_settings'])
     if 'binary' in model_file:

@@ -107,7 +107,6 @@ class DNN_datasets:
         self.s_df['label'] = 2
         self.b_df['label'] = np.where(self.b_df['process'] == 'TTBar', 0, 1)
         del self.s_df[genmatchreq], self.b_df['tt_type']
-        #del self.b_df[genmatchreq], self.s_df['tt_type']
         print(self.s_df)
         sb_df = pd.concat([self.s_df,self.b_df])
         #
@@ -118,7 +117,7 @@ class DNN_datasets:
         #print(sb_df.loc[139, sb_df.columns.to_series()[np.isinf(sb_df).any()]])
         #
         sb_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        sb_df.dropna(how="any", inplace=True)
+        #sb_df.dropna(how="any", inplace=True)
         print(sb_df)
         print(sum(sb_df['process'] == 'sig'))
         encoder = LabelEncoder()
@@ -127,7 +126,7 @@ class DNN_datasets:
         onehot_labels = to_categorical(encoded_labels)
         sb_df['label'] = onehot_labels.tolist()
         self.sb_df = sb_df[dnn_cut(sb_df)].sample(frac=1).reset_index(drop=True) # to shuffle dataset
-        print(np.unique(self.sb_df['label'],return_counts=True))
+        print(np.unique(self.sb_df['process'],return_counts=True))
         for v in self.cut_vars:
             if v not in self.dnn_vars:
                 del self.sb_df[v]

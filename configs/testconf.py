@@ -26,6 +26,7 @@ parameters = defaults.merge_parameters_from_files(default_parameters,
                                                   f"{localdir}/params/object_preselection.yaml",
                                                   f"{localdir}/params/skim_params.yaml",
                                                   f"{localdir}/params/sample_params.yaml",
+                                                  f"{localdir}/params/event_flags.yaml",
                                                   update = True)
 
 cfg = Configurator(

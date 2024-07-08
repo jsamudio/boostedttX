@@ -1,0 +1,10 @@
+event_flags:
+  '2017':
+  - goodVertices
+  - globalSuperTightHalo2016Filter
+  - HBHENoiseFilter
+  - HBHENoiseIsoFilter
+  - EcalDeadCellTriggerPrimitiveFilter
+  - BadPFMuonFilter
+  - BadPFMuonDzFilter
+  - ecalBadCalibFilter

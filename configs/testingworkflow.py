@@ -1,5 +1,8 @@
 import awkward as ak
 import numpy as np
+import uproot
+import os
+from pocket_coffea.utils.skim import uproot_writeable, copy_file
 
 from pocket_coffea.workflows.base import BaseProcessorABC
 from pocket_coffea.utils.configurator import Configurator
@@ -23,12 +26,13 @@ from coffea.analysis_tools import PackedSelection
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
 
-class ZHbbBaseProcessor (BaseProcessorABC):
+class ZHbbTestProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
         super().__init__(cfg)
 
     def process_extra_before_skim(self):
         self.events['sum_sign_genw'] = np.sum(np.sign(self.events['genWeight']))
+
 
     def skim_events(self):
         self._skim_masks = PackedSelection()
@@ -57,6 +61,34 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.output['cutflow']['skim'][self._dataset] = self.nEvents_after_skim
         self.has_events = self.nEvents_after_skim > 0
 
+    def export_skimmed_chunk(self):
+        filename = (
+            "__".join(
+                [
+                    self._dataset,
+                    self.events.metadata['fileuuid'],
+                    str(self.events.metadata['entrystart']),
+                    str(self.events.metadata['entrystop']),
+                ]
+            )
+            + ".root"
+        )
+        # TODO Generalize skimming output temporary location
+        with uproot.recreate(f"/cms/data/store/user/jsamudio/scratch/{filename}") as fout:
+            fout["Events"] = uproot_writeable(self.events)
+        # copy the file
+        copy_file(
+            filename, "/cms/data/store/user/jsamudio/scratch", self.cfg.save_skimmed_files, subdirs=[self._dataset]
+        )
+        # save the new file location for the new dataset definition
+        self.output["skimmed_files"] = {
+            self._dataset: [
+                os.path.join(self.cfg.save_skimmed_files, self._dataset, filename)
+            ]
+        }
+        self.output["nskimmed_files"] = {self._dataset: [self.nEvents_after_skim]}
+
+
     def apply_object_preselection(self, variation):
         #soft e, e, soft mu, mu, jet, fatjet
 
@@ -82,20 +114,6 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events['qJetGood'] = qjet_sel(self.events.JetGood, self.params)
         self.events['e_softe'] = lep_softlep_combo(self.events.ElectronGood, self.events.SoftElectronGood)
         self.events['mu_softmu'] = lep_softlep_combo(self.events.MuonGood, self.events.SoftMuonGood)
-
-    def process_extra_after_presel(self, variation):
-        self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "particleNetMD_Xbb")
-        #self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
-        #self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
-        ### Add function to implement combinatorics now that we have the sorted list
-        zh_helper(self.events)
-        match_gen_lep(self.events)
-        if self._sample in sig:
-            match_gen_sig(self.events)
-        else:
-            match_gen_tt(self.events, self._sample)
-        applyDNN(self.events)
-        calc_weight(self.events, self.output, self._dataset, self.params)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

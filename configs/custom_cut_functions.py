@@ -33,11 +33,11 @@ def event_selection(events, params, year, sample, **kwargs):
             (events.nJetGood >= 5) &
             (events.nFatJetGood >= 1) &
             (events.MET.pt > 20) &
-            (events.nElectronGood + events.nMuonGood == 1)
+            (events.nMuonGood + events.nElectronGood == 1)
             #(events.nSoftElectronGood < 2) &
             #(events.nSoftMuonGood < 2)
             )
-    # Pad None vlaues with False
+    # Pad None values with False
     return ak.where(ak.is_none(mask), False, mask)
 
 event_selection = Cut(
