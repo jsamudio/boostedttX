@@ -10,6 +10,7 @@ import argparse
 import outvars
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator, FixedLocator, FormatStrFormatter
 
 parser = argparse.ArgumentParser(description='Build datasets for NN training')
 
@@ -176,23 +177,18 @@ class DNN_datasets:
             weight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['genWeight'].to_numpy(), dtype = float)
             topptWeight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['topptWeight'].to_numpy(), dtype = float)
             norm_weight = (topptWeight * norm_weight * np.sign(weight))
-            #if 'tt_B' in i:
-            #    norm_weight = (topptWeight * norm_weight * np.sign(weight))
-            #elif 'ttZ' in i:
-                #norm_weight = (topptWeight * norm_weight * np.sign(weight))/1000
-            #    norm_weight = norm_weight/1000
-            #elif 'ttH' in i:
-                #norm_weight = (topptWeight * norm_weight * np.sign(weight))/1000
-            #    norm_weight = norm_weight/1000
-            #elif 'TTBar' in i:
-            #    norm_weight = (topptWeight * norm_weight * np.sign(weight))/10000
             n, bins, patches = ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=self.nn_bins, stacked=False,
                     histtype='step', range= (0,1), label=f'{i}', weights=norm_weight)
             #n, bins, patches = ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=self.nn_bins, stacked=False,
             #        histtype='step', range= (0,1), label=f'{i}')
             print(i, np.sum(n))
-        ax.legend()
+        ax.xaxis.set_minor_locator(AutoMinorLocator())
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
+        ax.tick_params(which='both', direction='in', top=True, right=True)
         ax.set_yscale('log')
+        ax.set_xlim([bins[0],bins[-1]])
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles,labels, framealpha = 0, ncol=2, fontsize=8)
 
         plt.savefig("testDNN.pdf")
 
