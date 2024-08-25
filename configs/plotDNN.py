@@ -167,21 +167,49 @@ class DNN_datasets:
         return s_df, b_df
 
     def plot_dnnHist(self):
-        fig, ax = plt.subplots()
+        fig, (ax, ax2) = plt.subplots(2,1, sharex=True, gridspec_kw={'height_ratios':[3,1]})
         print(np.unique(self.sb_df.process, return_counts=True))
         cuts = dnn_cut(self.sb_df)
         plotcut = plot_cut(self.sb_df)
+        sigs = ['ttZ', 'ttH', 'old_ttZbb']
+        sumS = []
+        sumB = []
 
         for i in self.sb_df.process.unique():
             norm_weight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['norm_weight'].to_numpy(), dtype = float)
             weight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['genWeight'].to_numpy(), dtype = float)
             topptWeight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['topptWeight'].to_numpy(), dtype = float)
+
             norm_weight = (topptWeight * norm_weight * np.sign(weight))
+
             n, bins, patches = ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=self.nn_bins, stacked=False,
                     histtype='step', range= (0,1), label=f'{i}', weights=norm_weight)
+
             #n, bins, patches = ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=self.nn_bins, stacked=False,
             #        histtype='step', range= (0,1), label=f'{i}')
+            if i in sigs:
+                sumS.append(n)
+            else:
+                sumB.append(n)
             print(i, np.sum(n))
+
+        #vals = pd.DataFrame(np.concatenate(sumS))
+        #print(vals)
+        print(np.sum(sumS,axis=0), np.sum(sumB,axis=0))
+        sumS = np.sum(sumS,axis=0)
+        sumB = np.sum(sumB,axis=0)
+        bin_c = (bins[1:]+bins[:-1])/2
+        ax2.errorbar(x=bin_c, y = sumS/np.sqrt(sumB), xerr=(bins[1:]-bins[:-1])/2,
+                fmt='.', color='k', label=r'S/$\sqrt{\mathrm{B}}$')
+        ax2.xaxis.set_minor_locator(AutoMinorLocator())
+        ax2.yaxis.set_major_formatter(FormatStrFormatter('%g'))
+        ax2.yaxis.set_minor_locator(AutoMinorLocator())
+        ax2.tick_params(which='both', direction='in', top=True, right=True)
+        ax2.yaxis.set_label_coords(-0.07,0.35)
+        ax2.set_ylabel(r'$\mathrm{S/}\sqrt{\mathrm{B}}$')
+        ax2.grid(True)
+
+
         ax.xaxis.set_minor_locator(AutoMinorLocator())
         ax.yaxis.set_minor_locator(AutoMinorLocator())
         ax.tick_params(which='both', direction='in', top=True, right=True)
@@ -189,6 +217,13 @@ class DNN_datasets:
         ax.set_xlim([bins[0],bins[-1]])
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles,labels, framealpha = 0, ncol=2, fontsize=8)
+        fig.subplots_adjust(
+            top=0.88,
+            bottom=0.11,
+            left=0.11,
+            right=0.88,
+            hspace=0.0,
+            wspace=0.2)
 
         plt.savefig("testDNN.pdf")
 
