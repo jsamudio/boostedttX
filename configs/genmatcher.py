@@ -1,14 +1,17 @@
 import math
 import awkward as ak
 import numpy as np
-from coffea.nanoevents.methods import vector
+from coffea.nanoevents.methods import vector, nanoaod
 
 deltaR = (lambda obj1_, obj2_: ak.flatten(obj1_.metric_table(obj2_)))
 
 def match_gen_lep(events):
     gen_id = events.GenPart.pdgId
     gen_mom = events.GenPart.genPartIdxMother
-    islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & (abs(gen_id[gen_mom]) ==24))
+    gen_st = events.GenPart.status
+    gen_pt = events.GenPart.pt
+    #islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & ((abs(gen_id[gen_mom[gen_mom]]) == 6) | (abs(gen_id[gen_mom[gen_mom]]) == 24)) &(abs(gen_id[gen_mom]) ==24))
+    islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & (abs(events.GenPart[gen_mom].distinctParent.pdgId) == 6) &(abs(gen_id[gen_mom]) ==24))
     lep_match_dr = deltaR(events.LeptonGood, events.GenPart[islep])
     events["matchedGenLep"] = (ak.sum(lep_match_dr <= 0.1, axis=1) > 0)
 
@@ -86,28 +89,30 @@ def match_gen_tt(events, sample):
     events['topptWeight_Up']   = toppt_rwgt_up
     events['topptWeight_Down'] = toppt_rwgt_dn
 
-def match_gen_sig(events):
+def match_gen_sig(events, sample):
     ZHCand = events.FatJetSorted[:,0]
     gen_id = events.GenPart.pdgId
     gen_mom = events.GenPart.genPartIdxMother
     gen_pt = events.GenPart.pt
+    gen_st = events.GenPart.status
 
     istt = (abs(gen_id) == 6)
     #
-    isbb_fromZ     = ((abs(gen_id) == 5) & (gen_id[gen_mom] == 23))
-    isqq_fromZ     = ((abs(gen_id) <  5) & (gen_id[gen_mom] == 23))
-    isllnunu_fromZ = ((abs(gen_id) >=  11) & (abs(gen_id) <= 16) & (gen_id[gen_mom] == 23))
-    isbb_fromH    = ((abs(gen_id) == 5) & (gen_id[gen_mom] == 25))
-    isnonbb_fromH = ((abs(gen_id) != 5) & (gen_id[gen_mom] == 25))
-    isHbb     = ((gen_id == 25) & (ak.sum(isbb_fromH, axis=1) == 2))
-    isHnonbb  = ((gen_id == 25) & (ak.sum(isbb_fromH, axis=1) == 0))
-    isZbb  = ((gen_id == 23) & (ak.sum(isbb_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)))
-    isZqq  = ((gen_id == 23) & (ak.sum(isqq_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)))
-    isZllnunu = ((gen_id == 23) & (ak.sum(isllnunu_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)))
+    isbb_fromZ     = ((abs(gen_id) == 5) & (gen_id[gen_mom] == 23) & (gen_st[gen_mom] == 62))
+    isqq_fromZ     = ((abs(gen_id) <  5) & (gen_id[gen_mom] == 23) & (gen_st[gen_mom] == 62))
+    isllnunu_fromZ = ((abs(gen_id) >=  11) & (abs(gen_id) <= 16) & (gen_id[gen_mom] == 23) & (gen_st[gen_mom] == 62))
+    isbb_fromH    = ((abs(gen_id) == 5) & (gen_id[gen_mom] == 25) & (gen_st[gen_mom] == 62))
+    isnonbb_fromH = ((abs(gen_id) != 5) & (gen_id[gen_mom] == 25) & (gen_st[gen_mom] == 62))
+    isHbb     = ((gen_id == 25) & (ak.sum(isbb_fromH, axis=1) == 2) & (gen_st == 62))
+    isHnonbb  = ((gen_id == 25) & (ak.sum(isbb_fromH, axis=1) == 0) & (gen_st == 62))
+    isZbb  = ((gen_id == 23) & (ak.sum(isbb_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)) & (gen_st == 62))
+    isZqq  = ((gen_id == 23) & (ak.sum(isqq_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)) & (gen_st == 62))
+    isZllnunu = ((gen_id == 23) & (ak.sum(isllnunu_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)) & (gen_st == 62))
     isZH = ((isHbb) | (isZbb) | (isZqq) | (isZllnunu) | (isHnonbb))
     print("isHbb", sum(ak.sum(isHbb, axis=1)))
     print("isHnonbb", sum(ak.sum(isHnonbb, axis=1)))
-    print("isZbb", sum(ak.sum(isZbb,axis=1)))
+    print("isZbb axis 1", sum(ak.sum(isZbb,axis=1)))
+    print("isZbb axis -1", sum(ak.sum(isZbb,axis=-1)))
     print("isZqq", sum(ak.sum(isZqq, axis=1)))
     print("isZllnunu", sum(ak.sum(isZllnunu, axis=1)))
     #print("recoZH",len(rZh_eta),len(rZh_phi))
@@ -130,6 +135,9 @@ def match_gen_sig(events):
     events['matchedGenZH']    = ak.sum(zh_match, axis=1) > 0
     events['matchedGen_Zbb']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isZbb,axis=1) >  0))
     events['matchedGen_Hbb']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isHbb,axis=1) >  0))
+    #print(sum(events['matchedGen_Hbb']))
+    #events['matchedGen_Hbb2']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep2']) & (ak.sum(isHbb,axis=1) >  0))
+    #print(sum(events['matchedGen_Hbb2']))
     events['matchedGen_ZHbb'] = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & ((ak.sum(isZbb,axis=1) + ak.sum(isHbb, axis=1)) > 0))
     events['matchedGen_Zqq']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isZqq,axis=1) >  0))
     #
@@ -143,3 +151,5 @@ def match_gen_sig(events):
         events['process'] = 'ttZ'
     elif 'ttH' in sample:
         events['process'] = 'ttH'
+
+    events['topptWeight']      = 1
