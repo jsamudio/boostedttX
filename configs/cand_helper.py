@@ -132,7 +132,7 @@ def zh_helper(events):
 
     b_pt_ptsort, b_eta_ptsort, b_phi_ptsort, b_mass_ptsort, b_btag_ptsort = [make_ptsorted_arr(ZHCand, bjet, "gt", proc) for proc in [bjet.pt, bjet.eta, bjet.phi, bjet.mass, bjet.btagDeepFlavB]]
     b_ptsort_vec = zip_4vec(b_pt_ptsort, b_eta_ptsort, b_phi_ptsort, b_mass_ptsort)
-    print(ak.pad_none(b_ptsort_vec, 1, axis=1))
+    #print(ak.pad_none(b_ptsort_vec, 1, axis=1))
 
     # ZH and q
 
@@ -232,8 +232,8 @@ def zh_helper(events):
     events["l_b2_mtb"] = ak.flatten(l_b2_mtb)
 
     # q near b
-    print(leading_b)
-    print(qjet)
+    #print(leading_b)
+    #print(qjet)
     q_pt_b1dRsort, q_eta_b1dRsort, q_phi_b1dRsort, q_mass_b1dRsort = [make_dRsorted_arr(leading_b, qjet, "gt", proc) for proc in [qjet.pt, qjet.eta, qjet.phi, qjet.mass]]
     q_b1dRsort_vec = zip_4vec(q_pt_b1dRsort, q_eta_b1dRsort, q_phi_b1dRsort, q_mass_b1dRsort)
 

@@ -1,16 +1,12 @@
 import pandas as pd
 import numpy as np
-import os
-import sys
-import awkward as ak
-from glob import glob
 
 from coffea.util import load
 import argparse
 import outvars
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import AutoMinorLocator, FixedLocator, FormatStrFormatter
+from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter
 
 parser = argparse.ArgumentParser(description='Build datasets for NN training')
 
@@ -241,7 +237,7 @@ class DNN_datasets:
         nn_bins = weighted_quantile(nn_df, quantiles, norm_weight)
         nn_bins[0], nn_bins[-1] = 0,1
         print(nn_bins)
-        nn_bins = [0., 0.083, 0.431, 0.560, 0.736, 0.865, 1. ]
+        #nn_bins = [0., 0.083, 0.431, 0.560, 0.736, 0.865, 1. ]
         return nn_bins
 
 

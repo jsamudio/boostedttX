@@ -11,7 +11,7 @@ sig_vars = ['process', 'Zbb', 'Hbb', 'Hnonbb', 'Zqq',
 bkg_vars = ['process', 'tt_type',
         'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']
 
-weight_vars = ['genWeight', 'norm_weight']
+weight_vars = ['genWeight', 'norm_weight', 'topptWeight']
 
 NN_vars = [
     'outZH_b1_pt','outZH_b2_pt',

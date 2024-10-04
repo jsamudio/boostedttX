@@ -198,6 +198,25 @@ def fatjet_sel(events, params, leptons_collection=""):
 
     return fatjets[good_fatjets]
 
+def fatjet_sel2(events, params, leptons_collection=""):
+
+    fatjets = events['FatJet']
+    cuts = params.object_preselection['FatJet']
+
+    passes_eta = abs(fatjets.eta) < cuts['eta']
+    passes_pt = fatjets.pt > cuts['pt']
+    passes_id = fatjets.jetId >= cuts['jetId']
+    passes_massLow = fatjets.particleNet_mass >= cuts['mass']['low']
+    passes_massHigh = fatjets.particleNet_mass <= cuts['mass']['high']
+    if leptons_collection != "":
+        dR_jets_lep = fatjets.metric_table(events[leptons_collection])
+        mask_lepton_cleaning = ak.prod(dR_jets_lep > cuts["dr_lepton"], axis=2) == 1
+        #mask_lepton_cleaning = is_lep_cleaned(events, leptons_collection, "FatJet", 0.8)
+
+    good_fatjets = passes_eta & passes_pt & passes_id & passes_massLow & passes_massHigh & mask_lepton_cleaning
+
+    return fatjets[good_fatjets]
+
 '''
 b-tagging
 '''

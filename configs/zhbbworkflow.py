@@ -4,7 +4,7 @@ import numpy as np
 from pocket_coffea.workflows.base import BaseProcessorABC
 from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.hist_manager import Axis
-from pocket_coffea.lib.weights_manager import WeightsManager
+#from pocket_coffea.lib.weights_manager import WeightsManager
 from pocket_coffea.lib.objects import (
     jet_correction,
     lepton_selection,
@@ -12,13 +12,13 @@ from pocket_coffea.lib.objects import (
     btagging,
     get_dilepton,
 )
-from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_sel
+from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_sel, fatjet_sel2
 from custom_cut_functions import sortbyscore
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
 import dnn_model
 from applyDNN import applyDNN
-from weight_handler import calc_weight
+from weight_handler import calc_weight, add_weights_to_ttbb
 from coffea.analysis_tools import PackedSelection
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
@@ -78,6 +78,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
 
         self.events['JetGood'], self.jetGoodMask = jet_sel(self.events, "Jet", self.params, "LeptonGood")
         self.events['FatJetGood'] = fatjet_sel(self.events, self.params, "LeptonGood")
+        self.events['FatJetGood2'] = fatjet_sel2(self.events, self.params, "LeptonGood")
         self.events['bJetGood'] = bjet_sel(self.events.JetGood, self.params)
         self.events['qJetGood'] = qjet_sel(self.events.JetGood, self.params)
         self.events['e_softe'] = lep_softlep_combo(self.events.ElectronGood, self.events.SoftElectronGood)
@@ -91,11 +92,16 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         zh_helper(self.events)
         match_gen_lep(self.events)
         if self._sample in sig:
-            match_gen_sig(self.events)
+            match_gen_sig(self.events, self._sample)
         else:
             match_gen_tt(self.events, self._sample)
         applyDNN(self.events)
         calc_weight(self.events, self.output, self._dataset, self.params)
+        print("XSEC: ", self.events.metadata['xsec'])
+        print("LUMI: ", self.params.sample_params['lumi']['lumi'])
+        print("genWeights total: ", self.output['sum_signOf_genweights'][self._dataset])
+        if 'TTbb' in self._sample:
+            add_weights_to_ttbb(self.events, self._sample)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)
@@ -104,6 +110,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events['nSoftElectronGood'] = ak.num(self.events.SoftElectronGood)
         self.events['nJetGood'] = ak.num(self.events.JetGood)
         self.events['nFatJetGood'] = ak.num(self.events.FatJetGood)
+        self.events['nFatJetGood2'] = ak.num(self.events.FatJetGood)
         self.events['nbJetGood'] = ak.num(self.events.bJetGood)
         self.events['nLeptonGood'] = (self.events['nMuonGood'] + self.events['nElectronGood'])
 
