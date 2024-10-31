@@ -20,6 +20,12 @@ from weight_handler import calc_weight, add_weights_to_ttbb
 from coffea.analysis_tools import PackedSelection
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
+bkg = [ "TTbb_Hadronic",
+        "TTbb_SemiLeptonic",
+        "TTbb_2L2Nu",
+        "TTToHadronic",
+        "TTTo2L2Nu",
+        "TTToSemiLeptonic"]
 
 class FirstRunBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
@@ -37,7 +43,7 @@ class FirstRunBaseProcessor (BaseProcessorABC):
             flags += self.params.event_flags_data[self._year]
         for flag in flags:
             mask_flags &= getattr(self.events.Flag, flag).to_numpy()
-        self._skim_masks.add("event_flags", mask_flags)
+        #self._skim_masks.add("event_flags", mask_flags)
 
         for skim_func in self._skim:
             # Apply the skim function and add it to the mask
@@ -70,14 +76,16 @@ class FirstRunBaseProcessor (BaseProcessorABC):
         self.events['SoftElectronGood'] = soft_lep_sel(self.events, "Electron", self.params)
 
         self.events['MuonGoodDi'] = lep_selDi(self.events, "Muon", self.params)
+        self.events['MuonGoodDi'] = self.events['MuonGoodDi'][ak.argsort(self.events['MuonGoodDi'].pt, ascending=False)]
         self.events['ElectronGoodDi'] = lep_selDi(self.events, "Electron", self.params)
+        self.events['ElectronGoodDi'] = self.events['ElectronGoodDi'][ak.argsort(self.events['ElectronGoodDi'].pt, ascending=False)]
 
         self.events['ll'] = get_dilepton(self.events.ElectronGoodDi, self.events.MuonGoodDi)
-        print(dir(self.events['ll']))
 
         leptons = ak.with_name(
                 ak.concatenate((self.events.MuonGood, self.events.ElectronGood), axis = 1),
                 name='PtEtaPhiMCandidate')
+
         self.events['LeptonGood'] = leptons[ak.argsort(leptons.pt, ascending=False)]
 
         leptonsDi = ak.with_name(
@@ -95,15 +103,17 @@ class FirstRunBaseProcessor (BaseProcessorABC):
 
     def process_extra_after_presel(self, variation):
         self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "particleNetMD_Xbb")
-        #self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
-        #self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
+        self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
+        self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
         ### Add function to implement combinatorics now that we have the sorted list
         zh_helper(self.events)
         match_gen_lep(self.events)
         if self._sample in sig:
             match_gen_sig(self.events, self._sample)
-        else:
+        elif self._sample in bkg:
             match_gen_tt(self.events, self._sample)
+        if "Jets" in self._sample:
+            self.events['topptWeight'] = 1
         calc_weight(self.events, self.output, self._dataset, self.params)
         print("XSEC: ", self.events.metadata['xsec'])
         print("LUMI: ", self.params.sample_params['lumi']['lumi'])

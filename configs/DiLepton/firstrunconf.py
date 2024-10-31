@@ -43,21 +43,25 @@ cfg = Configurator(
                       f"{localdir}/datasets/TTbb_SemiLeptonic.json",
                       f"{localdir}/datasets/TTToHadronic.json",
                       f"{localdir}/datasets/TTTo2L2Nu.json",
-                      f"{localdir}/datasets/TTToSemiLeptonic.json"
+                      f"{localdir}/datasets/TTToSemiLeptonic.json",
+                      f"{localdir}/datasets/WJetsToLNu.json",
+                      f"{localdir}/datasets/DYJetsToLL.json",
                 ],
             "filter": {
                 "samples":  [
                             "ttHTobb",
-                            "ttHToNonbb",
-                            "TTZToQQ",
-                            "TTZToLLNuNu",
+                            #"ttHToNonbb",
+                            #"TTZToQQ",
+                            #"TTZToLLNuNu",
                             "TTZToBB",
-                            "TTbb_Hadronic",
-                            "TTbb_SemiLeptonic",
-                            "TTbb_2L2Nu",
-                            "TTToHadronic",
-                            "TTTo2L2Nu",
-                            "TTToSemiLeptonic",
+                            #"TTbb_Hadronic",
+                            #"TTbb_SemiLeptonic",
+                            #"TTbb_2L2Nu",
+                            #"TTToHadronic",
+                            #"TTTo2L2Nu",
+                            #"TTToSemiLeptonic",
+                            #"WJetsToLNu_HT",
+                            #"DYJetsToLL_HT",
                 ],
                 "samples_exclude": [],
                 "year": ['2017']
@@ -94,6 +98,7 @@ cfg = Configurator(
                         'tt+B'    : [get_genTtbarId_100_eq([51, 52, 53, 54, 55, 56])],
                     },
                     'TTZToBB' : {
+                        'general': [passthrough],
                         'genMatch'   : [genMatch],
                         'non_genMatch'   : [non_genMatch]
                     },
@@ -106,6 +111,7 @@ cfg = Configurator(
                         'non_genMatch'   : [non_genMatch]
                     },
                     'ttHTobb' : {
+                        'general': [passthrough],
                         'genMatch'   : [genMatch],
                         'non_genMatch'   : [non_genMatch]
                     },
@@ -119,9 +125,17 @@ cfg = Configurator(
         workflow = FirstRunBaseProcessor,
 
         skim = [precut],
+        #skim = [passthrough],
         preselections = [diLepEvent_selection],
+        #preselections = [passthrough],
         categories = {
-            "btag_mask": [btag_mask, vetoE, vetoMu],
+            #"OS_mask": [OS_mask],
+            #"diMass_mask": [diMass_mask],
+            #"diPt_mask": [diPt_mask],
+            #"di_mask": [di_mask],
+            #"btag_mask": [passthrough],
+            "btag_mask": [btag_mask, di_mask, OS_mask, diMass_mask],
+            #"btag_mask": [btag_mask, vetoE, vetoMu],
             #"diLep": [diLepEvent_selection],
             },
         weights = {
@@ -144,38 +158,44 @@ cfg = Configurator(
             #**count_hist(name="nbJetGood", coll="bJetGood", bins=8, start=0, stop=8),
             #**count_hist(name="nFatJetGood", coll="FatJetGood", bins=8, start=0, stop=8),
             #**count_hist(name="nLeptonGood", coll="LeptonGood", bins=3, start=0, stop=3),
-            "mAK8" : HistConf([Axis(coll="FatJetGood", field="particleNet_mass", bins = 100, start=0, stop=200, label=r"$M_{pNet}$ [GeV]")]),
+            "mAK8" : HistConf([Axis(coll="FatJetSorted", field="particleNet_mass", bins = 100, start=0, stop=500, label=r"$M_{pNet}$ [GeV]", pos=0)]),
+            "AK8_pt" : HistConf([Axis(coll="FatJetSorted", field="pt", bins = 100, start=0, stop=500, label=r"$p_{t}$ [GeV]", pos=0)]),
+            "ll_mass" : HistConf([Axis(coll="ll", field="mass", bins = 100, start=0, stop=500, label=r"$m_{\ell\ell}$ [GeV]")]),
+            "ll_pt" : HistConf([Axis(coll="ll", field="mass", bins = 100, start=0, stop=500, label=r"$p_{t}$ [GeV]")]),
             "zhbbtag" : HistConf([Axis(coll="FatJetGood", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
             "zhbbtag_sorted" : HistConf([Axis(coll="FatJetSorted", field="particleNetMD_Xbb", bins = 40, start=0, stop=1, label=r"$Xbb_{pNet}$", pos=0)]),
-            "outZH_b1_pt" : HistConf([Axis(coll="events", field="outZH_b1_pt", bins = 100, start=0, stop=200, label=r"$Xbb_{pNet}$", pos=0)])
+            #"outZH_b1_pt" : HistConf([Axis(coll="events", field="outZH_b1_pt", bins = 100, start=0, stop=200, label=r"$Xbb_{pNet}$", pos=0)])
         },
         columns = {
             "common": {
+                "inclusive": [ColOut("events", ["event"]+outvars.weight_vars)],
                 "bycategory": {}
             },
             "bysample": {
                 "ttHTobb": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
-                "ttHToNonbb": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
-                "TTZToQQ": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
-                "TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                #"ttHTobb": {"inclusive": [ColOut("events", ['0lep', '1lep', '2lep'])]},
+                #"ttHToNonbb": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                #"TTZToQQ": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                #"TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
                 "TTZToBB": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
-                "TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
-                "TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
-                "TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
-                "TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
-                "TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
-                "TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                #"TTZToBB": {"inclusive": [ColOut("events", ['0lep', '1lep', '2lep'])]},
+                #"TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                #"TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                #"TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                #"TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                #"TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                #"TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
             }
         }
         )
 
 run_options = {
-        "executor"       : "dask/lxplus",
+        "executor"       : "futures",
         "env"            : "myenv",
         "cores"          : 4,
         "workers"        : 1,
-        "scaleout"       : 50,
-        "worker_image"   : "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-cc7-latest",
+        "scaleout"       : 16,
+        "worker_image"   : "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest",
         "queue"          : "microcentury",
         "walltime"       : "00:40:00",
         "mem_per_worker" : "4GB", # GB

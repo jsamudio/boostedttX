@@ -10,17 +10,25 @@ def match_gen_lep(events):
     gen_mom = events.GenPart.genPartIdxMother
     gen_st = events.GenPart.status
     gen_pt = events.GenPart.pt
-    #islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & ((abs(gen_id[gen_mom[gen_mom]]) == 6) | (abs(gen_id[gen_mom[gen_mom]]) == 24)) &(abs(gen_id[gen_mom]) ==24))
-    islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & (abs(events.GenPart[gen_mom].distinctParent.pdgId) == 6) &(abs(gen_id[gen_mom]) ==24))
+    islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & ((abs(gen_id[gen_mom[gen_mom]]) == 6) | (abs(gen_id[gen_mom[gen_mom]]) == 24)) &(abs(gen_id[gen_mom]) ==24))
+    #islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13) | (abs(gen_id) == 15)) & (abs(events.GenPart[gen_mom].distinctParent.pdgId) == 6) &(abs(gen_id[gen_mom]) ==24))
+    masked = ak.count(events.GenPart[islep].pt, axis = -1)
+    print(ak.sum(masked == 0, axis = -1))
+    print("0 Lep: ", ak.sum(masked == 0, axis = -1))
+    print("1 Lep: ", ak.sum(masked == 1, axis = -1))
+    print("2 Lep: ", ak.sum(masked == 2, axis = -1))
+    events['0lep'] = masked == 0
+    events['1lep'] = masked == 1
+    events['2lep'] = masked == 2
     #deltaR2 = (lambda obj1_, obj2_: ak.flatten(obj1_.metric_table(obj2_, axis=None)))
     #lep_match_dr = deltaR2(events.LeptonGoodDi, events.GenPart[islep])
-    print(len(events.LeptonGoodDi))
-    print(len(events.GenPart[islep]))
+    #print(len(events.LeptonGoodDi))
+    #print(len(events.GenPart[islep]))
     lep_match_dr = ak.flatten(events.LeptonGoodDi.metric_table(events.GenPart[islep]), axis = -1)
-    print(lep_match_dr)
-    print(len(ak.sum(lep_match_dr <= 0.1, axis=-1) > 1))
-    print(sum(ak.sum(lep_match_dr <= 0.1, axis=-1) > 1))
-    print(len(events.GenPart))
+    #print(lep_match_dr)
+    #print(len(ak.sum(lep_match_dr <= 0.1, axis=-1) > 1))
+    #print(sum(ak.sum(lep_match_dr <= 0.1, axis=-1) > 1))
+    #print(len(events.GenPart))
     events["matchedGenLep"] = (ak.sum(lep_match_dr <= 0.1, axis=-1) > 1)
     #events["matchedGenLep"] = True
 
@@ -107,6 +115,8 @@ def match_gen_sig(events, sample):
 
     istt = (abs(gen_id) == 6)
     #
+
+    #
     isbb_fromZ     = ((abs(gen_id) == 5) & (gen_id[gen_mom] == 23) & (gen_st[gen_mom] == 62))
     isqq_fromZ     = ((abs(gen_id) <  5) & (gen_id[gen_mom] == 23) & (gen_st[gen_mom] == 62))
     isllnunu_fromZ = ((abs(gen_id) >=  11) & (abs(gen_id) <= 16) & (gen_id[gen_mom] == 23) & (gen_st[gen_mom] == 62))
@@ -120,8 +130,7 @@ def match_gen_sig(events, sample):
     isZH = ((isHbb) | (isZbb) | (isZqq) | (isZllnunu) | (isHnonbb))
     print("isHbb", sum(ak.sum(isHbb, axis=1)))
     print("isHnonbb", sum(ak.sum(isHnonbb, axis=1)))
-    print("isZbb axis 1", sum(ak.sum(isZbb,axis=1)))
-    print("isZbb axis -1", sum(ak.sum(isZbb,axis=-1)))
+    print("isZbb", sum(ak.sum(isZbb,axis=1)))
     print("isZqq", sum(ak.sum(isZqq, axis=1)))
     print("isZllnunu", sum(ak.sum(isZllnunu, axis=1)))
     #print("recoZH",len(rZh_eta),len(rZh_phi))

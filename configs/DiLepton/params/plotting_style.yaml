@@ -1,45 +1,45 @@
 plotting_style:
   opts_mc:
     stack: False
-    histtype: "step"
+      #histtype: "step"
   
   samples_groups:
     ttbb (4FS):
-      - TTbb_Hadronic__TTbbHadronic_tt+B
-      - TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+B
-      - TTbb_2L2Nu__TTbb2L2Nu_tt+B
+      - TTbb_Hadronic__tt+B
+      - TTbb_SemiLeptonic__tt+B
+      - TTbb_2L2Nu__tt+B
     TTBar (5FS):
-      - TTToSemiLeptonic__TTToSemiLeptonic_tt+LF
-      - TTToSemiLeptonic__TTToSemiLeptonic_tt+C
-      - TTTo2L2Nu__TTTo2L2Nu_tt+LF
-      - TTTo2L2Nu__TTTo2L2Nu_tt+C
-      - TTToHadronic__TTToHadronic_tt+LF
-      - TTToHadronic__TTToHadronic_tt+C
-    ttH (genm):
+      - TTToSemiLeptonic__tt+LF
+      - TTToSemiLeptonic__tt+C
+      - TTTo2L2Nu__tt+LF
+      - TTTo2L2Nu__tt+C
+      - TTToHadronic__tt+LF
+      - TTToHadronic__tt+C
+    ttH:
       - ttHTobb__genMatch
       - ttHToNonbb__genMatch
-    ttZ (genm):
+      - ttHTobb__non_genMatch
+      - ttHToNonbb__non_genMatch
+    ttZ:
       - TTZToQQ__genMatch
       - TTZToLLNuNu__genMatch
       - TTZToBB__genMatch
+      - TTZToQQ__non_genMatch
+      - TTZToBB__non_genMatch
+      - TTZToLLNuNu__non_genMatch
   exclude_samples:
-    - TTZToQQ__non_genMatch
-    - TTZToBB__non_genMatch
-    - TTZToLLNuNu__non_genMatch
-    - ttHTobb__non_genMatch
-    - ttHToNonbb__non_genMatch
     - TTToSemiLeptonic
     - TTbb_SemiLeptonic
     - TTToHadronic
     - TTbb_Hadronic
     - TTTo2L2Nu
     - TTbb_2L2Nu
-    - TTToSemiLeptonic__TTToSemiLeptonic_tt+B
-    - TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+C
-    - TTbb_SemiLeptonic__TTbbSemiLeptonic_tt+LF
-    - TTToHadronic__TTToHadronic_tt+B
-    - TTbb_Hadronic__TTbbHadronic_tt+C
-    - TTbb_Hadronic__TTbbHadronic_tt+LF
-    - TTTo2L2Nu__TTTo2L2Nu_tt+B
-    - TTbb_2L2Nu__TTbb2L2Nu_tt+C
-    - TTbb_2L2Nu__TTbb2L2Nu_tt+LF
+    - TTToSemiLeptonic__tt+B
+    - TTbb_SemiLeptonic__tt+C
+    - TTbb_SemiLeptonic__tt+LF
+    - TTToHadronic__tt+B
+    - TTbb_Hadronic__tt+C
+    - TTbb_Hadronic__tt+LF
+    - TTTo2L2Nu__tt+B
+    - TTbb_2L2Nu__tt+C
+    - TTbb_2L2Nu__tt+LF

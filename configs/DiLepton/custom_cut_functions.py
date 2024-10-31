@@ -11,9 +11,10 @@ def precut(events, params, year, sample, **kwargs):
     #Precut Mask
     mask = (
             (ak.num(events.Muon) + ak.num(events.Electron) >= 1) &
-            (ak.num(events.Jet) >= 5) &
+            (ak.num(events.Jet) >= 3) &
             (ak.num(events.FatJet) >= 1) &
-            (events.MET.pt >= 20) )
+            (events.MET.pt >= 20)
+            )
     # Pad None values with False
     return ak.where(ak.is_none(mask), False, mask)
 
@@ -56,16 +57,17 @@ def diLepEvent_selection(events, params, year, sample, **kwargs):
     OS = events.ll.charge == 0
 
     mask = (
-            OS &
-            ((ak.firsts(events.ElectronGoodDi.pt) > params["pt_leading_lepton"]) |
-            (ak.firsts(events.MuonGoodDi.pt) > params["pt_leading_lepton"])) &
-            (events.ll.mass > params["mll"]["low"]) &
-            ((events.ll.mass < 76) | (events.ll.mass > 106)) &
+            #OS &
+            #((ak.firsts(events.ElectronGoodDi.pt) > params["pt_leading_lepton"]) |
+            #(ak.firsts(events.MuonGoodDi.pt) > params["pt_leading_lepton"])) &
+            #(events.ll.mass > params["mll"]["low"]) &
+            #((events.ll.mass < 76) | (events.ll.mass > 106)) &
             (events.nJetGood >= 3) &
             (events.nFatJetGood >= 1) &
-            (events.MET.pt > 20) &
-            (events.nMuonGoodDi + events.nElectronGoodDi == 2) &
-            (events.nLeptonGoodDi == 2)
+            (events.MET.pt > 20)
+            #(events.nMuonGoodDi + events.nElectronGoodDi == 2)
+            #(events.nMuonGood + events.nElectronGood != 1) &
+            #(events.nLeptonGoodDi == 2)
             #(events.nll == 1)
             #(events.nSoftElectronGood < 2) &
             #(events.nSoftMuonGood < 2)
@@ -83,11 +85,86 @@ diLepEvent_selection = Cut(
 )
 
 '''
+dilep mask
+'''
+
+def di_mask(events, params, year, sample, **kwargs):
+    mask = (
+            #(events.nll == 1))
+            (events.nMuonGoodDi + events.nElectronGoodDi == 2))
+    return ak.where(ak.is_none(mask), False, mask)
+
+di_mask = Cut(
+        name = "diMask",
+        params = {
+            "pt_leading_lepton": 25,
+            "mll": {'low': 20},
+        },
+        function = di_mask,
+)
+
+'''
+dilep pt mask
+'''
+
+def diPt_mask(events, params, year, sample, **kwargs):
+    mask = (
+            #((ak.firsts(events.ElectronGoodDi.pt) > params["pt_leading_lepton"]) |
+            #(ak.firsts(events.MuonGoodDi.pt) > params["pt_leading_lepton"])) )
+            (ak.firsts(events.LeptonGoodDi.pt) > params["pt_leading_lepton"]))
+    return ak.where(ak.is_none(mask), False, mask)
+
+diPt_mask = Cut(
+        name = "diPtMask",
+        params = {
+            "pt_leading_lepton": 25,
+            "mll": {'low': 20},
+        },
+        function = diPt_mask,
+)
+
+'''
+dilep mass mask
+'''
+
+def diMass_mask(events, params, year, sample, **kwargs):
+    mask = (
+            (events.ll.mass > params["mll"]["low"]) &
+            ((events.ll.mass < 76) | (events.ll.mass > 106)))
+            #(events.ll.mass < 76) )
+    return ak.where(ak.is_none(mask), False, mask)
+
+diMass_mask = Cut(
+        name = "diMassMask",
+        params = {
+            "pt_leading_lepton": 25,
+            "mll": {'low': 20},
+        },
+        function = diMass_mask,
+)
+
+'''
+OS mask
+'''
+
+def OS_mask(events, params, year, sample, **kwargs):
+    OS = events.ll.charge == 0
+    mask = (OS)
+    return ak.where(ak.is_none(mask), False, mask)
+
+OS_mask = Cut(
+        name = "OSMask",
+        params = {},
+        function = OS_mask,
+)
+
+'''
 btag mask
 '''
 
 def btag_mask(events, params, year, sample, **kwargs):
-    mask = ((events.nbJetGood >= 2))
+    mask = ((events.nbJetGood >= 1) &
+            (events.FatJetSorted[:,0].particleNetMD_Xbb >= 0.6))
     return ak.where(ak.is_none(mask), False, mask)
 
 btag_mask = Cut(

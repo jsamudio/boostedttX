@@ -173,5 +173,261 @@
               }
             }
         ]
+    },
+
+    "DYJetsToLL_M-50_HT-70to100":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-70to100_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec": 140.0,
+                  "part": "70to100"
+              }
+            }
+        ]
+    },
+
+    "DYJetsToLL_M-50_HT-100to200":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-100to200_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec": 139.2,
+                  "part": "100to200"
+              }
+            }
+        ]
+    },
+
+    "DYJetsToLL_M-50_HT-200to400":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-200to400_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec": 38.4,
+                  "part": "200to400"
+              }
+            }
+        ]
+    },
+
+    "DYJetsToLL_M-50_HT-400to600":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-400to600_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec": 5.174,
+                  "part": "400to600"
+              }
+            }
+        ]
+    },
+
+    "DYJetsToLL_M-50_HT-600to800":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-600to800_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec": 1.258,
+                  "part": "600to800"
+              }
+            }
+        ]
+    },
+
+    "DYJetsToLL_M-50_HT-800to1200":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-800to1200_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":0.5598,
+                  "part": "800to1200"
+              }
+            }
+        ]
+    },
+
+    "DYJetsToLL_M-50_HT-1200to2500":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-1200to2500_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":0.1305,
+                  "part": "1200to2500"
+              }
+            }
+        ]
+    },
+
+    "DYJetsToLL_M-50_HT-2500toInf":{
+        "sample": "DYJetsToLL_HT",
+        "json_output": "datasets/DYJetsToLL.json",
+        "files":[
+            { "das_names": 
+                ["/DYJetsToLL_M-50_HT-2500toInf_TuneCP5_PSweights_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":0.002997,
+                  "part": "2500toInf"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-70to100":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["/WJetsToLNu_HT-70To100_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":1283,
+                  "part": "70to100"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-100to200":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["WJetsToLNu_HT-100To200_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":1244,
+                  "part": "100to200"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-200to400":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["/WJetsToLNu_HT-200To400_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":337.8,
+                  "part": "200to400"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-400to600":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["/WJetsToLNu_HT-400To600_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":44.93,
+                  "part": "400to600"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-600to800":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["/WJetsToLNu_HT-600To800_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":11.19,
+                  "part": "600to800"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-800to1200":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["/WJetsToLNu_HT-800To1200_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v3/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":4.926,
+                  "part": "800to1200"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-1200to2500":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["/WJetsToLNu_HT-1200To2500_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":1.152,
+                  "part": "1200to2500"
+              }
+            }
+        ]
+    },
+
+    "WJetsToLNu_HT-2500toInf":{
+        "sample": "WJetsToLNu_HT",
+        "json_output": "datasets/WJetsToLNu.json",
+        "files":[
+            { "das_names": 
+                ["/WJetsToLNu_HT-2500ToInf_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM"],
+              "metadata": {
+                  "year":"2017",
+                  "isMC": true,
+                  "xsec":0.02646,
+                  "part": "2500toInf"
+              }
+            }
+        ]
     }
 }

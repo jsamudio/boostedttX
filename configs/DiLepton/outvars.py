@@ -6,7 +6,8 @@ sig_vars = ['process', 'Zbb', 'Hbb', 'Hnonbb', 'Zqq',
         'Zllnunu', 'matchedGenZH', 'matchedGen_Zbb',
         'matchedGen_Hbb', 'matchedGen_ZHbb', 'matchedGen_Zqq',
         'matchedGen_ZHbb_bb', 'matchedGen_ZHbb_b', 'matchedGen_ZHbb_nob',
-        'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']
+        'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M',
+        '0lep', '1lep', '2lep']
 
 bkg_vars = ['process', 'tt_type',
         'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']
