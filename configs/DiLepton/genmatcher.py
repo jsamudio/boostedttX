@@ -11,25 +11,40 @@ def match_gen_lep(events):
     gen_st = events.GenPart.status
     gen_pt = events.GenPart.pt
     islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & ((abs(gen_id[gen_mom[gen_mom]]) == 6) | (abs(gen_id[gen_mom[gen_mom]]) == 24)) &(abs(gen_id[gen_mom]) ==24))
+
+    #want dr or invm between gen lepton and associated b jet from same top quark
+    #isb_fromTop = ((abs(gen_id) == 5) & (gen_id[gen_mom] == 6))
+    #b_lep_dr = ak.flatten(events.GenPart[islep].metric_table(events.GenPart[isb_fromTop]), axis = -1)
+    #b_lep_invM = (events.GenPart[islep] + events.GenPart[isb_fromTop]).mass
+    #print("b_lep_dr: ", b_lep_dr)
+    #print("b_lep_invM: ", b_lep_invM)
+    #print("min b_lep_invM: ", ak.min(b_lep_invM, axis = -1))
+
     #islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13) | (abs(gen_id) == 15)) & (abs(events.GenPart[gen_mom].distinctParent.pdgId) == 6) &(abs(gen_id[gen_mom]) ==24))
-    masked = ak.count(events.GenPart[islep].pt, axis = -1)
-    print(ak.sum(masked == 0, axis = -1))
-    print("0 Lep: ", ak.sum(masked == 0, axis = -1))
-    print("1 Lep: ", ak.sum(masked == 1, axis = -1))
-    print("2 Lep: ", ak.sum(masked == 2, axis = -1))
-    events['0lep'] = masked == 0
-    events['1lep'] = masked == 1
-    events['2lep'] = masked == 2
+    #masked = ak.count(events.GenPart[islep].pt, axis = -1)
+    #print("# of events in chunk", ak.sum(ak.count(events.LeptonGoodDi.pt, axis = -1) > 0, axis = -1))
+    #print("2 Reco:", ak.sum(ak.count(events.LeptonGoodDi.pt, axis = -1) == 2, axis = -1))
+    #print("2 Ele:", ak.sum(ak.count(events.ElectronGoodDi.pt, axis = -1) > 1, axis = -1))
+    #print("2 Muon:", ak.sum(ak.count(events.MuonGoodDi.pt, axis = -1) > 1, axis = -1))
+    #print(ak.sum(masked == 0, axis = -1))
+    #print("0 Lep: ", ak.sum(masked == 0, axis = -1))
+    #print("1 Lep: ", ak.sum(masked == 1, axis = -1))
+    #print("2 Lep: ", ak.sum(masked == 2, axis = -1))
+    #events['0lep'] = masked == 0
+    #events['1lep'] = masked == 1
+    #events['2lep'] = masked == 2
     #deltaR2 = (lambda obj1_, obj2_: ak.flatten(obj1_.metric_table(obj2_, axis=None)))
     #lep_match_dr = deltaR2(events.LeptonGoodDi, events.GenPart[islep])
-    #print(len(events.LeptonGoodDi))
-    #print(len(events.GenPart[islep]))
+    #print("Good Leptons:", len(events.LeptonGoodDi))
+    #print("Gen leptons:", len(events.GenPart[islep]))
     lep_match_dr = ak.flatten(events.LeptonGoodDi.metric_table(events.GenPart[islep]), axis = -1)
-    #print(lep_match_dr)
+    #print("Flattened table:", len(lep_match_dr))
+    #print(len(lep_match_dr[ak.num(lep_match_dr, axis = -1) > 2]))
     #print(len(ak.sum(lep_match_dr <= 0.1, axis=-1) > 1))
     #print(sum(ak.sum(lep_match_dr <= 0.1, axis=-1) > 1))
     #print(len(events.GenPart))
     events["matchedGenLep"] = (ak.sum(lep_match_dr <= 0.1, axis=-1) > 1)
+    #print("matchedGenLep:", events.matchedGenLep)
     #events["matchedGenLep"] = True
 
 def match_gen_tt(events, sample):
@@ -153,9 +168,6 @@ def match_gen_sig(events, sample):
     events['matchedGenZH']    = ak.sum(zh_match, axis=1) > 0
     events['matchedGen_Zbb']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isZbb,axis=1) >  0))
     events['matchedGen_Hbb']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isHbb,axis=1) >  0))
-    #print(sum(events['matchedGen_Hbb']))
-    #events['matchedGen_Hbb2']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep2']) & (ak.sum(isHbb,axis=1) >  0))
-    #print(sum(events['matchedGen_Hbb2']))
     events['matchedGen_ZHbb'] = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & ((ak.sum(isZbb,axis=1) + ak.sum(isHbb, axis=1)) > 0))
     events['matchedGen_Zqq']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isZqq,axis=1) >  0))
     #

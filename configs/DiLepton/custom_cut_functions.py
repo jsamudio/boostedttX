@@ -90,8 +90,8 @@ dilep mask
 
 def di_mask(events, params, year, sample, **kwargs):
     mask = (
-            #(events.nll == 1))
-            (events.nMuonGoodDi + events.nElectronGoodDi == 2))
+            (events.nLeptonGoodDi == 2))
+            #(events.nMuonGoodDi + events.nElectronGoodDi == 2))
     return ak.where(ak.is_none(mask), False, mask)
 
 di_mask = Cut(
@@ -163,8 +163,8 @@ btag mask
 '''
 
 def btag_mask(events, params, year, sample, **kwargs):
-    mask = ((events.nbJetGood >= 1) &
-            (events.FatJetSorted[:,0].particleNetMD_Xbb >= 0.6))
+    mask = ((events.nbJetGood >= 2))
+            #(events.FatJetSorted[:,0].particleNetMD_Xbb >= 0.6))
     return ak.where(ak.is_none(mask), False, mask)
 
 btag_mask = Cut(
@@ -263,12 +263,16 @@ GenMatch Cut
 '''
 
 def genMatchZHbb(events, params, year, sample, **kwargs):
+    #FIXME
     mask = (events['matchedGen_ZHbb_bb'])
+    #mask = (events['matchedGen_ZHbb'])
 
     return ak.where(ak.is_none(mask), False, mask)
 
 def non_genMatchZHbb(events, params, year, sample, **kwargs):
+    #FIXME
     mask = (events['matchedGen_ZHbb_bb'])
+    #mask = (events['matchedGen_ZHbb'])
 
     return ak.where(ak.is_none(mask), False, ~mask)
 

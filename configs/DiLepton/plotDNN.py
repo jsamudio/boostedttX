@@ -4,10 +4,12 @@ import numpy as np
 from coffea.util import load
 import argparse
 import outvars
+import mplhep as hep
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter
 
+hep.style.use("CMS")
 parser = argparse.ArgumentParser(description='Build datasets for NN training')
 
 parser.add_argument('--input', '-i', type=str, help='Input .coffea file')
@@ -18,25 +20,25 @@ filein = load(args.input)
 
 def dnn_cut(df_):
     base_cuts = (
-        (df_['n_b_outZH'] >= 2) &
+        (df_['n_b_outZH'] == 2) &
         (df_['ZH_bbvLscore'] >= 0.6) &
-        (df_['n_ak4jets']   >= 5)             &
+        (df_['n_ak4jets']   >= 3)             &
         #FIXME these need to be added in
 
         #( (df_['isEleE']==True) | (df_['isMuonE']==True)) & # pass sim trigger
         #(df_['passNotHadLep'] == 1) & # might add
         (df_['ZH_pt']       >= 200)& # 200
         (df_['MET_pt']      >= 20)            &
-        (df_['ZH_M']        >= 50)            &
-        (df_['ZH_M']        <= 200)
+        (df_['ZH_M']        >= 75)            &
+        (df_['ZH_M']        <= 150)
     )
     return base_cuts
 
 def plot_cut(df_):
     base_cuts = (
-            (df_['ZH_pt'] > 300)     &
-            (df_['ZH_M'] > 75)       &
-            (df_['ZH_M'] < 145)      &
+            #(df_['ZH_pt'] > 300)     &
+            #(df_['ZH_M'] > 75)       &
+            #(df_['ZH_M'] < 145)      &
             (df_['newgenm_NN'] <= 1) &
             (df_['newgenm_NN'] > 0.)
     )
@@ -44,11 +46,12 @@ def plot_cut(df_):
 
 
 
-NN_vars = outvars.NN_vars
-sig_vars = outvars.NN_vars+outvars.sig_vars
-bkg_vars = outvars.NN_vars+outvars.bkg_vars
+NN_vars = outvars.diNN_vars
+sig_vars = outvars.diNN_vars+outvars.sig_vars
+bkg_vars = outvars.diNN_vars+outvars.bkg_vars
 
-sig = ['ttHTobb__genMatch', 'ttHToNonbb__genMatch','TTZToBB__genMatch', 'TTZToQQ__genMatch', 'TTZToLLNuNu__genMatch']
+#sig = ['ttHTobb__genMatch', 'ttHToNonbb__genMatch','TTZToBB__genMatch', 'TTZToQQ__genMatch', 'TTZToLLNuNu__genMatch']
+sig = ['ttHTobb__genMatch', 'TTZToBB__genMatch']
 bkg = ["TTbb_Hadronic__tt+B",
        "TTbb_SemiLeptonic__tt+B",
        "TTbb_2L2Nu__tt+B",
@@ -58,6 +61,7 @@ bkg = ["TTbb_Hadronic__tt+B",
        "TTTo2L2Nu__tt+C",
        "TTToHadronic__tt+LF",
        "TTToHadronic__tt+C"]
+       #]
 
 genmatchreq = 'matchedGen_ZHbb_bb'
 
@@ -164,6 +168,7 @@ class DNN_datasets:
 
     def plot_dnnHist(self):
         fig, (ax, ax2) = plt.subplots(2,1, sharex=True, gridspec_kw={'height_ratios':[3,1]})
+        fig.set_size_inches(3.75, 4.5)
         print(np.unique(self.sb_df.process, return_counts=True))
         cuts = dnn_cut(self.sb_df)
         plotcut = plot_cut(self.sb_df)
@@ -171,15 +176,24 @@ class DNN_datasets:
         sumS = []
         sumB = []
 
+        label_dict = {
+                "TTBar" : r'$\mathsf{t\bar{t}+\text{LF}}$, $\mathsf{t\bar{t}+c\bar{c}}$',
+                "tt_B" : r'$\mathsf{t\bar{t}+b\bar{b}}$',
+                "ttZ" : r'$\mathsf{t\bar{t}Z}$',
+                "ttH" : r'$\mathsf{t\bar{t}H}$',
+                "vjets": r'$\mathsf{V+jets}$'
+        }
         for i in self.sb_df.process.unique():
             norm_weight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['norm_weight'].to_numpy(), dtype = float)
+            print(i, np.unique(self.sb_df[(self.sb_df['process'] == i)]['norm_weight'],return_counts=True))
             weight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['genWeight'].to_numpy(), dtype = float)
             topptWeight = np.asarray(self.sb_df[cuts & plotcut & (self.sb_df['process'] == i)]['topptWeight'].to_numpy(), dtype = float)
 
             norm_weight = (topptWeight * norm_weight * np.sign(weight))
 
             n, bins, patches = ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=self.nn_bins, stacked=False,
-                    histtype='step', range= (0,1), label=f'{i}', weights=norm_weight)
+            #n, bins, patches = ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=10, stacked=False,
+                    histtype='step', range= (0,1), label=label_dict[i], weights=norm_weight)
 
             #n, bins, patches = ax.hist(self.sb_df['newgenm_NN'][cuts & plotcut & (self.sb_df['process'] == i)], bins=self.nn_bins, stacked=False,
             #        histtype='step', range= (0,1), label=f'{i}')
@@ -195,24 +209,27 @@ class DNN_datasets:
         sumS = np.sum(sumS,axis=0)
         sumB = np.sum(sumB,axis=0)
         bin_c = (bins[1:]+bins[:-1])/2
+        print(sumS/np.sqrt(sumB))
         ax2.errorbar(x=bin_c, y = sumS/np.sqrt(sumB), xerr=(bins[1:]-bins[:-1])/2,
                 fmt='.', color='k', label=r'S/$\sqrt{\mathrm{B}}$')
         ax2.xaxis.set_minor_locator(AutoMinorLocator())
         ax2.yaxis.set_major_formatter(FormatStrFormatter('%g'))
         ax2.yaxis.set_minor_locator(AutoMinorLocator())
-        ax2.tick_params(which='both', direction='in', top=True, right=True)
-        ax2.yaxis.set_label_coords(-0.07,0.35)
-        ax2.set_ylabel(r'$\mathrm{S/}\sqrt{\mathrm{B}}$')
+        ax2.tick_params(which='both', direction='in', top=True, right=True, labelsize=10)
+        ax2.set_ylabel(r'$\mathrm{S/}\sqrt{\mathrm{B}}$', fontsize=10)
+        ax2.yaxis.set_label_coords(-0.12,0.45)
+        ax2.set_xlabel(r'NN Score', fontsize=10)
         ax2.grid(True)
+        #ax2.text(0.15,0.25, r'$\mathsf{S/\sqrt{B}}$', fontsize=10)
 
 
         ax.xaxis.set_minor_locator(AutoMinorLocator())
         ax.yaxis.set_minor_locator(AutoMinorLocator())
-        ax.tick_params(which='both', direction='in', top=True, right=True)
+        ax.tick_params(which='both', direction='in', top=True, right=True, labelsize=10)
         ax.set_yscale('log')
         ax.set_xlim([bins[0],bins[-1]])
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles,labels, framealpha = 0, ncol=2, fontsize=8)
+        ax.legend(handles,labels, framealpha = 0, ncol=2, fontsize=10)
         fig.subplots_adjust(
             top=0.88,
             bottom=0.11,
@@ -220,8 +237,9 @@ class DNN_datasets:
             right=0.88,
             hspace=0.0,
             wspace=0.2)
+        hep.cms.label("Work in progress", loc=0, ax=ax, fontsize=10)
 
-        plt.savefig("testDNN.pdf")
+        plt.savefig("pdf/di_DNN.pdf", bbox_inches='tight')
 
     def get_NN_bins(self):
         cuts = dnn_cut(self.sb_df)
@@ -238,6 +256,7 @@ class DNN_datasets:
         nn_bins[0], nn_bins[-1] = 0,1
         print(nn_bins)
         #nn_bins = [0., 0.083, 0.431, 0.560, 0.736, 0.865, 1. ]
+        #nn_bins = [0., 0.20, 0.40, 0.60, 0.80, 1.]
         return nn_bins
 
 

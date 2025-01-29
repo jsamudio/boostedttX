@@ -3,6 +3,7 @@ from pocket_coffea.lib.cut_definition import Cut
 from pocket_coffea.lib.columns_manager import ColOut
 from pocket_coffea.lib.cut_functions import get_nObj_min, get_HLTsel
 from pocket_coffea.parameters.histograms import *
+from pocket_coffea.parameters.cuts import passthrough
 import zhbbworkflow
 from zhbbworkflow import ZHbbBaseProcessor
 import outvars
@@ -42,7 +43,9 @@ cfg = Configurator(
                       f"{localdir}/datasets/TTbb_SemiLeptonic.json",
                       f"{localdir}/datasets/TTToHadronic.json",
                       f"{localdir}/datasets/TTTo2L2Nu.json",
-                      f"{localdir}/datasets/TTToSemiLeptonic.json"
+                      f"{localdir}/datasets/TTToSemiLeptonic.json",
+                      f"{localdir}/datasets/WJetsToLNu.json",
+                      f"{localdir}/datasets/DYJetsToLL.json",
                 ],
             "filter": {
                 "samples":  [
@@ -57,6 +60,8 @@ cfg = Configurator(
                             "TTToHadronic",
                             "TTTo2L2Nu",
                             "TTToSemiLeptonic",
+                            "WJetsToLNu_HT",
+                            "DYJetsToLL_HT",
                 ],
                 "samples_exclude": [],
                 "year": ['2017']
@@ -118,9 +123,10 @@ cfg = Configurator(
         workflow = ZHbbBaseProcessor,
 
         skim = [precut],
-        preselections = [event_selection],
+        preselections = [diLepEvent_selection],
         categories = {
-            "btag_mask": [btag_mask, vetoE, vetoMu],
+            #"btag_mask": [btag_mask, vetoE, vetoMu],
+            "btag_mask": [btag_mask, di_mask, OS_mask, diMass_mask],
             },
         weights = {
             "common": {
@@ -154,17 +160,19 @@ cfg = Configurator(
                 "bycategory": {}
             },
             "bysample": {
-                "ttHTobb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "ttHToNonbb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTZToQQ": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTZToBB": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                "TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                "ttHTobb": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                "ttHToNonbb": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                "TTZToQQ": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                "TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                "TTZToBB": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.sig_vars)]},
+                "TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                "TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                "TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                "TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                "TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                "TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.diNN_vars+outvars.bkg_vars)]},
+                "WJetsToLNu_HT": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.wz_bkg_vars)]},
+                "DYJetsToLL_HT": {"inclusive": [ColOut("events", outvars.diNN_vars+outvars.wz_bkg_vars)]},
             }
         }
         )

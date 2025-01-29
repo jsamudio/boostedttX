@@ -164,8 +164,11 @@ class DNN_model:
         model      = keras.models.Model(inputs=main_input, outputs=output, name='model')
         optimizer  = keras.optimizers.Adam(learning_rate=self.lr_alpha, clipnorm=1)
 
-        if (load_weights and os.path.exists('./'+load_weights)):
-            model.load_weights('./'+load_weights)
+        #FIXME for now specify channel folder here?
+        if (load_weights and os.path.exists('./SemiLeptonic/'+load_weights)):
+            model.load_weights('./SemiLeptonic/'+load_weights)
+        elif (load_weights and not os.path.exists('./SemiLeptonic/'+load_weights)):
+            raise Exception("Model file path does not exist")
         #
         #from focal_loss import BinaryFocalLoss
         model.compile(
@@ -356,16 +359,66 @@ def local_test(m_info, train_binary=False):
              weights=np.ones(len(y_pred[testY[:,2] == 1][:,2]))*.001, label='SIG')
     plt.hist(y_pred[testY[:,0] == 1][:,2],
              bins=10, range=(0,1), histtype='step',
-             weights=np.ones(len(y_pred[testY[:,0] == 1][:,2]))*.10, label='tt')
+             weights=np.ones(len(y_pred[testY[:,0] == 1][:,2]))*.04, label='tt')
     plt.hist(y_pred[testY[:,1] == 1][:,2],
              bins=10, range=(0,1), histtype='step',
-             weights=np.ones(len(y_pred[testY[:,1] == 1][:,2]))*.15, label='ttbb')
+             weights=np.ones(len(y_pred[testY[:,1] == 1][:,2]))*.1, label='ttbb')
     plt.legend()
     plt.yscale('log')
     plt.xlim(0,1)
     #plt.title(out_name)
     plt.show()
     plt.savefig('nn_training.pdf')
+
+def plot_roc_curve(y_test, y_pred):
+    import matplotlib.pyplot as plt
+    from sklearn.preprocessing import label_binarize
+    from sklearn.metrics import roc_curve, auc
+    from itertools import cycle
+    #n_classes = len(np.unique(y_test))
+    n_classes = 3
+    print(n_classes)
+    y_test = label_binarize(y_test, classes=np.arange(n_classes))
+
+    # Compute ROC curve and ROC area for each class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    thresholds = dict()
+    for i in range(n_classes):
+      fpr[i], tpr[i], thresholds[i] = roc_curve(y_test[:, i], y_pred[:, i], drop_intermediate=False)
+    roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Compute micro-average ROC curve and ROC area
+    fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_pred.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    # First aggregate all false positive rates
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+    # Then interpolate all ROC curves at this points
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(n_classes):
+      mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+
+    # Finally average it and compute AUC
+    mean_tpr /= n_classes
+
+    fpr["macro"] = all_fpr
+    tpr["macro"] = mean_tpr
+    roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+    # Plot all ROC curves
+    #plt.figure(figsize=(10,5))
+    plt.figure(dpi=600)
+    lw = 2
+    plt.plot(fpr["micro"], tpr["micro"],
+    label="micro-average ROC curve (area = {0:0.2f})".format(roc_auc["micro"]),
+    color="deeppink", linestyle=":", linewidth=4,)
+
+    plt.plot(fpr["macro"], tpr["macro"],
+    label="macro-average ROC curve (area = {0:0.2f})".format(roc_auc["macro"]),
+    color="navy", linestyle=":", linewidth=4,)
 
 
 def prep_model_data(m_info, is_binary=False):

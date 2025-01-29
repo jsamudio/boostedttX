@@ -4,7 +4,7 @@ from pocket_coffea.lib.columns_manager import ColOut
 from pocket_coffea.lib.cut_functions import get_nObj_min, get_HLTsel
 from pocket_coffea.parameters.histograms import *
 import zhbbworkflow
-from zhbbworkflow import ZHbbBaseProcessor
+from zhbbworkflow_spanet import ZHbbBaseProcessor
 import outvars
 
 import cloudpickle
@@ -52,11 +52,11 @@ cfg = Configurator(
                             #"TTZToLLNuNu",
                             #"TTZToBB",
                             #"TTbb_Hadronic",
-                            #"TTbb_SemiLeptonic",
+                            "TTbb_SemiLeptonic",
                             #"TTbb_2L2Nu",
                             #"TTToHadronic",
                             #"TTTo2L2Nu",
-                            #"TTToSemiLeptonic",
+                            "TTToSemiLeptonic",
                 ],
                 "samples_exclude": [],
                 "year": ['2017']
@@ -117,8 +117,8 @@ cfg = Configurator(
 
         workflow = ZHbbBaseProcessor,
         workflow_options = {"parton_jet_min_dR": 0.3,
-                            "parton_jet_min_dR_postfsr": 1.0,
-                           "dump_columns_as_arrays_per_chunk": "/cms/data/jsamudio/boosted/boostedttX/configs/SemiLeptonic/output_columns_parton_matching/" },
+                            "parton_jet_min_dR_postfsr": 1.0},
+                           #"dump_columns_as_arrays_per_chunk": "/cms/data/jsamudio/boosted/boostedttX/configs/SemiLeptonic/output_columns_parton_matching/" },
 
         skim = [precut],
         preselections = [event_selection],
@@ -153,50 +153,52 @@ cfg = Configurator(
         },
         columns = {
             "common": {
-                "inclusive": [ColOut("events", ["newgenm_NN", "event"]+outvars.weight_vars),
-                              ColOut("PartonInitial", ["pt", "eta", "phi", "mass", "pdgId", "provenance"], flatten=False),
-                              ColOut("PartonLastCopy",["pt", "eta", "phi","mass", "pdgId", "provenance",], flatten=False),
-                              ColOut("PartonLastCopyMatched",["pt", "eta", "phi","mass", "pdgId", "provenance",], flatten=False),
-                              ColOut(
-                                "JetGood",
-                                [
-                                    "pt",
-                                    "eta",
-                                    "phi",
-                                    "hadronFlavour",
-                                    "btagDeepFlavB",
-                                    "btag_L",
-                                    "btag_M",
-                                    "btag_H"
-                                ], flatten=False
-                            ),
-                            ColOut(
-                                "JetGoodMatched",
-                                [
-                                    "pt",
-                                    "eta",
-                                    "phi",
-                                    "hadronFlavour",
-                                    "btagDeepFlavB",
-                                    "btag_L",
-                                    "btag_M",
-                                    "btag_H",
-                                    "dRMatchedJet",
-                                    "provenance"
-                                ], flatten=False
-                            ),
-                            ColOut("LeptonGood",
-                                   ["pt","eta","phi", "pdgId", "charge", "mvaTTH"], flatten=False,
-                                   pos_end=1, store_size=False),
-                            ColOut("MET", ["phi","pt","significance"], flatten=False),
-                            ColOut("Generator",["x1","x2","id1","id2","xpdf1","xpdf2"], flatten=False),
-                            ColOut("LeptonGenLevel",["pt","eta","phi","mass","pdgId"], flatten=False),
-                            ],
+                "inclusive": [ColOut("events", ["n_b_inZH"]),
+                        ColOut(
+                            "Parton",
+                            ["pt", "eta", "phi", "mass", "pdgId", "provenance"]
+                        ),
+                        ColOut(
+                            "PartonMatched",
+                            ["pt", "eta", "phi","mass", "pdgId", "provenance", "dRMatchedJet"],
+                        ),
+                        ColOut(
+                            "JetGood",
+                            ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H"],
+                        ),
+                        ColOut(
+                            "JetGoodMatched",
+                            ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H", "dRMatchedJet"],
+                        ),
+                        ColOut("LeptonGood",
+                               ["pt","eta","phi", "pdgId", "charge", "mvaTTH"],
+                               pos_end=1, store_size=False),
+                        ColOut("MET", ["phi","pt","significance"]),
+                        ColOut("Generator",["x1","x2","id1","id2","xpdf1","xpdf2"]),
+                        ColOut("LeptonParton",["pt","eta","phi","mass","pdgId"]),
+                        ColOut("FatJetSorted",["pt", "eta", "phi", "mass", "particleNetMD_Xbb"], pos_end=1, store_size=False),
+                        ColOut(
+                            "FatJetMatched",
+                            ["pt", "eta", "phi", "mass", "particleNetMD_Xbb", "dRMatchedJet"],
+                        ),
+                        ColOut(
+                            "HiggsMatched",
+                            ["pt", "provenance"],
+                        ),
+                ],
                 
                 "bycategory": {}
             },
             "bysample": {
-                "ttHTobb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
+                "ttHTobb": {
+                    "bycategory": {
+                        "btag_mask": [
+                            ColOut("HiggsGen",
+                                   ["pt", "eta", "phi", "mass", "pdgId"], pos_end=1, store_size=False),
+                            ]
+                        }
+                    }
+                #"ttHTobb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
                 #"ttHToNonbb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
                 #"TTZToQQ": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
                 #"TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},

@@ -11,7 +11,7 @@ sig_vars = ['process', 'Zbb', 'Hbb', 'Hnonbb', 'Zqq',
 bkg_vars = ['process', 'tt_type',
         'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']
 
-weight_vars = ['genWeight', 'norm_weight', 'topptWeight']
+weight_vars = ['genWeight', 'norm_weight', 'topptWeight', 'nAK4inAK8']
 
 NN_vars = [
     'outZH_b1_pt','outZH_b2_pt',
@@ -48,3 +48,11 @@ NN_vars = [
     'spher','aplan',
     'n_b_inZH', 'n_q_inZH',
     'n_b_outZH', 'n_q_outZH', "ZH_bbvLscore"]
+
+spanet_vars = [
+    'JetGood_pt', 'JetGood_eta', 'JetGood_phi', 'JetGood_btagDeepFlavB', #'JetGood_btagL', 'JetGood_btagM', 'JetGood_btagH', # maybe also mass but they do zeroes_like('pt'), and sin/cos phi
+    #'ZH_pt', 'ZH_eta', 'ZH_phi', 'ZH_bbvLscore', # mass decorrelated
+    'LeptonGood_pt', 'LeptonGood_eta', 'LeptonGood_phi'] #'LeptonGood_is_electron', # sin and cos phi
+    #'MET_pt', 'MET_phi'] #'MET_eta',
+    #'ht']
+    

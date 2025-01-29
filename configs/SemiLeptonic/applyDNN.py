@@ -15,7 +15,7 @@ def dnn_cut(df_):
         (df_['ZH_M']        <= 200)
     )
     return base_cuts
-def applyDNN(events, model_file='newgenm_model.h5'):
+def applyDNN(events, model_file='newgenm_model.weights.h5'):
     from dnn_model import DNN_model
 
     dnn_vars = outvars.NN_vars

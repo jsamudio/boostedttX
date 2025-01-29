@@ -12,9 +12,9 @@ from pocket_coffea.lib.objects import (
     btagging,
     get_dilepton,
 )
-from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_sel, fatjet_sel2
+from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_sel, fatjet_sel2, lep_selDi
 from custom_cut_functions import sortbyscore
-from cand_helper import zh_helper
+from cand_helperDi import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
 import dnn_model
 from applyDNN import applyDNN
@@ -22,6 +22,12 @@ from weight_handler import calc_weight, add_weights_to_ttbb
 from coffea.analysis_tools import PackedSelection
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
+bkg = [ "TTbb_Hadronic",
+        "TTbb_SemiLeptonic",
+        "TTbb_2L2Nu",
+        "TTToHadronic",
+        "TTTo2L2Nu",
+        "TTToSemiLeptonic"]
 
 class ZHbbBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
@@ -71,11 +77,24 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events['ElectronGood'] = lep_sel(self.events, "Electron", self.params)
         self.events['SoftElectronGood'] = soft_lep_sel(self.events, "Electron", self.params)
 
+        self.events['MuonGoodDi'] = lep_selDi(self.events, "Muon", self.params)
+        self.events['MuonGoodDi'] = self.events['MuonGoodDi'][ak.argsort(self.events['MuonGoodDi'].pt, ascending=False)]
+        self.events['ElectronGoodDi'] = lep_selDi(self.events, "Electron", self.params)
+        self.events['ElectronGoodDi'] = self.events['ElectronGoodDi'][ak.argsort(self.events['ElectronGoodDi'].pt, ascending=False)]
+
+        self.events['ll'] = get_dilepton(self.events.ElectronGoodDi, self.events.MuonGoodDi)
+
         leptons = ak.with_name(
                 ak.concatenate((self.events.MuonGood, self.events.ElectronGood), axis = 1),
                 name='PtEtaPhiMCandidate')
+
         self.events['LeptonGood'] = leptons[ak.argsort(leptons.pt, ascending=False)]
 
+        leptonsDi = ak.with_name(
+                ak.concatenate((self.events.MuonGoodDi, self.events.ElectronGoodDi), axis = 1),
+                name='PtEtaPhiMCandidate')
+
+        self.events['LeptonGoodDi'] = leptonsDi[ak.argsort(leptonsDi.pt, ascending=False)]
         self.events['JetGood'], self.jetGoodMask = jet_sel(self.events, "Jet", self.params, "LeptonGood")
         self.events['FatJetGood'] = fatjet_sel(self.events, self.params, "LeptonGood")
         self.events['FatJetGood2'] = fatjet_sel2(self.events, self.params, "LeptonGood")
@@ -86,26 +105,32 @@ class ZHbbBaseProcessor (BaseProcessorABC):
 
     def process_extra_after_presel(self, variation):
         self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "particleNetMD_Xbb")
-        #self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
-        #self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
+        self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
+        self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
         ### Add function to implement combinatorics now that we have the sorted list
         zh_helper(self.events)
         match_gen_lep(self.events)
         if self._sample in sig:
             match_gen_sig(self.events, self._sample)
-        else:
+        elif self._sample in bkg:
             match_gen_tt(self.events, self._sample)
-        applyDNN(self.events)
+        if "Jets" in self._sample:
+            self.events['topptWeight'] = 1
+        print("I am applying the DNN!!!!")
+        applyDNN(self.events, model_file='newgenm_model.weights.h5')
         calc_weight(self.events, self.output, self._dataset, self.params)
         print("XSEC: ", self.events.metadata['xsec'])
         print("LUMI: ", self.params.sample_params['lumi']['lumi'])
-        print("genWeights total: ", self.output['sum_signOf_genweights'][self._dataset])
         if 'TTbb' in self._sample:
             add_weights_to_ttbb(self.events, self._sample)
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)
+        self.events['nMuonGoodDi'] = ak.num(self.events.MuonGoodDi)
         self.events['nElectronGood'] = ak.num(self.events.ElectronGood)
+        self.events['nElectronGoodDi'] = ak.num(self.events.ElectronGoodDi)
+        self.events['nLeptonGoodDi'] = ak.num(self.events.LeptonGoodDi)
+        #self.events['nll'] = ak.num(self.events.ll)
         self.events['nSoftMuonGood'] = ak.num(self.events.SoftMuonGood)
         self.events['nSoftElectronGood'] = ak.num(self.events.SoftElectronGood)
         self.events['nJetGood'] = ak.num(self.events.JetGood)
@@ -113,6 +138,3 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events['nFatJetGood2'] = ak.num(self.events.FatJetGood)
         self.events['nbJetGood'] = ak.num(self.events.bJetGood)
         self.events['nLeptonGood'] = (self.events['nMuonGood'] + self.events['nElectronGood'])
-
-
-

@@ -87,7 +87,7 @@ def zh_helper(events):
     ak8 = events.FatJetGood
     bjet = events.bJetGood
     qjet = events.qJetGood
-    #lep = events.LeptonGood
+    lep = events.LeptonGoodDi
     met = events.MET
     events['ZH_pt'] = ZHCand.pt
     events['ZH_M'] = ZHCand.particleNet_mass
@@ -97,13 +97,15 @@ def zh_helper(events):
     Dirty padding and array formatting to use old SandA calculation
     '''
 
-    #spher, aplan = calc_SandA(
-    #    np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.pt, max(ak.count(ak4.pt, axis = 1)), clip=True), np.nan)), ak.to_numpy(lep.pt), axis=1),
-    #    np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.eta, max(ak.count(ak4.eta, axis = 1)), clip=True), np.nan)), ak.to_numpy(lep.eta), axis=1),
-    #    np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.phi, max(ak.count(ak4.phi, axis = 1)), clip=True), np.nan)), ak.to_numpy(lep.phi), axis=1))
+    spher, aplan = calc_SandA(
+        np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.pt, max(ak.count(ak4.pt, axis = 1)), clip=True), np.nan)), ak.to_numpy(ak.fill_none(ak.pad_none(lep.pt, max(ak.count(lep.pt, axis=1)), clip=True), np.nan)), axis=1),
+        np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.eta, max(ak.count(ak4.eta, axis = 1)), clip=True), np.nan)), ak.to_numpy(ak.fill_none(ak.pad_none(lep.eta, max(ak.count(lep.eta, axis=1)), clip=True), np.nan)), axis=1),
+        np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.phi, max(ak.count(ak4.phi, axis = 1)), clip=True), np.nan)), ak.to_numpy(ak.fill_none(ak.pad_none(lep.phi, max(ak.count(lep.phi, axis=1)), clip=True), np.nan)), axis=1))
+        #np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.eta, max(ak.count(ak4.eta, axis = 1)), clip=True), np.nan)), ak.to_numpy(lep.eta), axis=1),
+        #np.append(ak.to_numpy(ak.fill_none(ak.pad_none(ak4.phi, max(ak.count(ak4.phi, axis = 1)), clip=True), np.nan)), ak.to_numpy(lep.phi), axis=1))
 
-    #events["spher"] = spher
-    #events["aplan"] = aplan
+    events["spher"] = spher
+    events["aplan"] = aplan
 
     '''
     Comparing ZH candidate with ak4, b, q ,l || l and b
@@ -144,12 +146,31 @@ def zh_helper(events):
 
     # Combinations
 
-    #ZH_l_dr = deltaR(ZHCand, lep)
+    #Define lepton sorted arrays
 
-    #ZH_l_invM = (ZHCand + lep).mass #might need this to be specifically pNet mass
+    lep_pt_ptsort, lep_eta_ptsort, lep_phi_ptsort, lep_mass_ptsort = [make_ptsorted_arr(ZHCand, lep, "gt", proc) for proc in [lep.pt, lep.eta, lep.phi, lep.mass]]
+    lep_ptsort_vec = zip_4vec(lep_pt_ptsort, lep_eta_ptsort, lep_phi_ptsort, lep_mass_ptsort)
 
-    #events["ZH_l_dr"] = ak.flatten(ZH_l_dr)
-    #events["ZH_l_invM"] = ak.flatten(ZH_l_invM)
+    #Leading and sub-leading lepton
+
+    ind_leading_lep = ak.argmax(ak.nan_to_num(lep_pt_ptsort, nan=-1), axis = 1, keepdims=True)
+
+    leading_lep = lep_ptsort_vec[ind_leading_lep]
+
+    ind_subLeading_lep = np.where(ind_leading_lep + 1 < ak.count(lep_pt_ptsort, axis=1), ind_leading_lep + 1, ind_leading_lep)
+
+    subLeading_lep = lep_ptsort_vec[ind_subLeading_lep]
+
+    ZH_leadingLep_dr = deltaR(ZHCand, leading_lep)
+    ZH_subLeadingLep_dr = deltaR(ZHCand, subLeading_lep)
+
+    ZH_leadingLep_invM = (ZHCand + leading_lep).mass #might need this to be specifically pNet mass
+    ZH_subLeadingLep_invM = (ZHCand + subLeading_lep).mass #might need this to be specifically pNet mass
+
+    events["ZH_leadingLep_dr"] = ak.flatten(ZH_leadingLep_dr)
+    events["ZH_subLeadingLep_dr"] = ak.flatten(ZH_subLeadingLep_dr)
+    events["ZH_leadingLep_invM"] = ak.flatten(ZH_leadingLep_invM)
+    events["ZH_subLeadingLep_invM"] = ak.flatten(ZH_subLeadingLep_invM)
 
     # Leading-Subleading (pt) b and q combinations
 
@@ -181,36 +202,109 @@ def zh_helper(events):
 
     q_q_dr = deltaR(leading_q, subLeading_q)
 
-    # Nearest and second nearest b to l
+    # Nearest and second nearest b to leading lepton
+
+    b_pt_dRsort_leadingLep, b_eta_dRsort_leadingLep, b_phi_dRsort_leadingLep, b_mass_dRsort_leadingLep = [make_dRsorted_arr(leading_lep, bjet, "gt", proc) for proc in [bjet.pt, bjet.eta, bjet.phi, bjet.mass]]
+
+    b_dRsort_leadingLep_vec = zip_4vec(b_pt_dRsort_leadingLep, b_eta_dRsort_leadingLep, b_phi_dRsort_leadingLep, b_mass_dRsort_leadingLep)
+
+    ind_near_b_leadingLep = ak.argmax(ak.nan_to_num(b_pt_dRsort_leadingLep, nan=-1), axis = 1, keepdims=True)
+
+    near_b_leadingLep = b_dRsort_leadingLep_vec[ind_near_b_leadingLep]
+
+    ind_subNear_b_leadingLep = np.where(ind_near_b_leadingLep + 1 < ak.count(b_pt_dRsort_leadingLep, axis=1), ind_near_b_leadingLep + 1, ind_near_b_leadingLep)
+
+    subNear_b_leadingLep = b_dRsort_leadingLep_vec[ind_subNear_b_leadingLep]
+
+    # Nearest and second nearest b to sub leading lepton
     # Any NaN value is a b within the dR cone of the ZH candidate
 
-    b_pt_dRsort_l, b_eta_dRsort_l, b_phi_dRsort_l, b_mass_dRsort_l = [make_dRsorted_arr(ZHCand, bjet, "gt", proc) for proc in [bjet.pt, bjet.eta, bjet.phi, bjet.mass]]
-    b_dRsort_l_vec = zip_4vec(b_pt_dRsort_l, b_eta_dRsort_l, b_phi_dRsort_l, b_mass_dRsort_l)
+    b_pt_dRsort_subLeadingLep, b_eta_dRsort_subLeadingLep, b_phi_dRsort_subLeadingLep, b_mass_dRsort_subLeadingLep = [make_dRsorted_arr(subLeading_lep, bjet, "gt", proc) for proc in [bjet.pt, bjet.eta, bjet.phi, bjet.mass]]
 
-    ind_near_b = ak.argmax(ak.nan_to_num(b_pt_dRsort_l, nan=-1), axis = 1, keepdims=True)
+    b_dRsort_subLeadingLep_vec = zip_4vec(b_pt_dRsort_subLeadingLep, b_eta_dRsort_subLeadingLep, b_phi_dRsort_subLeadingLep, b_mass_dRsort_subLeadingLep)
 
-    near_b = b_dRsort_l_vec[ind_near_b]
+    ind_near_b_subLeadingLep = ak.argmax(ak.nan_to_num(b_pt_dRsort_subLeadingLep, nan=-1), axis = 1, keepdims=True)
 
-    ind_subNear_b = np.where(ind_near_b + 1 < ak.count(b_pt_dRsort_l, axis=1), ind_near_b + 1, ind_near_b)
+    near_b_subLeadingLep = b_dRsort_subLeadingLep_vec[ind_near_b_subLeadingLep]
 
-    subNear_b = b_dRsort_l_vec[ind_subNear_b]
+    ind_subNear_b_subLeadingLep = np.where(ind_near_b_subLeadingLep + 1 < ak.count(b_pt_dRsort_subLeadingLep, axis=1), ind_near_b_subLeadingLep + 1, ind_near_b_subLeadingLep)
 
-    #l_b1_invM = (lep + near_b).mass
-    #l_b1_dr = deltaR(lep, near_b)
+    subNear_b_subLeadingLep = b_dRsort_subLeadingLep_vec[ind_subNear_b_subLeadingLep]
 
-    #l_b2_invM = (lep + subNear_b).mass
-    #l_b2_dr = deltaR(lep, subNear_b)
+    # dR sorted leptons (for use with ZH only)
 
-    #l_b1_mtb = calc_mtb((lep+leading_b).pt, (lep+leading_b).phi, met.pt, met.phi)
-    #l_b2_mtb = calc_mtb((lep+leading_b).pt, (lep+leading_b).phi, met.pt, met.phi)
+    lep_pt_dRsort, lep_eta_dRsort, lep_phi_dRsort, lep_mass_dRsort = [make_dRsorted_arr(ZHCand, lep, "gt", proc) for proc in [lep.pt, lep.eta, lep.phi, lep.mass]]
+    lep_dRsort_vec = zip_4vec(lep_pt_dRsort, lep_eta_dRsort, lep_phi_dRsort, lep_mass_dRsort)
 
-    #events["l_b1_invM"] = ak.flatten(l_b1_invM)
-    #events["l_b2_invM"] = ak.flatten(l_b2_invM)
+    ind_near_lep = ak.argmax(ak.nan_to_num(lep_pt_dRsort, nan=-1), axis = 1, keepdims=True)
+    near_lep = lep_dRsort_vec[ind_near_lep]
 
-    #events["l_b1_dr"] = ak.flatten(l_b1_dr)
-    #events["l_b2_dr"] = ak.flatten(l_b2_dr)
+    ind_subNear_lep = np.where(ind_near_lep + 1 < ak.count(lep_pt_dRsort, axis=1), ind_near_lep + 1, ind_near_lep)
+    subNear_lep = lep_dRsort_vec[ind_subNear_lep]
 
-    #events["l_b2_mtb"] = l_b2_mtb
+    ZH_nearLep_dr = deltaR(ZHCand, near_lep)
+    ZH_subNearLep_dr = deltaR(ZHCand, subNear_lep)
+    events["ZH_nearLep_dr"] = ak.flatten(ZH_nearLep_dr)
+    events["ZH_subNearLep_dr"] = ak.flatten(ZH_subNearLep_dr)
+    #
+
+    # Need 8 total (leading/subleading lep and 2x near/subnear b)
+    leadingLep_b11_invM = (leading_lep + near_b_leadingLep).mass
+    subLeadingLep_b11_invM = (subLeading_lep + near_b_leadingLep).mass
+    leadingLep_b11_dr = deltaR(leading_lep, near_b_leadingLep)
+    subLeadingLep_b11_dr = deltaR(subLeading_lep, near_b_leadingLep)
+
+    leadingLep_b21_invM = (leading_lep + subNear_b_leadingLep).mass
+    subLeadingLep_b21_invM = (subLeading_lep + subNear_b_leadingLep).mass
+    leadingLep_b21_dr = deltaR(leading_lep, subNear_b_leadingLep)
+    subLeadingLep_b21_dr = deltaR(subLeading_lep, subNear_b_leadingLep)
+
+    leadingLep_b12_invM = (leading_lep + near_b_subLeadingLep).mass
+    subLeadingLep_b12_invM = (subLeading_lep + near_b_subLeadingLep).mass
+    leadingLep_b12_dr = deltaR(leading_lep, near_b_subLeadingLep)
+    subLeadingLep_b12_dr = deltaR(subLeading_lep, near_b_subLeadingLep)
+
+    leadingLep_b22_invM = (leading_lep + subNear_b_subLeadingLep).mass
+    subLeadingLep_b22_invM = (subLeading_lep + subNear_b_subLeadingLep).mass
+    leadingLep_b22_dr = deltaR(leading_lep, subNear_b_subLeadingLep)
+    subLeadingLep_b22_dr = deltaR(subLeading_lep, subNear_b_subLeadingLep)
+
+    mindR_leadingLep_b = ak.min(deltaR(leading_lep, b_ptsort_vec), axis = -1)
+    maxdR_leadingLep_b = ak.max(deltaR(leading_lep, b_ptsort_vec), axis = -1)
+
+    mindR_subLeadingLep_b = ak.min(deltaR(subLeading_lep, b_ptsort_vec), axis = -1)
+    maxdR_subLeadingLep_b = ak.max(deltaR(subLeading_lep, b_ptsort_vec), axis = -1)
+
+    events["mindR_leadingLep_b"] = mindR_leadingLep_b
+    events["mindR_subLeadingLep_b"] = mindR_subLeadingLep_b
+    events["maxdR_leadingLep_b"] = maxdR_leadingLep_b
+    events["maxdR_subLeadingLep_b"] = maxdR_subLeadingLep_b
+
+    leadingLep_b1_mtb = calc_mtb((leading_lep+leading_b).pt, (leading_lep+leading_b).phi, met.pt, met.phi)
+    subLeadingLep_b1_mtb = calc_mtb((subLeading_lep+leading_b).pt, (subLeading_lep+leading_b).phi, met.pt, met.phi)
+    leadingLep_b2_mtb = calc_mtb((leading_lep+leading_b).pt, (leading_lep+leading_b).phi, met.pt, met.phi)
+    subLeadingLep_b2_mtb = calc_mtb((subLeading_lep+leading_b).pt, (subLeading_lep+leading_b).phi, met.pt, met.phi)
+
+    events["leadingLep_b11_invM"] = ak.flatten(leadingLep_b11_invM)
+    events["subLeadingLep_b11_invM"] = ak.flatten(subLeadingLep_b11_invM)
+    events["leadingLep_b21_invM"] = ak.flatten(leadingLep_b21_invM)
+    events["subLeadingLep_b21_invM"] = ak.flatten(subLeadingLep_b21_invM)
+
+    events["leadingLep_b11_dr"] = ak.flatten(leadingLep_b11_dr)
+    events["subLeadingLep_b11_dr"] = ak.flatten(subLeadingLep_b11_dr)
+    events["leadingLep_b21_dr"] = ak.flatten(leadingLep_b21_dr)
+    events["subLeadingLep_b21_dr"] = ak.flatten(subLeadingLep_b21_dr)
+
+    events["leadingLep_b12_invM"] = ak.flatten(leadingLep_b12_invM)
+    events["subLeadingLep_b12_invM"] = ak.flatten(subLeadingLep_b12_invM)
+    events["leadingLep_b22_invM"] = ak.flatten(leadingLep_b22_invM)
+    events["subLeadingLep_b22_invM"] = ak.flatten(subLeadingLep_b22_invM)
+
+    events["leadingLep_b12_dr"] = ak.flatten(leadingLep_b12_dr)
+    events["subLeadingLep_b12_dr"] = ak.flatten(subLeadingLep_b12_dr)
+    events["leadingLep_b22_dr"] = ak.flatten(leadingLep_b22_dr)
+    events["subLeadingLep_b22_dr"] = ak.flatten(subLeadingLep_b22_dr)
+
     # Combinations involving ZH and leading(subleading) b and q
 
     events["outZH_b1_pt"] = ak.flatten(leading_b.pt)
@@ -228,8 +322,10 @@ def zh_helper(events):
     events["outZH_b1_q_mindr"] = ak.min(ak.where(b1_q_dr == np.nan, np.inf, b1_q_dr), axis=1)
     events["outZH_b2_q_mindr"] = ak.min(ak.where(b2_q_dr == np.nan, np.inf, b2_q_dr), axis=1)
 
-    #events["l_b1_mtb"] = ak.flatten(l_b1_mtb)
-    #events["l_b2_mtb"] = ak.flatten(l_b2_mtb)
+    events["leadingLep_b1_mtb"] = ak.flatten(leadingLep_b1_mtb)
+    events["subLeadingLep_b1_mtb"] = ak.flatten(subLeadingLep_b1_mtb)
+    events["leadingLep_b2_mtb"] = ak.flatten(leadingLep_b2_mtb)
+    events["subLeadingLep_b2_mtb"] = ak.flatten(subLeadingLep_b2_mtb)
 
     # q near b
     #print(leading_b)
@@ -293,6 +389,7 @@ def zh_helper(events):
 
     events["n_b_inZH"] = n_b_inZhbb
     events["n_b_outZH"] = n_b_outZhbb
+    # For information sake output these and then maybe we don't really look at them in the network
     events["n_q_inZH"] = n_q_inZhbb
     events["n_q_outZH"] = n_q_outZhbb
 
@@ -310,9 +407,9 @@ def zh_helper(events):
     events["inZHb_outZHb_dr"] = ak.flatten(deltaR(inZH_b, outZH_b))
 
     ht_b = ak.sum(ak.nan_to_num(b_pt_ptsort, nan=0), axis=1)
-    #sc_pt_outZH = ht_b + ak.sum(ak.nan_to_num(q_pt_ptsort, nan=0), axis=1) + lep.pt
+    sc_pt_outZH = ht_b + ak.sum(ak.nan_to_num(q_pt_ptsort, nan=0), axis=1) + leading_lep.pt + subLeading_lep.pt
     events["ht_b"] = ht_b
-    #events["ht_outZH"] = ak.flatten(sc_pt_outZH)
+    events["ht_outZH"] = ak.flatten(sc_pt_outZH)
 
     events["outZH_b12_m"] = ak.flatten((leading_b + subLeading_b).mass)
     events["outZH_b12_dr"] = ak.flatten(deltaR(leading_b, subLeading_b))

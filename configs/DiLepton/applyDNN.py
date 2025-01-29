@@ -4,9 +4,9 @@ import awkward as ak
 import numpy as np
 def dnn_cut(df_):
     base_cuts = (
-        (df_['n_b_outZH'] >= 2) &
+        (df_['n_b_outZH'] == 2) &
         (df_['ZH_bbvLscore'] >= 0.6) &
-        (df_['n_ak4jets']   >= 5)             &
+        (df_['n_ak4jets']   >= 3)             &
         #( (df_['isEleE']==True) | (df_['isMuonE']==True)) & # pass sim trigger
         #(df_['passNotHadLep'] == 1) & # might add
         (df_['ZH_pt']       >= 200)& # 200
@@ -15,18 +15,18 @@ def dnn_cut(df_):
         (df_['ZH_M']        <= 200)
     )
     return base_cuts
-def applyDNN(events, model_file='newgenm_model.h5'):
+
+# WHY DOESNT THIS ERROR OUT IF THE MODEL FILE DOES NOT EXIST
+def applyDNN(events, model_file='newgenm_model.weights.h5'):
     from dnn_model import DNN_model
 
-    dnn_vars = outvars.NN_vars
+    dnn_vars = outvars.diNN_vars
     cutvars = dnn_vars + ['ZH_pt', 'ZH_M', 'MET_pt']
     a = np.array([ak.to_numpy(events[var], allow_missing=True) for var in cutvars]).T
     data = ak.to_numpy(a)
     df_ = pd.DataFrame(data=data, columns = cutvars, dtype=np.float64)
     resetIndex = (lambda df: df.reset_index(drop=True).copy())
-    m_info = {'sequence': [['Dense', 128], ['Dense', 64], ['Dropout', 0.5]],
-              'other_settings': {'fl_a': [2, 2.5, 1], 'fl_g': 0.25, 'lr_alpha': 0.0002},
-              'n_epochs': 250, 'batch_size': 10256}
+    m_info = {'sequence': [['Dense', 128], ['Dense', 64], ['Dropout', 0.5]], 'other_settings': {'fl_a': [4.1, 3.15, 2.97], 'fl_g': 0.15, 'lr_alpha': 0.00015}, 'n_epochs': 10050, 'batch_size': 10256}
     dnn = DNN_model(m_info['sequence'],m_info['other_settings'])
     if 'binary' in model_file:
         nn_model = dnn.Build_Binary_Model(len(dnn_vars), load_weights=model_file)#'nn_ttzh_model.h5')
@@ -55,6 +55,7 @@ def applyDNN(events, model_file='newgenm_model.h5'):
     #if model_file == 'withbbvlnewgenm_model.h5': # old, but may keep
     #if df_nn_name == cfg.nn: # a bit more robust
     if model_file == 'newgenm_model.weights.h5': # new
+        print("USING THE CORRECT MODEL FILE =================================")
         explain_model = dnn.Build_New_Model(len(dnn_vars), nn_model) # output size 64
         if len(pred_df) > 0:
             explain_pred = explain_model.predict(pred_df) # shape (n_events, 64)

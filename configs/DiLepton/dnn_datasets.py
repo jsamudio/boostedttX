@@ -21,9 +21,9 @@ filein = load(args.input)
 
 def dnn_cut(df_):
     base_cuts = (
-        (df_['n_b_outZH'] >= 2) &
+        (df_['n_b_outZH'] == 2) &
         (df_['ZH_bbvLscore'] >= 0.6) &
-        (df_['n_ak4jets']   >= 5)             &
+        (df_['n_ak4jets']   >= 3)             &
         #( (df_['isEleE']==True) | (df_['isMuonE']==True)) & # pass sim trigger
         #(df_['passNotHadLep'] == 1) & # might add
         (df_['ZH_pt']       >= 200)& # 200
@@ -33,18 +33,18 @@ def dnn_cut(df_):
     )
     return base_cuts
 
-NN_vars = outvars.NN_vars
-sig_vars = outvars.NN_vars+outvars.sig_vars
-bkg_vars = outvars.NN_vars+outvars.bkg_vars
+NN_vars = outvars.diNN_vars
+sig_vars = outvars.diNN_vars+outvars.sig_vars
+bkg_vars = outvars.diNN_vars+outvars.bkg_vars
 
-sig = ['ttHTobb__genMatch', 'ttHToNonbb__genMatch','TTZToBB__genMatch', 'TTZToQQ__genMatch', 'TTZToLLNuNu__genMatch']
+sig = ['ttHTobb__genMatch', 'TTZToBB__genMatch']
 #sig = ['ttHTobb', 'TTZToBB']
 bkg = [
-    "TTbb_SemiLeptonic__tt+B",
+    "TTbb_2L2Nu__tt+B",
     #"TTbb_SemiLeptonic__tt+LF",
     #"TTbb_SemiLeptonic__tt+C",
-    "TTToSemiLeptonic__tt+LF",
-    "TTToSemiLeptonic__tt+C",
+    "TTTo2L2Nu__tt+LF",
+    "TTTo2L2Nu__tt+C",
     #"TTToSemiLeptonic__tt+B"
     ]
 genmatchreq = 'matchedGen_ZHbb_bb'
@@ -121,6 +121,20 @@ class DNN_datasets:
         sb_df.dropna(how="any", inplace=True)
         #print(sb_df)
         #print(sum(sb_df['process'] == 'sig'))
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        sns.set(font_scale=0.1)
+        fig, ax = plt.subplots(figsize=(15,15))
+        res = sns.heatmap(sb_df[self.dnn_vars][sb_df['label'] == 2].corr(), annot=True,
+                          fmt= '1.2f',annot_kws={"size": 5}, xticklabels=True,
+                          yticklabels=True,
+                          cmap=plt.cm.Reds, cbar=False, square= False, ax=ax)
+        res.set_xticklabels(res.get_xmajorticklabels(), fontsize = 8, rotation = 90)
+        res.set_yticklabels(res.get_ymajorticklabels(), fontsize = 8, rotation = 0)
+
+        fig.suptitle(f"Pearson Correlation Matrix (Bkg)")
+        plt.savefig("corr.pdf")
+        #sb_df.corr(numeric_only=True)
         encoder = LabelEncoder()
         encoder.fit(sb_df['label'])
         encoded_labels = encoder.transform(sb_df['label'])

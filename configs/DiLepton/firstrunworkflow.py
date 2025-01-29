@@ -92,7 +92,7 @@ class FirstRunBaseProcessor (BaseProcessorABC):
                 ak.concatenate((self.events.MuonGoodDi, self.events.ElectronGoodDi), axis = 1),
                 name='PtEtaPhiMCandidate')
 
-        self.events['LeptonGoodDi'] = leptons[ak.argsort(leptons.pt, ascending=False)]
+        self.events['LeptonGoodDi'] = leptonsDi[ak.argsort(leptonsDi.pt, ascending=False)]
         self.events['JetGood'], self.jetGoodMask = jet_sel(self.events, "Jet", self.params, "LeptonGood")
         self.events['FatJetGood'] = fatjet_sel(self.events, self.params, "LeptonGood")
         self.events['FatJetGood2'] = fatjet_sel2(self.events, self.params, "LeptonGood")

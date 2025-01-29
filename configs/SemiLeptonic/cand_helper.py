@@ -115,6 +115,11 @@ def zh_helper(events):
     # ZH and AK4
     # ak4 (in 0.8 dR to ZH cand.) btag sorted by dR, ascending with nan first
     ak4_btag_indRsort = make_dRsorted_arr(ZHCand, ak4, "lt", ak4.btagDeepFlavB)
+    nAK4inAK8 = ak.sum((ak4_btag_indRsort > 0), axis = -1)
+    print("AK4 btag drSort inside AK8:", ak4_btag_indRsort)
+    print("nAK4inAK8 == 0:", ak.sum(nAK4inAK8 == 0))
+    print("nAK4inAK8", nAK4inAK8)
+    events["nAK4inAK8"] = nAK4inAK8
 
     events["ak4_bestb_inZH"] = ak.max(ak4_btag_indRsort, axis=1)
     events["ak4_worstb_inZH"] = ak.min(ak4_btag_indRsort, axis=1)
@@ -184,7 +189,7 @@ def zh_helper(events):
     # Nearest and second nearest b to l
     # Any NaN value is a b within the dR cone of the ZH candidate
 
-    b_pt_dRsort_l, b_eta_dRsort_l, b_phi_dRsort_l, b_mass_dRsort_l = [make_dRsorted_arr(ZHCand, bjet, "gt", proc) for proc in [bjet.pt, bjet.eta, bjet.phi, bjet.mass]]
+    b_pt_dRsort_l, b_eta_dRsort_l, b_phi_dRsort_l, b_mass_dRsort_l = [make_dRsorted_arr(lep, bjet, "gt", proc) for proc in [bjet.pt, bjet.eta, bjet.phi, bjet.mass]]
     b_dRsort_l_vec = zip_4vec(b_pt_dRsort_l, b_eta_dRsort_l, b_phi_dRsort_l, b_mass_dRsort_l)
 
     ind_near_b = ak.argmax(ak.nan_to_num(b_pt_dRsort_l, nan=-1), axis = 1, keepdims=True)

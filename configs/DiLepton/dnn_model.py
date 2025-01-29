@@ -10,9 +10,13 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import backend as K
+from ActTensor_tf import SwiGLU
+import outvars
 
 #import config.ana_cff as cfg
 
+NN_vars = outvars.diNN_vars
+'''
 NN_vars = [
     'outZH_b1_pt','outZH_b2_pt',
     'outZH_b1_score','outZH_b2_score',
@@ -48,7 +52,7 @@ NN_vars = [
     'spher','aplan',
     'n_b_inZH', 'n_q_inZH',
     'n_b_outZH', 'n_q_outZH', "ZH_bbvLscore"]
-
+'''
 nodak8md_dnn_ZH_vars = [
     # may have to get rid of due to bad p-score:
     # n_q_outZh, l_b2_dr, n_ak4jets
@@ -103,7 +107,8 @@ class DNN_model:
     #
 
     seq_dict = {
-        'Dense'  : (lambda x: keras.layers.Dense(x, activation='relu', )),#kernel_regularizer=y(z))),
+        'Dense'  : (lambda x: keras.layers.Dense(x, activation='gelu')), #kernel_regularizer=y(z))),
+        'Dense2'  : (lambda x: keras.layers.Dense(x, activation='relu', kernel_regularizer='l1')), #kernel_regularizer=y(z))),
         'Dropout': (lambda x: keras.layers.Dropout(x)),
         'Batch'  : (lambda : keras.layers.BatchNormalization())
     }
@@ -162,10 +167,13 @@ class DNN_model:
         output     = keras.layers.Dense(3, activation='softmax', name='output')(layer)
             #
         model      = keras.models.Model(inputs=main_input, outputs=output, name='model')
-        optimizer  = keras.optimizers.Adam(learning_rate=self.lr_alpha, clipnorm=1)
+        optimizer  = keras.optimizers.AdamW(learning_rate=self.lr_alpha, clipnorm=1, weight_decay=0.04)
 
-        if (load_weights and os.path.exists('./'+load_weights)):
-            model.load_weights('./'+load_weights)
+        #FIXME for now specify channel folder here?
+        if (load_weights and os.path.exists('./DiLepton/'+load_weights)):
+            model.load_weights('./DiLepton/'+load_weights)
+        elif (load_weights and not os.path.exists('./DiLepton/'+load_weights)):
+            raise Exception("Model file path does not exist")
         #
         #from focal_loss import BinaryFocalLoss
         model.compile(
@@ -323,6 +331,7 @@ def plot_history(history):
     #acc.set_yscale('log')
     acc.legend()
     plt.show()
+    plt.savefig('nn_history.pdf')
     plt.close()
 
 def local_test(m_info, train_binary=False):
@@ -335,8 +344,8 @@ def local_test(m_info, train_binary=False):
         model, testX, testY = train_binary_model(m_info)
     y_pred = model.predict(testX)
     weight = np.ones_like(y_pred[:,2])*.001
-    weight = np.where(testY[:,0]==1,.10,weight)
-    weight = np.where(testY[:,1]==1,.15,weight)
+    weight = np.where(testY[:,0]==1,.04,weight)
+    weight = np.where(testY[:,1]==1,.05,weight)
     print('AUC score', roc_auc_score(testY[:,2],y_pred[:,2],sample_weight=weight))
     cm = confusion_matrix(np.argmax(testY,axis=1), np.argmax(y_pred,axis=1))
     print ("\nThe confusion matrix of the test set on the trained nerual network:\n" , cm)
@@ -350,22 +359,89 @@ def local_test(m_info, train_binary=False):
     #out_name = f'{s_b_val:.2f}_{s_ttbb_val:.2f}_{args.job_number}'
     #print(out_name)
     #model.save_weights(cfg.dnn_ZH_dir+'/test_archs/'+out_name+'.h5')
+    plot_roc_curve(testY, y_pred)
 
     plt.hist(y_pred[testY[:,2] == 1][:,2],
              bins=10, range=(0,1), histtype='step',
              weights=np.ones(len(y_pred[testY[:,2] == 1][:,2]))*.001, label='SIG')
     plt.hist(y_pred[testY[:,0] == 1][:,2],
              bins=10, range=(0,1), histtype='step',
-             weights=np.ones(len(y_pred[testY[:,0] == 1][:,2]))*.10, label='tt')
+             weights=np.ones(len(y_pred[testY[:,0] == 1][:,2]))*.04, label='tt')
     plt.hist(y_pred[testY[:,1] == 1][:,2],
              bins=10, range=(0,1), histtype='step',
-             weights=np.ones(len(y_pred[testY[:,1] == 1][:,2]))*.15, label='ttbb')
+             weights=np.ones(len(y_pred[testY[:,1] == 1][:,2]))*.05, label='ttbb')
+    print("Sum of scores in one event:", (y_pred[0,2] + y_pred[0,0] + y_pred[0,1]))
     plt.legend()
     plt.yscale('log')
     plt.xlim(0,1)
     #plt.title(out_name)
     plt.show()
     plt.savefig('nn_training.pdf')
+
+def plot_roc_curve(y_test, y_pred):
+    import matplotlib.pyplot as plt
+    from sklearn.preprocessing import label_binarize
+    from sklearn.metrics import roc_curve, auc
+    from itertools import cycle
+    #n_classes = len(np.unique(y_test))
+    n_classes = 3
+    print(n_classes)
+    y_test = label_binarize(y_test, classes=np.arange(n_classes))
+
+    # Compute ROC curve and ROC area for each class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    thresholds = dict()
+    for i in range(n_classes):
+      fpr[i], tpr[i], thresholds[i] = roc_curve(y_test[:, i], y_pred[:, i], drop_intermediate=False)
+    roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Compute micro-average ROC curve and ROC area
+    fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_pred.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    # First aggregate all false positive rates
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+    # Then interpolate all ROC curves at this points
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(n_classes):
+      mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+
+    # Finally average it and compute AUC
+    mean_tpr /= n_classes
+
+    fpr["macro"] = all_fpr
+    tpr["macro"] = mean_tpr
+    roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+    # Plot all ROC curves
+    #plt.figure(figsize=(10,5))
+    plt.figure(dpi=600)
+    lw = 2
+    plt.plot(fpr["micro"], tpr["micro"],
+    label="micro-average ROC curve (area = {0:0.2f})".format(roc_auc["micro"]),
+    color="deeppink", linestyle=":", linewidth=4,)
+
+    plt.plot(fpr["macro"], tpr["macro"],
+    label="macro-average ROC curve (area = {0:0.2f})".format(roc_auc["macro"]),
+    color="navy", linestyle=":", linewidth=4,)
+
+    colors = cycle(["aqua", "darkorange", "darkgreen", "yellow", "blue"])
+    for i, color in zip(range(n_classes), colors):
+      plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+      label=f"ROC curve of class {i}")
+
+    plt.plot([0, 1], [0, 1], "k--", lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("Receiver Operating Characteristic (ROC) curve")
+    plt.legend()
+    plt.savefig('nn_roc.pdf')
+    plt.close()
 
 
 def prep_model_data(m_info, is_binary=False):
@@ -413,7 +489,7 @@ if __name__ == "__main__":
     #m_info = {"sequence": [["Dense", 128], ["Dense", 64], ["Dropout", 0.5]], "other_settings": {"fl_a": [0.75, 1, 0.25], "fl_g": 0.5, "lr_alpha": 0.0003}, "n_epochs": 140, "batch_size": 10256}
     # === new NN
     #m_info = {'sequence': [['Dense', 128], ['Dense', 64], ['Dropout', 0.5]], 'other_settings': {'fl_a': [1, 2, 0.75], 'fl_g': 0.25, 'lr_alpha': 0.0003}, 'n_epochs': 150, 'batch_size': 10256}
-    m_info = {'sequence': [['Dense', 128], ['Dense', 64], ['Dropout', 0.5]], 'other_settings': {'fl_a': [2, 2.5, 1], 'fl_g': 0.25, 'lr_alpha': 0.0002}, 'n_epochs': 250, 'batch_size': 10256}
+    m_info = {'sequence': [['Dense', 128], ['Dense', 64], ['Dropout', 0.5]], 'other_settings': {'fl_a': [4.98, 2.76, 2.29], 'fl_g': 0.15, 'lr_alpha': 0.00015}, 'n_epochs': 10050, 'batch_size': 10256}
 
     local_test(m_info)
 
