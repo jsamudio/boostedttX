@@ -1,0 +1,17 @@
+"executor"       : "dask/kodiak"
+"env"            : "myenv"
+"cores-per-worker"          : 4
+"death-timeout" : 3600
+"workers"        : 1
+"scaleout"       : 50
+"worker-image"   : "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5"
+"queue"          : "econ"
+"walltime"       : "00:40:00"
+"mem-per-worker" : "4GB" # GB
+"disk_per_worker" : "1GB" # GB
+"exclusive"      : False
+"chunk"          : 400000
+"retries"        : 50
+"treereduction"  : 20
+"adaptive"          : False
+"local_virtualenv": True

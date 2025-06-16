@@ -50,7 +50,7 @@ cfg = Configurator(
                             #"ttHToNonbb",
                             #"TTZToQQ",
                             #"TTZToLLNuNu",
-                            #"TTZToBB",
+                            "TTZToBB",
                             #"TTbb_Hadronic",
                             "TTbb_SemiLeptonic",
                             #"TTbb_2L2Nu",
@@ -167,6 +167,10 @@ cfg = Configurator(
                             ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H"],
                         ),
                         ColOut(
+                            "JetGoodTruncated",
+                            ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H"],
+                        ),
+                        ColOut(
                             "JetGoodMatched",
                             ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H", "dRMatchedJet"],
                         ),
@@ -176,10 +180,10 @@ cfg = Configurator(
                         ColOut("MET", ["phi","pt","significance"]),
                         ColOut("Generator",["x1","x2","id1","id2","xpdf1","xpdf2"]),
                         ColOut("LeptonParton",["pt","eta","phi","mass","pdgId"]),
-                        ColOut("FatJetSorted",["pt", "eta", "phi", "mass", "particleNetMD_Xbb"], pos_end=1, store_size=False),
+                        ColOut("FatJetSorted",["pt", "eta", "phi", "mass", "xbbVsQCD"], pos_end=1, store_size=False),
                         ColOut(
                             "FatJetMatched",
-                            ["pt", "eta", "phi", "mass", "particleNetMD_Xbb", "dRMatchedJet"],
+                            ["pt", "eta", "phi", "mass", "particleNetMD_Xbb", "dRMatchedJet", "xbbVsQCD"],
                         ),
                         ColOut(
                             "HiggsMatched",
@@ -191,6 +195,14 @@ cfg = Configurator(
             },
             "bysample": {
                 "ttHTobb": {
+                    "bycategory": {
+                        "btag_mask": [
+                            ColOut("HiggsGen",
+                                   ["pt", "eta", "phi", "mass", "pdgId"], pos_end=1, store_size=False),
+                            ]
+                        }
+                    },
+                "TTZToBB": {
                     "bycategory": {
                         "btag_mask": [
                             ColOut("HiggsGen",

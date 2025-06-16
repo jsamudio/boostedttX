@@ -1,0 +1,6 @@
+jet_scale_factors:
+
+  jet_collection:
+    bbtag: FatJetSorted
+    
+  bbtagSF:

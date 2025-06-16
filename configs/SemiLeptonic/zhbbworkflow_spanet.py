@@ -14,7 +14,7 @@ from pocket_coffea.lib.objects import (
 )
 from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_sel, fatjet_sel2
 from custom_cut_functions import sortbyscore
-from cand_helper import zh_helper
+from cand_helper import zh_helper, ak4_truncate
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
 import dnn_model
 from applyDNN import applyDNN
@@ -109,10 +109,11 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         quarks = self.events.LHEPart[isOutgoing & isParton]
         print("quarks", ak.num(quarks, axis=-1))
 
-        # Select b-quarks at Gen level, coming from H->bb decay
-        if self._sample in ['ttHTobb', 'ttHTobb_ttToSemiLep']:
+        # Select b-quarks at Gen level, coming from Z/H->bb decay
+        # for now seeing if we reuse the higgs collection for both
+        if self._sample in ['ttHTobb', 'TTZToBB']:
             higgs = self.events.GenPart[
-                (self.events.GenPart.pdgId == 25)
+                ((self.events.GenPart.pdgId == 25) | (self.events.GenPart.pdgId == 23))
                 & (self.events.GenPart.hasFlags(['fromHardProcess']))
             ]
             higgs = higgs[ak.num(higgs.childrenIdxG, axis=2) == 2]
@@ -122,22 +123,26 @@ class ZHbbBaseProcessor (BaseProcessorABC):
                 higgs, self.events.FatJetSorted, dr_min=self.dr_min
             )
             print("Matched fatjets:", matched_fatjets)
-            
-            higgs_partons = ak.with_field(
-                ak.flatten(higgs.children, axis=2), 25, "from_part"
-            )
+
+            if self._sample in ['ttHTobb']:
+                higgs_partons = ak.with_field(
+                    ak.flatten(higgs.children, axis=2), 25, "from_part"
+                )
+            else:
+                higgs_partons = ak.with_field(
+                    ak.flatten(higgs.children, axis=2), 23, "from_part"
+                )
             # DO NOT sort b-quarks by pt
             # if not we are not able to match them with the provenance
             quarks = ak.with_name(
                 ak.concatenate((quarks, higgs_partons), axis=1),
                 name='PtEtaPhiMCandidate',
             )
+        else:
+            higgs = self.events.GenPart[
+                (self.events.GenPart.hasFlags(['fromHardProcess']))
+            ]
         print("quarks", quarks.pdgId)
-
-        higgs = self.events.GenPart[
-            (self.events.GenPart.hasFlags(['fromHardProcess']))
-        ]
-        
         # Get the interpretation
         if self._sample in ['ttHTobb', 'ttHTobb_ttToSemiLep']:
             prov = get_partons_provenance_ttHbb(
@@ -147,6 +152,15 @@ class ZHbbBaseProcessor (BaseProcessorABC):
                 self.events.LHEPart.pdgId == 25
             ]
             higgs = higgs[higgs.pdgId == 25]
+            ak8prov = 1 * ak.ones_like(higgs.pt)
+        elif self._sample in ['TTZToBB']:
+            prov = get_partons_provenance_ttHbb(
+                ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
+            ).snapshot()
+            self.events["HiggsParton"] = self.events.LHEPart[
+                self.events.LHEPart.pdgId == 23
+            ]
+            higgs = higgs[higgs.pdgId == 23]
             ak8prov = 1 * ak.ones_like(higgs.pt)
         elif self._sample == "TTbb_SemiLeptonic":
             prov = get_partons_provenance_ttbb4F(
@@ -172,7 +186,9 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         # Calling our general object_matching function.
         # The output is an awkward array with the shape of the second argument and None where there is no matching.
         # So, calling like this, we will get out an array of matched_quarks with the dimension of the JetGood.
+        # FIXME hardcoded truncation of AK4 jets for the matched jet collection
         matched_quarks, matched_jets, deltaR_matched = object_matching(
+            #quarks, self.events.JetGoodTruncated, dr_min=self.dr_min
             quarks, self.events.JetGood, dr_min=self.dr_min
         )     
         matched_higgs, matched_fatjets, deltaR_matchedAK8 = object_matching(
@@ -216,14 +232,19 @@ class ZHbbBaseProcessor (BaseProcessorABC):
                 ak.values_astype(self.events.JetGood.btagDeepFlavB > val, int),
                 f"btag_{wp}"
             )
+        #self.events.FatJetGood['xbbVsQCD'] = self.events.FatJetGood.particleNetMD_Xbb / (self.events.FatJetGood.particleNetMD_Xbb + self.events.FatJetGood.particleNetMD_QCD)
+        xbbVsQCD = self.events.FatJetGood.particleNetMD_Xbb / (self.events.FatJetGood.particleNetMD_Xbb + self.events.FatJetGood.particleNetMD_QCD)
+        self.events['FatJetGood'] = ak.with_field(self.events.FatJetGood, xbbVsQCD, 'xbbVsQCD')
 
 
     def process_extra_after_presel(self, variation):
-        self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "particleNetMD_Xbb")
+        print(self.events.FatJetGood.xbbVsQCD)
+        self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "xbbVsQCD")
         #self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
         #self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
         ### Add function to implement combinatorics now that we have the sorted list
         zh_helper(self.events)
+        ak4_truncate(self.events)
         match_gen_lep(self.events)
         if self._sample in sig:
             match_gen_sig(self.events, self._sample)

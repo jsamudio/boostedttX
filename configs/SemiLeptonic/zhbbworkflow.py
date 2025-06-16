@@ -312,9 +312,6 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         print("genWeights total: ", self.output['sum_signOf_genweights'][self._dataset])
         if 'TTbb' in self._sample:
             add_weights_to_ttbb(self.events, self._sample)
-        if self._sample in ["ttHTobb"]:
-            self.do_parton_matching_ttHbb()
-        self.count_partons()
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

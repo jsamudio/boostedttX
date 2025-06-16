@@ -1,0 +1,40 @@
+input:
+  Jet: [MASK, pt, eta, phi, sin_phi, cos_phi, btag, btag_L, btag_M, btag_H]
+  Lepton: [pt, eta, phi, sin_phi, cos_phi, is_electron]
+  Met: [pt, eta, phi, sin_phi, cos_phi]
+  FatJet: [pt, eta, phi, sin_phi, cos_phi, bbtag]
+  Event: [n_b_inZH]
+
+collection:
+  Jet: JetGood
+  FatJet: FatJetSorted
+  Lepton: LeptonGood
+  Met: MET
+  Event: events
+
+particles: [t1, t2, h]
+
+mapping_sample:
+  ttHTobb: tthbb
+  TTZToBB: ttzbb
+  tt+B: ttbb
+  tt+C: ttlf
+  tt+LF: ttlf
+
+mapping_encoding:
+  signal:
+    ttHTobb: 1
+    TTZToBB: 2
+    tt+B: 3
+    tt+C: 4
+    tt+LF: 4
+
+classification:
+  EVENT:
+    - tthbb
+    - ttzbb
+    - ttbb
+    - ttlf
+    - signal
+
+frac_train: 0.8

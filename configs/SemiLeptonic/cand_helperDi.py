@@ -110,6 +110,7 @@ def zh_helper(events):
     In general, want to output arrays of variables which are sorted by dR
     '''
     events["ZH_bbvLscore"] = ZHCand.particleNetMD_Xbb
+    events["ZH_bbvLscore"] = ZHCand.xbbVsQCD
     events["outZH_max_ak8pnetMass"] = ak.max(events.FatJetSorted.particleNet_mass[:,1:], axis=1)
 
     # ZH and AK4

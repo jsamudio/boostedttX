@@ -1,0 +1,26 @@
+input:
+  Jet: [MASK, pt, eta, phi, sin_phi, cos_phi, btag, btag_L, btag_M, btag_H]
+  Lepton: [pt, eta, phi, sin_phi, cos_phi, is_electron]
+  Met: [pt, eta, phi, sin_phi, cos_phi]
+
+collection:
+  Jet: JetGood
+  Lepton: LeptonGood
+  Met: MET
+
+particles: [t1, t2, h]
+
+mapping_sample:
+  ttHTobb: tthbb
+  tt+B: ttbb
+  tt+C: ttcc
+  tt+LF: ttlf
+
+classification:
+  EVENT:
+    - tthbb
+    - ttbb
+    - ttcc
+    - ttlf
+
+frac_train: 0.8

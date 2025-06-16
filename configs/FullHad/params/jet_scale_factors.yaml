@@ -1,0 +1,8 @@
+jet_scale_factors:
+
+  jet_collection:
+    bbtag: FatJetSorted
+    
+  bbtagSF:
+    '2017':
+      file: 'SemiLeptonic/2017_bbtag_sf.json'

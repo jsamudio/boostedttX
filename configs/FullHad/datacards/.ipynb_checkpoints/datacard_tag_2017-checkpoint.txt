@@ -1,0 +1,16 @@
+Datacard for 2017
+imax * number of bins
+jmax * number of processes minus 1
+kmax * number of nuisance paramerters
+----------------------------------------------------------------------------------------------------
+shapes data_obs * datacard_tag_2017.root $CHANNEL_data_obs
+shapes * * datacard_tag_2017.root $CHANNEL_$PROCESS $CHANNEL_$PROCESS_$SYSTEMATIC
+----------------------------------------------------------------------------------------------------
+bin                 Zhpt1 Zhpt2 Zhpt3
+observation         -1  -1  -1  
+----------------------------------------------------------------------------------------------------
+bin                 Zhpt1 Zhpt1 Zhpt1 Zhpt1 Zhpt1 Zhpt1 Zhpt1 Zhpt1 Zhpt1 Zhpt1 Zhpt2 Zhpt2 Zhpt2 Zhpt2 Zhpt2 Zhpt2 Zhpt2 Zhpt2 Zhpt2 Zhpt2 Zhpt3 Zhpt3 Zhpt3 Zhpt3 Zhpt3 Zhpt3 Zhpt3 Zhpt3 Zhpt3 Zhpt3
+process             ttH0 ttZ0 ttH1 ttZ1 ttH2 ttZ2 ttH3 ttZ3 TTBar tt_B ttH0 ttZ0 ttH1 ttZ1 ttH2 ttZ2 ttH3 ttZ3 TTBar tt_B ttH0 ttZ0 ttH1 ttZ1 ttH2 ttZ2 ttH3 ttZ3 TTBar tt_B
+process             -7 -6 -5 -4 -3 -2 -1 0 1 2 -7 -6 -5 -4 -3 -2 -1 0 1 2 -7 -6 -5 -4 -3 -2 -1 0 1 2
+rate                -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+----------------------------------------------------------------------------------------------------

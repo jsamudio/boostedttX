@@ -47,6 +47,29 @@ event_selection = Cut(
 )
 
 '''
+Leptons study event selection
+'''
+
+def lepstudy_event_selection(events, params, year, sample, **kwargs):
+    #Event selection mask
+    mask = (
+            (events.nJetGood >= 5) &
+            (events.nFatJetGood >= 1) &
+            (events.MET.pt > 20) &
+            (events.nMuonGood + events.nElectronGood == 1)
+            #(events.nSoftElectronGood < 2) &
+            #(events.nSoftMuonGood < 2)
+            )
+    # Pad None values with False
+    return ak.where(ak.is_none(mask), False, mask)
+
+lepstudy_event_selection = Cut(
+        name = "lepstudy_eventSelection",
+        params = {},
+        function = lepstudy_event_selection,
+)
+
+'''
 btag mask
 '''
 
@@ -59,6 +82,20 @@ btag_mask = Cut(
         params = {},
         function = btag_mask,
 )
+
+'''
+btag mask
+'''
+
+#def eleMVAIsoWPL_mask(events, params, year, sample, **kwargs):
+#    mask = ((events.nMuonGood + events.nElectronGood_mvaIsoWPL == 1))
+#    return ak.where(ak.is_none(mask), False, mask)
+
+#btag_mask = Cut(
+#        name = "ele_isoWPL",
+#        params = {},
+#        function = btag_mask,
+#)
 
 '''
 SFOS J/Psi veto

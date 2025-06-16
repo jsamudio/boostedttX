@@ -1,6 +1,7 @@
 import math
 import awkward as ak
 import numpy as np
+import pandas as pd
 from coffea.nanoevents.methods import vector, nanoaod
 
 deltaR = (lambda obj1_, obj2_: ak.flatten(obj1_.metric_table(obj2_)))
@@ -89,6 +90,22 @@ def match_gen_tt(events, sample):
     events['topptWeight_Up']   = toppt_rwgt_up
     events['topptWeight_Down'] = toppt_rwgt_dn
 
+def fill1e(one_d_array):
+    return pd.DataFrame.from_records(one_d_array).values.flatten()
+
+def fillne(nd_array):
+    counts_ = np.array(ak.count(nd_array))
+    rect_ , flat_ = np.full((len(nd_array),max(counts_)),np.nan), np.array(ak.flatten(nd_array))
+    def cfillne(ja, o, c):
+        rows, _ = o.shape
+        c_i = 0
+        for i in range(rows):
+            o[i,:c[i]] = ja[c_i:c_i+c[i]]
+            c_i += c[i]
+        return o
+    return cfillne(flat_, rect_, counts_)
+    #
+
 def match_gen_sig(events, sample):
     ZHCand = events.FatJetSorted[:,0]
     gen_id = events.GenPart.pdgId
@@ -132,6 +149,9 @@ def match_gen_sig(events, sample):
     events['Zqq']= (ak.sum(isZqq, axis=1) > 0)
     events['Zllnunu']= (ak.sum(isZllnunu, axis=1) > 0)
 
+    zh_pt = fill1e(gen_pt[isZH]).flatten()
+    events['genZHpt'] = zh_pt
+
     events['matchedGenZH']    = ak.sum(zh_match, axis=1) > 0
     events['matchedGen_Zbb']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isZbb,axis=1) >  0))
     events['matchedGen_Hbb']  = ((ak.sum(zh_match, axis=1) > 0) & (events['matchedGenLep']) & (ak.sum(isHbb,axis=1) >  0))
@@ -153,3 +173,31 @@ def match_gen_sig(events, sample):
         events['process'] = 'ttH'
 
     events['topptWeight']      = 1
+
+def match_tt_products(events):
+    ZHCand = events.FatJetSorted[:,0]
+    gen_id = events.GenPart.pdgId
+    gen_mom = events.GenPart.genPartIdxMother
+    gen_pt = events.GenPart.pt
+    gen_st = events.GenPart.status
+    
+    # Look at other decay products dR with respect to the ZH candidate
+
+    ispart_fromWfromtop = (((abs(gen_id) < 5)) & 
+                                   ((abs(gen_id[gen_mom[gen_mom]]) == 6) & 
+                                    (abs(gen_id[gen_mom]) ==24)))
+    
+    isbb_fromtt     = ((abs(gen_id) == 5) & (abs(gen_id[gen_mom]) == 6))
+
+    events['min_wpart_ZH_dR'] = ak.min(deltaR(ZHCand, events.GenPart[(ispart_fromWfromtop)]), axis=-1)
+    events['max_wpart_ZH_dR'] = ak.max(deltaR(ZHCand, events.GenPart[(ispart_fromWfromtop)]), axis=-1)
+    events['n_wpart_ZH_dR_0p4'] = ak.sum(deltaR(ZHCand, events.GenPart[(ispart_fromWfromtop)]) > 0.4, axis=-1)
+    events['n_wpart_ZH_dR_0p8'] = ak.sum(deltaR(ZHCand, events.GenPart[(ispart_fromWfromtop)]) > 0.8, axis=-1)
+    events['n_wpart_ZH_dR_1p2'] = ak.sum(deltaR(ZHCand, events.GenPart[(ispart_fromWfromtop)]) > 1.2, axis=-1)
+    #print("Delta R: ", events.wpart_ZH_dR)
+    events['min_topb_ZH_dR'] = ak.min(deltaR(ZHCand, events.GenPart[(isbb_fromtt)]), axis=-1)
+    events['max_topb_ZH_dR'] = ak.max(deltaR(ZHCand, events.GenPart[(isbb_fromtt)]), axis=-1)
+    events['n_topb_ZH_dR_0p4'] = ak.sum(deltaR(ZHCand, events.GenPart[(isbb_fromtt)]) > 0.4, axis=-1)
+    events['n_topb_ZH_dR_0p8'] = ak.sum(deltaR(ZHCand, events.GenPart[(isbb_fromtt)]) > 0.8, axis=-1)
+    events['n_topb_ZH_dR_1p2'] = ak.sum(deltaR(ZHCand, events.GenPart[(isbb_fromtt)]) > 1.2, axis=-1)
+    

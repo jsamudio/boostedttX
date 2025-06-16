@@ -1,0 +1,25 @@
+{
+    "TTbb_Hadronic__2017": {
+        "metadata": {
+            "das_names": "['/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM']",
+            "sample": "TTbb_Hadronic",
+            "year": "2017",
+            "isMC": "True",
+            "xsec": "9.286",
+            "part": "",
+            "nevents": "5694656",
+            "size": "14656938944"
+        },
+        "files": [
+            "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/1DD1BB46-D65F-B148-965E-8DB20A33BE8C.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/2C5102B9-7027-3E4E-836C-06A981E74AF3.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/653BA400-3833-5F48-A42F-23B3F86AB049.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/4C17381F-D004-7743-A44E-671BD3E84D4C.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/57DCB40E-7DC0-1A49-A140-4E69BD6D2A62.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/D6993B20-9974-AD42-B574-FE6CADF82731.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/DD9BC642-AF87-C144-9E6A-18B9A3EA0E2E.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/DEFFBFFE-764B-5746-9DC0-243494FE6267.root",
+"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/A2529DC7-00B6-C446-A40A-BC543359773D.root"
+        ]
+    }
+}

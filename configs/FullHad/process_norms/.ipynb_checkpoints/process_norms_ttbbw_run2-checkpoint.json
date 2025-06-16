@@ -1,0 +1,20 @@
+{
+    "2017": {
+        "TTBar": {
+            "yield": 128790.4173967287,
+            "otherVar": "test"
+        },
+        "tt_B": {
+            "yield": 14762.404289412063,
+            "otherVar": "test"
+        },
+        "ttZ": {
+            "yield": 55.49965676127865,
+            "otherVar": "test"
+        },
+        "ttH": {
+            "yield": 41.8219944460525,
+            "otherVar": "test"
+        }
+    }
+}

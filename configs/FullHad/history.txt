@@ -1,0 +1,1000 @@
+   79  tmux a -t 0
+   80  tmux a -t 4
+   81  tmux a -t 0
+   82  cd gpudev/
+   83  ll
+   84  mkdir ECALPF
+   85  cd ECALPF/
+   86  cmsinit
+   87  cmsrel CMSSW_15_0_0_pre1
+   88  cd CMSSW_15_0_0_pre1/src/
+   89  cmsenv
+   90  git cms-init
+   91  ll
+   92  git status
+   93  git cms-addpkg RecoParticleFlow/PFRecHitProducer
+   94  scram b -j 8
+   95  ll
+   96  cd RecoParticleFlow/PFRecHitProducer/
+   97  ll
+   98  tmux a -t 4
+   99  cd /cms/data/jsamudio/boosted/boostedttX/configs/spanet_inputs/
+  100  ll
+  101  tmux a -t 4
+  102  cd gpudev/ECALPF/CMSSW_15_0_0_pre1/src/
+  103  cmsinit
+  104  cd RecoParticleFlow/PFRecHitProducer/src/
+  105  cd ..
+  106  ll
+  107  cd plugins/
+  108  ll
+  109  vim alpaka/PFRecHitECALParamsESProducer.cc 
+  110  cd ..
+  111  vim test/PFRecHitProducerTest.cc 
+  112  vim test/pfRecHitProducerAlpakaValidation.py 
+  113  vim plugins/alpaka/PFRecHitECALParamsESProducer.cc 
+  114  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  115  scram b -j 8
+  116  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  117  scram b -j 8
+  118  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  119  git diff
+  120  vim interface/PFRecHitTopologyRecord.h 
+  121  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  122  vim interface/PFRecHitTopologyRecord.h 
+  123  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  124  scram b -j 8
+  125  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  126  scram b -j 8
+  127  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  128  git siff
+  129  git diff
+  130  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  131  scram b -j 8
+  132  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  133  scram b -j 8
+  134  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  135  scram b -j 8
+  136  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  137  scram b -j 8
+  138  vim interface/PFRecHitTopologySoA.h 
+  139  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  140  scram b -j 8
+  141  vim interface/PFRecHitTopologyRecord.h 
+  142  scram b -j 8
+  143  vim interface/PFRecHitTopologyRecord.h 
+  144  scram b -j 8
+  145  vim interface/PFRecHitTopologyRecord.h 
+  146  scram b -j 8
+  147  vim interface/PFRecHitTopologyRecord.h 
+  148  scram b -j 8
+  149  vim interface/PFRecHitTopologyRecord.h 
+  150  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  151  scram b -j 8
+  152  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  153  vim interface/PFRecHitTopologyRecord.h 
+  154  scram b -j 8
+  155  vim interface/PFRecHitTopologyRecord.h 
+  156  scram b -j 8
+  157  vim interface/PFRecHitTopologyRecord.h 
+  158  scram b -j 8
+  159  vim interface/PFRecHitTopologyRecord.h 
+  160  vim plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  161  scram b -j 8
+  162  vim interface/PFRecHitTopologyRecord.h 
+  163  scram b -j 8
+  164  tmux a -t 0
+  165  tmux a -t 4
+  166  cd /cms/data/jsamudio/boosted/boostedttX/
+  167  cd configs/
+  168  ll
+  169  cd spanet_inputs/options_files/
+  170  ll
+  171  vim options.json 
+  172  tmux a -t 4
+  173  cd gpudev/ECALPF/CMSSW_15_0_0_pre1/src/
+  174  cmsinit
+  175  cd RecoParticleFlow/
+  176  cd PFRecHitProducer/
+  177  ll
+  178  cd test/
+  179  ll
+  180  vim pfRecHitProducerAlpakaValidation.py 
+  181  ll /cms/data/store/relval/CMSSW_1
+  182  vim pfRecHitProducerAlpakaValidation.py 
+  183  ll /cms/data/store/relval/CMSSW_13_0_0_pre3/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/
+  184  vim pfRecHitProducerAlpakaValidation.py 
+  185  ll /cms/data/store/relval/CMSSW_13_0_0_pre3/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_130X_mcRun3_2022_realistic_v2-v1/00000/02ad4435-5510-4bd4-88f1-5f0cd67b7166.root 
+  186  vim pfRecHitProducerAlpakaValidation.py 
+  187  cp pfRecHitProducerAlpakaValidation.py testing.py
+  188  vim testing.py 
+  189  ll ../../../../cfipython/el8_amd64_gcc12/RecoParticleFlow/PFRecHitProducer/PFRecHitSoAProducerECAL_alpaka.py 
+  190  vim ../../../../cfipython/el8_amd64_gcc12/RecoParticleFlow/PFRecHitProducer/PFRecHitSoAProducerECAL_alpaka.py 
+  191  vim ../../../../cfipython/el8_amd64_gcc12/RecoParticleFlow/PFRecHitProducer/alpaka_cuda_asyncPFRecHitSoAProducerECAL_cfi.py 
+  192  vim ../../../../cfipython/el8_amd64_gcc12/RecoParticleFlow/PFRecHitProducer/alpaka_cuda_async_PFRecHitSoAProducerECAL.py 
+  193  vim ../../../../cfipython/el8_amd64_gcc12/RecoParticleFlow/PFRecHitProducer/alpaka_cuda_async_PFRecHitSoAProducerHCAL.py 
+  194  vim ../../../../cfipython/el8_amd64_gcc12/RecoParticleFlow/PFRecHitProducer/alpaka_cuda_async_PFRecHitSoAProducerECAL.py 
+  195  vim ../../../../cfipython/el8_amd64_gcc12/RecoParticleFlow/PFRecHitProducer/alpaka_cuda_async_PFRecHitSoAProducerHCAL.py 
+  196  vim testing.py 
+  197  cmsRun testing.py -c ECAL -b gpu
+  198  cd gpudev/ECALPF/CMSSW_15_0_0_pre1/src/
+  199  ll
+  200  cd RecoParticleFlow/PFRecHitProducer/test/
+  201  cd ../../
+  202  cd ..
+  203  cmsinit
+  204  cd RecoParticleFlow/PFRecHitProducer/test/
+  205  ll
+  206  cmsRun testing.py -c ECAL -b gpu
+  207  vim testing.py 
+  208  cmsRun testing.py -c ECAL -b gpu
+  209  cd ..
+  210  vim plugins/alpaka/CaloRecHitSoAProducer.cc 
+  211  git revert bf26a06620ca12daa1ee7796e0c7e0e755606059
+  212  cd ..
+  213  scram b -j 8
+  214  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitProducerKernel.dev.cc 
+  215  scram b -j 8
+  216  cd RecoParticleFlow/PFRecHitProducer/test/
+  217  cmsRun testing.py -c ECAL -b gpu
+  218  tmux a -t 0
+  219  voms-proxy-init -voms cms -rfc --valid 168:0
+  220  tmux a -t 0
+  221  tmux a -t 4
+  222  tmux a -t 0
+  223  cd /cms/data/jsamudio/boosted/boostedttX/configs/spanet_
+  224  cd /cms/data/jsamudio/boosted/boostedttX/configs
+  225  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  226  source spanetenv/bin/activate
+  227  source myenv/bin/activate
+  228  cd spanet_inputs/
+  229  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_ttHTobb__genMatch.parquet -o dec19.h5
+  230  source myenv/bin/activate
+  231  cd spanet_inputs/
+  232  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_ttHTobb__genMatch.parquet -o dec19.h5
+  233  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o dec19.h5
+  234  exit
+  235  source myenv/bin/activate
+  236  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o dec19.h5
+  237  cd spanet_inputs/
+  238  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o dec19.h5
+  239  exit
+  240  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  241  ll
+  242  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  243  vim DiLepton/dnn_model.py 
+  244  vim DiLepton/dnn_datasets.py 
+  245  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  246  vim spanet_inputs/options_files/options.json 
+  247  tmux a -t 4
+  248  ll
+  249  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  250  cd SemiLeptonic/
+  251  vim spanet_inference.py 
+  252  tmux a -t 4
+  253  tmux a -t 0
+  254  tmux a -t 4
+  255  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  256  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  257  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+  258  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  259  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  260  source spanetenv/bin/activate
+  261  cd SPANet/
+  262  source spanetenv/bin/activate
+  263  history
+  264  cd ..
+  265  ls
+  266  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:08:00:00
+  267  bash spanet_inputs/predict.sh 
+  268  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  269  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:18:00:00
+  270  bash spanet_inputs/predict.sh 
+  271  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:00:20:00
+  272  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:00:20:00 --gpu
+  273  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:00:20:00 --gpu 1
+  274  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:00:20:00
+  275  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:14:00:00
+  276  bash spanet_inputs/predict.sh 
+  277  python -m spanet.export ./spanet_output/version_5/ spanet.onnx
+  278  pip install onnx
+  279  python -m spanet.export ./spanet_output/version_5/ spanet.onnx
+  280  realpath .
+  281  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:00:02:00
+  282  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  283  cd gpudev/
+  284  ll
+  285  cd CMSSW_15_0_0_pre1/src/
+  286  ll
+  287  vim step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  288  ll
+  289  cd gpu
+  290  cd gpudev/
+  291  ll
+  292  cmsrel CMSSW_15_0_0_pre1
+  293  cmsinit
+  294  cmsrel CMSSW_15_0_0_pre1
+  295  ll
+  296  cd CMSSW_15_0_0_pre1/
+  297  cd src
+  298  ll
+  299  cmsinit
+  300  ll
+  301  git cms-init
+  302  ll
+  303  runTheMatrix.py -w upgrade -l 12434.422 --noRun
+  304  runTheMatrix.py -w upgrade -l 12434.422 --dryRun
+  305  cmsDriver.py step3  -s RAW2DIGI:RawToDigi_hcalOnly,RECO:reconstruction_hcalOnly,VALIDATION:@hcalOnlyValidation,DQM:@hcalOnly+@hcal2Only --conditions auto:phase1_2023_realistic --datatier GEN-SIM-RECO,MINIAODSIM,NANOAODSIM,DQMIO -n 10 --eventcontent RECOSIM,MINIAODSIM,NANOEDMAODSIM,DQM --geometry DB:Extended --era Run3_2023 --procModifiers alpaka --customise HeterogeneousCore/AlpakaServices/customiseAlpakaServiceMemoryFilling.customiseAlpakaServiceMemoryFilling --filein  file:step2.root  --fileout file:step3.root  --no_output > step3_TTbar_14TeV+2023_Patatrack_HCALOnlyAlpaka_Validation.log  2>&1
+  306  cmsDriver.py step3  -s RAW2DIGI:RawToDigi_hcalOnly,RECO:reconstruction_hcalOnly,VALIDATION:@hcalOnlyValidation,DQM:@hcalOnly+@hcal2Only --conditions auto:phase1_2023_realistic --datatier GEN-SIM-RECO,MINIAODSIM,NANOAODSIM,DQMIO -n 10 --eventcontent RECOSIM,MINIAODSIM,NANOEDMAODSIM,DQM --geometry DB:Extended --era Run3_2023 --procModifiers alpaka --customise HeterogeneousCore/AlpakaServices/customiseAlpakaServiceMemoryFilling.customiseAlpakaServiceMemoryFilling --filein  file:step2.root  --fileout file:step3.root  --no_exec > step3_TTbar_14TeV+2023_Patatrack_HCALOnlyAlpaka_Validation.log  2>&1
+  307  cmsDriver.py step3  -s RAW2DIGI:RawToDigi_hcalOnly,RECO:reconstruction_hcalOnly,VALIDATION:@hcalOnlyValidation,DQM:@hcalOnly+@hcal2Only --conditions auto:phase1_2023_realistic --datatier GEN-SIM-RECO,MINIAODSIM,NANOAODSIM,DQMIO -n 10 --eventcontent RECOSIM,MINIAODSIM,NANOEDMAODSIM,DQM --geometry DB:Extended --era Run3_2023 --procModifiers alpaka --customise HeterogeneousCore/AlpakaServices/customiseAlpakaServiceMemoryFilling.customiseAlpakaServiceMemoryFilling --filein  file:step2.root  --fileout file:step3.root  --no_exec > step3
+  308  ll
+  309  vim step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  310  vim step3
+  311  python step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  312  python3 step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  313  python3 -i step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  314  runTheMatrix.py -w upgrade -l 12434.422
+  315  root 12434.422_TTbar_14TeV+2023_Patatrack_HCALOnlyAlpaka_Validation/DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root 
+  316  ll
+  317  cd gpudev/ECALPF/CMSSW_15_0_0_pre1/src/
+  318  cmsinit
+  319  git status
+  320  ll
+  321  scram b -j 8
+  322  vim RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  323  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  324  vim RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  325  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  326  vim RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  327  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -C ECAL
+  328  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -- -C ECAL
+  329  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -c ECAL
+  330  ll
+  331  git status
+  332  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  333  vim RecoParticleFlow/PFRecHitProducer/interface/PFRecHitTopologyRecord.h 
+  334  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -c ECAL
+  335  l
+  336  ll
+  337  git status
+  338  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  339  vim RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  340  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  341  scram b -j 8
+  342  vim RecoParticleFlow/PFRecHitProducer/interface/PFRecHitTopologyRecord.h 
+  343  scram b -j 8
+  344  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  345  scram b -j 8
+  346  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  347  scram b -j 8
+  348  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  349  scram b -j 8
+  350  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  351  scram b -j 8
+  352  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  353  scram b -j 8
+  354  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  355  scram b -j 8
+  356  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -c ECAL
+  357  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  358  vim RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  359  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  360  scram b -j 8
+  361  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  362  scram b -j 8
+  363  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -c ECAL
+  364  git status
+  365  git diff
+  366  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  367  scram b -j 8
+  368  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -c ECAL
+  369  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitTopologyESProducer.cc 
+  370  vim RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py 
+  371  git status
+  372  git checkout -b dev_ecalGTThresh
+  373  git status
+  374  git add -u
+  375  git status
+  376  git commit -m "Add GT thresholds for ECAL"
+  377  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitProducerKernel.dev.cc 
+  378  scram b -j 8
+  379  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitProducerKernel.dev.cc 
+  380  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/CalorimeterDefinitions.h 
+  381  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitProducerKernel.dev.cc 
+  382  scram b -j 8
+  383  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -c ECAL
+  384  cd gpudev/
+  385  ll
+  386  cd ECALPF/CMSSW_15_0_0_pre1/src/
+  387  cmsinit
+  388  scram b -j 8
+  389  ll
+  390  vim RecoParticleFlow/PFRecHitProducer/test/PFRecHitProducerTest.cc 
+  391  scram b -j 8
+  392  ll
+  393  cmsRun RecoParticleFlow/PFRecHitProducer/test/pfRecHitProducerAlpakaValidation.py -c ECAL
+  394  ll
+  395  cd gpudev/ECALPF/CMSSW_15_0_0_pre1/src/
+  396  cmsinit
+  397  git status
+  398  git diff
+  399  git push my-cmssw 
+  400  git checkout from-CMSSW_15_0_0_pre1 
+  401  git checkout .
+  402  git checkout from-CMSSW_15_0_0_pre1 
+  403  git log
+  404  cd ..
+  405  git checkout -b dev_ECALPF
+  406  cd CMSSW_15_0_0_pre1/src/
+  407  git checkout -b dev_ECALPF
+  408  git fetch official-cmssw 
+  409  git cms-merge-topic #46453
+  410  git cms-merge-topic 46453
+  411  ll
+  412  vim .git/info/sparse-checkout 
+  413  git sparse-checkout update
+  414  git sparse-checkout reapply
+  415  ll
+  416  scram b -j 8
+  417  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/CaloRecHitSoAProducer.cc 
+  418  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitSoAProducer.cc 
+  419  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitProducerKernel.dev.cc 
+  420  ll
+  421  scram b -j 8
+  422  git cms-addpkg CondFormats/EcalObjects
+  423  scram b -j 8
+  424  git cms-addpkg CondFormats/DataRecord
+  425  scram b -j 8
+  426  ll
+  427  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/CalorimeterDefinitions.h 
+  428  scram b -j 8
+  429  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitProducerKernel.dev.cc 
+  430  scram b -j 8
+  431  vim RecoParticleFlow/PFRecHitProducer/plugins/alpaka/PFRecHitProducerKernel.dev.cc 
+  432  scram b -j 8
+  433  git cms-addpkg RecoParticleFlow/PFClusterProducer
+  434  vim RecoParticleFlow/PFClusterProducer/
+  435  cp RecoParticleFlow/PFClusterProducer/python/pfClusterHBHEAlpaka_cff.py RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py
+  436  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  437  cd gpudev/ECALPF/CMSSW_15_0_0_pre1/src/
+  438  ll
+  439  git status
+  440  cmsinit
+  441  ll
+  442  git status
+  443  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  444  scram b -j 8
+  445  runTheMatrix.py -w upgrade -l 12434.413
+  446  runTheMatrix.py -w upgrade -l 12434.412
+  447  vim 12434.412_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpaka/step2_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpaka.log 
+  448  vim 12434.412_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpaka/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpaka.log 
+  449  git cms-addpkg Configuration/ProcessModifiers Configuration/PyReleaseValidation
+  450  scram b -j 8
+  451  runTheMatrix.py -w upgrade -l 12434.413
+  452  ll
+  453  root 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root 
+  454  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  455  scram b -j 8
+  456  runTheMatrix.py -w upgrade -l 12434.413
+  457  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  458  ll 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/
+  459  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step4_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  460  edmDumpEventContent 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3.root 
+  461  python -i 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  462  python3 -i 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  463  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  464  vim Configuration/PyReleaseValidation/python/upgradeWorkflowComponents.py 
+  465  scram b -j 8
+  466  runTheMatrix.py -w upgrade -l 12434.413
+  467  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step4_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  468  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  469  python3 -i 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  470  cd gpudev/ECALPF/CMSSW_15_0_0_pre1/src/
+  471  ll
+  472  cmsinit
+  473  l
+  474  ll
+  475  rm -r 12434.412_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpaka/
+  476  rm -r 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpaka/
+  477  rm -r 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/
+  478  runTheMatrix.py -w upgrade -l 12434.413
+  479  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  480  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step2_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  481  python3 -i 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step2_DIGI_L1_DIGI2RAW_HLT.py 
+  482  python3 -i 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  483  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  484  runTheMatrix.py -w upgrade -l 12434.412
+  485  python3 -i 12434.412_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpaka/step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  486  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  487  vim RecoParticleFlow/PFClusterProducer/python/particleFlowCluster_cff.py 
+  488  scram b -j 8
+  489  runTheMatrix.py -w upgrade -l 12434.413
+  490  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  491  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  492  runTheMatrix.py -w upgrade -l 12434.413
+  493  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  494  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  495  cd 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/
+  496  cd ..
+  497  runTheMatrix.py -w upgrade -l 12434.413
+  498  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  499  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  500  runTheMatrix.py -w upgrade -l 12434.413
+  501  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  502  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  503  runTheMatrix.py -w upgrade -l 12434.413
+  504  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  505  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  506  runTheMatrix.py -w upgrade -l 12434.413
+  507  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  508  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  509  runTheMatrix.py -w upgrade -l 12434.413
+  510  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  511  python3 -i 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_RAW2DIGI_RECO_VALIDATION_DQM.py 
+  512  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  513  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  514  vim 12434.413_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation/step3_TTbar_14TeV+2023_Patatrack_ECALOnlyAlpakaValidation.log 
+  515  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  516  exit
+  517  bash spanet_inputs/predict.sh 
+  518  cd SPANet/
+  519  source spanetenv/bin/activate
+  520  cd ..
+  521  cd spanet_inputs/
+  522  cd ..
+  523  bash spanet_inputs/predict.sh 
+  524  exit
+  525  source myenv/bin/activate
+  526  cd spanet_inputs/
+  527  ll
+  528  ls
+  529  mkdir jan13_inputs
+  530  cp dec19_* jan13_inputs/
+  531  cd jan13_inputs/
+  532  ll
+  533  ls
+  534  rm  .
+  535  rm *
+  536  ls
+  537  cd ..
+  538  cp dec18_* jan13_inputs/
+  539  cd jan13_inputs/
+  540  ls
+  541  rm dec18_TTToSemiLeptonic__tt+B.parquet 
+  542  rm dec18_TTbb_SemiLeptonic__tt+C.parquet 
+  543  rm dec18_TTbb_SemiLeptonic__tt+LF.parquet 
+  544  ls
+  545  rm dec18_train_2895236.h5 
+  546  rm dec18_test_723810.h5 
+  547  ls
+  548  cd ..
+  549  python merge_parquet.py --input jan13_inputs/ --output jan13
+  550  python merge_parquet.py --input jan13_inputs/ --output jan13.parquet
+  551  ls
+  552  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan13.parquet -o jan13.h5
+  553  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C dec18_TTbb_SemiLeptonic__tt+B dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  554  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  555  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  556  exit
+  557  source SPANet/spanetenv/bin/activate
+  558  ls
+  559  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  560  exit
+  561  source SPANet/spanetenv/bin/activate
+  562  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  563  exit
+  564  source SPANet/spanetenv/bin/activate
+  565  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  566  exit
+  567  source SPANet/spanetenv/bin/activate
+  568  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  569  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_ttHTobb__genMatch.parquet -o test.h5
+  570  cd spanet_inputs/
+  571  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_ttHTobb__genMatch.parquet -o test.h5
+  572  exit
+  573  cd spanet_inputs/
+  574  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_ttHTobb__genMatch.parquet -o test.h5
+  575  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  576  exit
+  577  source SPANet/spanetenv/bin/activate
+  578  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  579  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  580  exit
+  581  cd spanet_inputs/
+  582  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  583  exit
+  584  source SPANet/spanetenv/bin/activate
+  585  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  586  exit
+  587  cd spanet_inputs/
+  588  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  589  exit
+  590  source SPANet/spanetenv/bin/activate
+  591  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  592  exit
+  593  source SPANet/spanetenv/bin/activate
+  594  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  595  exit
+  596  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o jan13.h5
+  597  cd spanet_inputs/
+  598  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o jan13.h5
+  599  exit
+  600  source SPANet/spanetenv/bin/activate
+  601  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  602  exit
+  603  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  604  ll
+  605  tmux ls
+  606  tmux
+  607  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  608  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+  609  ll spanet_inputs/
+  610  vim spanet_inputs/options_files/options.json 
+  611  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  612  vim RecoParticleFlow/PFClusterProducer/python/pfClusterECALAlpaka_cff.py 
+  613  vim spanet_inputs/options_files/options.json 
+  614  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  615  vim spanet_inputs/options_files/options.json 
+  616  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  617  vim spanet_inputs/options_files/options.json 
+  618  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  619  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+  620  vim spanet_inputs/options_files/options.json 
+  621  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  622  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+  623  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  624  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+  625  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  626  vim spanet_inputs/options_files/options.json 
+  627  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  628  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+  629  vim spanet_inputs/options_files/options.json 
+  630  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  631  vim spanet_inputs/options_files/options.json 
+  632  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  633  source SPANet/spanetenv/bin/activate
+  634  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  635  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o jan13.h5
+  636  cd spanet_inputs/
+  637  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o jan13.h5
+  638  exit
+  639  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  640  source SPANet/spanetenv/bin/activate
+  641  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  642  exit
+  643  cd spanet_inputs/
+  644  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o jan13.h5
+  645  cd ..
+  646  source myenv/bin/activate
+  647  cd spanet_inputs/
+  648  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18*.parquet -o jan13.h5
+  649  exit
+  650  source SPANet/spanetenv/bin/activate
+  651  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  652  exit
+  653  source myenv/bin/activate
+  654  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  655  cd spanet_inputs/
+  656  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan13.h5
+  657  exit
+  658  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  659  exit
+  660  source SPANet/spanetenv/bin/activate
+  661  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:24:00:00
+  662  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:12:00:00
+  663  exit
+  664  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  665  ll
+  666  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+  667  vim spanet_inputs/options_files/options.json 
+  668  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  669  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  670  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  671  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  672  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  673  vim spanet_inputs/options_files/options.json 
+  674  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  675  tmux
+  676  source myenv/bin/activate
+  677  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  678  exit
+  679  source myenv/bin/activate
+  680  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  681  cd spanet_inputs/
+  682  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  683  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  684  exit
+  685  source myenv/bin/activate
+  686  cd spanet_inputs/
+  687  tmux a -t 1
+  688  exit
+  689  source myenv/bin/activate
+  690  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  691  cd spanet_inputs/
+  692  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  693  exit
+  694  source myenv/bin/activate
+  695  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  696  cd spanet_inputs/
+  697  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  698  exit
+  699  cd spanet_inputs/
+  700  source myenv/bin/activate
+  701  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  702  source ../myenv/bin/activate
+  703  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  704  exit
+  705  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  706  source myenv/bin/activate
+  707  cd spanet_inputs/
+  708  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  709  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  710  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan14_TTToSemiLeptonic__tt+LF.parquet jan14_TTToSemiLeptonic__tt+C.parquet jan14_TTbb_SemiLeptonic__tt+B.parquet jan14_ttHTobb__genMatch.parquet -o jan14.h5
+  711  exit
+  712  source myenv/bin/activate
+  713  cd spanet_inputs/
+  714  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  715  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan14_TTToSemiLeptonic__tt+LF.parquet jan14_TTToSemiLeptonic__tt+C.parquet jan14_TTbb_SemiLeptonic__tt+B.parquet jan14_ttHTobb__genMatch.parquet -o jan14.h5
+  716  exit
+  717  source myenv/bin/activate
+  718  cd spanet_inputs/
+  719  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan14_TTToSemiLeptonic__tt+LF.parquet jan14_TTToSemiLeptonic__tt+C.parquet jan14_TTbb_SemiLeptonic__tt+B.parquet jan14_ttHTobb__genMatch.parquet -o jan14.h5
+  720  exit
+  721  ll
+  722  tmux ls
+  723  tmux a -t 0
+  724  tmux a -t 1
+  725  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  726  ll
+  727  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  728  voms-proxy-init -voms cms -rfc --valid 168:0
+  729  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  730  vim spanet_inputs/options_files/options.json 
+  731  tmux a -t 1
+  732  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  733  tmux a -t 1
+  734  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  735  vim spanet_inputs/options_files/options.json 
+  736  tmux a -t 1
+  737  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  738  vim spanet_inputs/options_files/options.json 
+  739  tmux a -t 1
+  740  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  741  tmux a -t 1
+  742  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  743  vim spanet_inputs/options_files/options.json 
+  744  tmux a -t 1
+  745  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  746  tmux a -t 1
+  747  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  748  tmux a -t 1
+  749  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  750  source myenv/bin/activate
+  751  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  752  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  753  cd spanet_inputs/
+  754  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  755  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  756  cd ..
+  757  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  758  tmux a -t 0
+  759  jupyter server list
+  760  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  761  ll
+  762  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  763  source myenv/bin/activate
+  764  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  765  source myenv/bin/activate
+  766  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  767  cd spanet_inputs/
+  768  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  769  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  770  cd ..
+  771  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetAK8Hbb
+  772  cd spanet_inputs/
+  773  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  774  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan14_TTToSemiLeptonic__tt+LF.parquet jan14_TTToSemiLeptonic__tt+C.parquet jan14_TTbb_SemiLeptonic__tt+B.parquet jan14_ttHTobb__genMatch.parquet -o jan14.h5
+  775  exit
+  776  source myenv/bin/activate
+  777  cd spanet_inputs/
+  778  source myenv/bin/activate
+  779  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan14_TTToSemiLeptonic__tt+LF.parquet jan14_TTToSemiLeptonic__tt+C.parquet jan14_TTbb_SemiLeptonic__tt+B.parquet jan14_ttHTobb__genMatch.parquet -o jan14.h5
+  780  python examine_hdf5.py jan14_train_7649.h5 
+  781  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan14_TTToSemiLeptonic__tt+LF.parquet jan14_TTToSemiLeptonic__tt+C.parquet jan14_TTbb_SemiLeptonic__tt+B.parquet jan14_ttHTobb__genMatch.parquet -o jan14.h5
+  782  ls
+  783  cd ..
+  784  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --executor futures -s 10 -o SemiLeptonic/SpanetAK8Hbb
+  785  cd spanet_inputs/
+  786  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetAK8Hbb/output_all.coffea -o jan14.parquet --cat btag_mask
+  787  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan14_TTToSemiLeptonic__tt+LF.parquet jan14_TTToSemiLeptonic__tt+C.parquet jan14_TTbb_SemiLeptonic__tt+B.parquet jan14_ttHTobb__genMatch.parquet jan14_ttHTobb__non_genMatch.parquet -o jan14.h5
+  788  exit
+  789  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  790  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  791  tmux a -t 1
+  792  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  793  ll
+  794  ls spanet_inputs/
+  795  vim spanet_inputs/options_files/options.json 
+  796  tmux a -t 1
+  797  source myenv/bin/activate
+  798  ll
+  799  ls
+  800  cd spanet_inputs/
+  801  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  802  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  803  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  804  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan14.h5
+  805  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan15.h5
+  806  exit
+  807  source SPANet/spanetenv/bin/activate
+  808  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:12:00:00
+  809  bash spanet_inputs/predict.sh 
+  810  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:16:00:00
+  811  ll
+  812  ls
+  813  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:16:00:00
+  814  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:00:30:00
+  815  ls
+  816  bash spanet_inputs/predict.sh 
+  817  ls
+  818  python -m spanet.train -of spanet_inputs/options_files/options.json --log_dir . --time_limit 00:12:00:00
+  819  bash spanet_inputs/predict.sh 
+  820  exit
+  821  source SPANet/spanetenv/bin/activate
+  822  cd spanet_inputs/
+  823  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan15.h5
+  824  exit
+  825  source myenv/bin/activate
+  826  cd spanet_inputs/
+  827  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan15.h5
+  828  exit
+  829  source myenv/bin/activate
+  830  cd spanet_inputs/
+  831  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan15.h5
+  832  exit
+  833  source myenv/bin/activate
+  834  cd spanet_inputs/
+  835  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan15.h5
+  836  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan15v2.h5
+  837  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i dec18_TTToSemiLeptonic__tt+LF.parquet dec18_TTToSemiLeptonic__tt+C.parquet dec18_TTbb_SemiLeptonic__tt+B.parquet dec18_ttHTobb__genMatch.parquet -o jan15v3.h5
+  838  exit
+  839  ssh gpu010
+  840  top
+  841  nvidia-smi -l 1
+  842  nvidia-smi
+  843  nvidia-smi -l
+  844  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  845  tmux a -t 1
+  846  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  847  vim spanet_inputs/options_files/options.json 
+  848  tmux a -t 1
+  849  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  850  vim SemiLeptonic/dnn_model.py 
+  851  vim spanet_inputs/options_files/options.json 
+  852  vim SemiLeptonic/dnn_model.py 
+  853  vim spanet_inputs/options_files/options.json 
+  854  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  855  vim spanet_inputs/options_files/options.json 
+  856  tmux a -t 1
+  857  vim spanet_inputs/options_files/options.json 
+  858  tmux a -t 1
+  859  vim spanet_inputs/options_files/options.json 
+  860  tmux a -t 1
+  861  vim spanet_inputs/options_files/options.json 
+  862  tmux a -t 1
+  863  vim spanet_inputs/options_files/options.json 
+  864  tmux a -t 1
+  865  ll
+  866  tmux a -t 1
+  867  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  868  ll
+  869  vim spanet_inputs/options_files/options.json 
+  870  tmux a -t 1
+  871  ll .globus/
+  872  realpath .globus/
+  873  ll
+  874  cd .globus/
+  875  ll'
+  876  ll
+  877  rm -f user*
+  878  ll
+  879  openssl pkcs12 -in CERN2025.p12 -clcerts -nokeys -out usercert.pem
+  880  openssl pkcs12 -in CERN2025.p12 -nocerts -out userkey.pem
+  881  chmod 400 usercert.pem 
+  882  chmod 400 userkey.pem 
+  883  ll
+  884  voms-proxy-init --rfc --voms cms -valid 192:00
+  885  tmux
+  886  tmux ls
+  887  tmux a -t 2
+  888  tmux a
+  889  ll
+  890  tmux a
+  891  tmux ls
+  892  tmux a -t 2
+  893  ll
+  894  exit
+  895  tmux
+  896  tmux a -t 2
+  897  tmux ls
+  898  tmux a -t 2
+  899  tmux a -t 3
+  900  tmux a -t 2
+  901  tmux a -t 3
+  902  tmux a -t 2
+  903  tmux a -t 3
+  904  source myenv/bin/activate
+  905  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetWithNB
+  906  ll
+  907  cpwd
+  908  pwd
+  909  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetWithNB/output_all.coffea -o jan28.parquet --cat btag_mask
+  910  cd spanet_inputs/
+  911  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetWithNB/output_all.coffea -o jan28.parquet --cat btag_mask
+  912  ll
+  913  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan28_TTToSemiLeptonic__tt+LF.parquet jan28_TTToSemiLeptonic__tt+C.parquet jan28_TTbb_SemiLeptonic__tt+B.parquet jan28_ttHTobb__genMatch.parquet -o jan28.h5
+  914  exit
+  915  source myenv/bin/activate
+  916  ls
+  917  ll
+  918  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --executor futures -s 12 -o SemiLeptonic/SpanetWithNB
+  919  ls
+  920  cd spanet_inputs/
+  921  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetWithNB/output_all.coffea -o jan28v2.parquet --cat btag_mask
+  922  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan28v2_TTToSemiLeptonic__tt+LF.parquet jan28v2_TTToSemiLeptonic__tt+C.parquet jan28v2_TTbb_SemiLeptonic__tt+B.parquet jan28v2_ttHTobb__genMatch.parquet -o jan28v2.h5
+  923  exit
+  924  tmux ls
+  925  tmux -t 2
+  926  tmux a -t 2
+  927  tmux a -t 3
+  928  tmux a -t 2
+  929  tmux a -t 3
+  930  tmux a -t 1
+  931  tmux a -t 0
+  932  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  933  ll
+  934  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  935  vim spanet_inputs/options_files/options.json 
+  936  tmux a -t 3
+  937  tmux a -t 1
+  938  vim spanet_inputs/options_files/options.json 
+  939  tmux a -t 1
+  940  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  941  ll
+  942  vim spanet_inputs/options_files/options.json 
+  943  tmux a -t 1
+  944  tmux a -t 2
+  945  tmux a -t 3
+  946  source SPANet/spanetenv/bin/activate
+  947  bash spanet_inputs/predict.sh 
+  948  exit
+  949  source myenv/bin/activate
+  950  cd spanet_inputs/
+  951  xit
+  952  exit
+  953  tmux a -t 1
+  954  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  955  vim spanet_inputs/options_files/options.json 
+  956  tmux a -t 1
+  957  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  958  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-fc8935c5
+  959  tmux a -t 1
+  960  cd /cms/data/jsamudio/boosted/boostedttX/configs/
+  961  apptainer shell -B /cvmfs/cms.cern.ch --bind /usr/local/cuda-11.6 --nv --bind /cms/data/$USERNAME --bind /home/$USERNAME   --bind /tmp/ --env KRB5CCNAME=$KRB5CCNAME /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmsml/cmsml:latest
+  962  source SPANet/spanetenv/bin/activate
+  963  python -m spanet.export ./spanet_output/version_23 spanet.onnx
+  964  python -m spanet.export ./spanet_output/version_27 spanet.onnx
+  965  source myenv/bin/activate
+  966  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  967  exit
+  968  tmux a -t 1
+  969  source myenv/bin/activate
+  970  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  971  pip install onnxruntime
+  972  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  973  pocket-coffea make-plots -i SemiLeptonic/SpanetInference/output_all.coffea  --cfg SemiLeptonic/SpanetInference/parameters_dump.yaml -o SemiLeptonic/SpanetInference/plots
+  974  pocket-coffea make-plots -i SemiLeptonic/SpanetInference/output_all.coffea  --cfg SemiLeptonic/SpanetInference/parameters_dump.yaml -o SemiLeptonic/SpanetInference/plots --log
+  975  pocket-coffea make-plots -i SemiLeptonic/SpanetInference/output_all.coffea  --cfg SemiLeptonic/SpanetInference/parameters_dump.yaml -o SemiLeptonic/SpanetInference/plots --log --overwrite
+  976  pocket-coffea make-plots -i SemiLeptonic/SpanetInference/output_all.coffea  --cfg SemiLeptonic/SpanetInference/parameters_dump.yaml -o SemiLeptonic/SpanetInference/plots --density --overwrite
+  977  pocket-coffea make-plots -i SemiLeptonic/SpanetInference/output_all.coffea  --cfg SemiLeptonic/SpanetInference/parameters_dump.yaml -o SemiLeptonic/SpanetInference/plots --density --overwrite
+  978  pocket-coffea make-plots --help
+  979  pocket-coffea make-plots -i SemiLeptonic/SpanetInference/output_all.coffea  --cfg SemiLeptonic/SpanetInference/parameters_dump.yaml -o SemiLeptonic/SpanetInference/plots --density --overwrite
+  980  pocket-coffea make-plots -i SemiLeptonic/SpanetInference/output_all.coffea  --cfg SemiLeptonic/SpanetInference/parameters_dump.yaml -o SemiLeptonic/SpanetInference/plots --density --log --overwrite
+  981  ll
+  982  ls
+  983  cd SemiLeptonic/
+  984  python plotDNN.py -i SpanetInference/output_all.coffea 
+  985  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  986  cd ..
+  987  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  988  cd SemiLeptonic/
+  989  python plotDNN.py -i SpanetInference/output_all.coffea 
+  990  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  991  cd ..
+  992  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  993  cd SemiLeptonic/
+  994  python plotDNN.py -i SpanetInference/output_all.coffea 
+  995  exit
+  996  source myenv/bin/activate
+  997  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInference
+  998  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 24 -o SemiLeptonic/SpanetInference
+  999  exit
+ 1000  source myenv/bin/activate
+ 1001  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 16 -o SemiLeptonic/SpanetInference
+ 1002  cd SemiLeptonic/
+ 1003  python plotSPA.py -i SpanetInference/output_all.coffea 
+ 1004  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 16 -o SemiLeptonic/SpanetInferenceGood
+ 1005  cd ..
+ 1006  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 16 -o SemiLeptonic/SpanetInferenceGood
+ 1007  python plotSPA.py -i SpanetInferenceGood/output_all.coffea 
+ 1008  cd SemiLeptonic/
+ 1009  python plotSPA.py -i SpanetInferenceGood/output_all.coffea 
+ 1010  python plotDNN.py -i GenMatchFixDNN5/output_all.coffea 
+ 1011  python plotDNN.py -i FullLepbdR/output_all.coffea 
+ 1012  python plotDNN.py -i GenMatchFixW3/output_all.coffea 
+ 1013  cd ..
+ 1014  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --test -o SemiLeptonic/SpanetWithZ
+ 1015  cd spanet_inputs/
+ 1016  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetWithZ/output_all.coffea -o ztest.parquet --cat btag_mask
+ 1017  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i ztest_TTZToBB__genMatch.parquet -o ztest.h5
+ 1018  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --executor futures -s 10 -o SemiLeptonic/SpanetWithZ
+ 1019  cd..
+ 1020  cd ..
+ 1021  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/testconf_spanet.py --executor futures -s 10 -o SemiLeptonic/SpanetWithZ
+ 1022  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetWithZ/output_all.coffea -o Jan30.parquet --cat btag_mask
+ 1023  cd spanet_inputs/
+ 1024  python coffea_to_parquet_script.py --cfg features.yaml -i ../SemiLeptonic/SpanetWithZ/output_all.coffea -o Jan30.parquet --cat btag_mask
+ 1025  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan28v2_TTToSemiLeptonic__tt+LF.parquet jan28v2_TTToSemiLeptonic__tt+C.parquet jan28v2_TTbb_SemiLeptonic__tt+B.parquet jan28v2_ttHTobb__genMatch.parquet Jan30_TTZToBB__genMatch.parquet -o jan30.h5
+ 1026  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i ztest_TTZToBB__genMatch.parquet -o ztest.h5
+ 1027  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan28v2_TTToSemiLeptonic__tt+LF.parquet jan28v2_TTToSemiLeptonic__tt+C.parquet jan28v2_TTbb_SemiLeptonic__tt+B.parquet jan28v2_ttHTobb__genMatch.parquet Jan30_TTZToBB__genMatch.parquet -o jan30.h5
+ 1028  ls
+ 1029  pwd
+ 1030  cd ..
+ 1031  pip install onnxruntime-gpu
+ 1032  python -i
+ 1033  ipython
+ 1034  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInferenceGPU
+ 1035  echo $CUDA_HOME
+ 1036  nvcc --version
+ 1037  cat /usr/local/cuda-11.6/version.json 
+ 1038  :q
+ 1039* 
+ 1040  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInferenceHZ
+ 1041  cd spanet_inputs/
+ 1042  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan28v2_TTToSemiLeptonic__tt+LF.parquet jan28v2_TTToSemiLeptonic__tt+C.parquet jan28v2_TTbb_SemiLeptonic__tt+B.parquet jan28v2_ttHTobb__genMatch.parquet Jan30_TTZToBB__genMatch.parquet -o feb1.h5
+ 1043  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 12 -o SemiLeptonic/SpanetInferenceHZ
+ 1044  cd ..
+ 1045  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 12 -o SemiLeptonic/SpanetInferenceHZ
+ 1046  python plotSPA.py -i SpanetInferenceHZ/output_all.coffea 
+ 1047  cd SemiLeptonic/
+ 1048  python plotSPA.py -i SpanetInferenceHZ/output_all.coffea 
+ 1049  python plotDNN.py -i GenMatchFixW3/output_all.coffea 
+ 1050  cd ,,
+ 1051  cd ..
+ 1052  cd spanet_inputs/
+ 1053  python parquet_to_h5.py --cfg features_spanetAK8.yaml -i jan28v2_TTToSemiLeptonic__tt+LF.parquet jan28v2_TTToSemiLeptonic__tt+C.parquet jan28v2_TTbb_SemiLeptonic__tt+B.parquet jan28v2_ttHTobb__genMatch.parquet Jan30_TTZToBB__genMatch.parquet -o feb2.h5
+ 1054  cd ..
+ 1055  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 12 -o SemiLeptonic/SpanetInferenceHZ2
+ 1056  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 12 -o SemiLeptonic/SpanetInferenceHTrain
+ 1057  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInferenceHTrain
+ 1058  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 12 -o SemiLeptonic/SpanetInferenceHTrain
+ 1059  python plotSPA.py -i /output_all.coffea 
+ 1060  cd SemiLeptonic/
+ 1061  python plotSPA.py -i SpanetInferenceHTrain/output_all.coffea 
+ 1062  python plotDNN.py -i GenMatchFixW3/output_all.coffea 
+ 1063  python massDistSpa.py --input SpanetInferenceHTrain/output_all.coffea 
+ 1064  python plotSPA.py -i SpanetInferenceHTrain/output_all.coffea 
+ 1065  python massDistSpa.py --input SpanetInferenceHTrain/output_all.coffea 
+ 1066  cd ..
+ 1067  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --test -o SemiLeptonic/SpanetInferenceHTrainFull
+ 1068  python PocketCoffea/pocket_coffea/scripts/runner.py --cfg SemiLeptonic/inference_conf.py --executor futures -s 12 -o SemiLeptonic/SpanetInferenceHTrainFull
+ 1069  cd SemiLeptonic/
+ 1070  python massDistSpa.py --input SpanetInferenceHTrainFull/output_all.coffea 
+ 1071  python plotSPA.py -i SpanetInferenceHTrainFull/output_all.coffea 
+ 1072  python plotDNN.py -i GenMatchFixW3/output_all.coffea 
+ 1073  python massDistSpa.py --input SpanetInferenceHTrainFull/output_all.coffea 
+ 1074  python massDist.py -i GenMatchFixW3/output_all.coffea 
+ 1075  python massDist.py -i FullLepbdR/output_all.coffea 
+ 1076  python massDist.py -i GenMatchFixDNN5/output_all.coffea 
+ 1077  history
+ 1078  history > history.txt

@@ -1,0 +1,113 @@
+features:
+  common:
+    PartonInitial:
+      pt: pt
+      eta: eta
+      phi: phi
+      mass: mass
+      pdgId: pdgId
+      prov: provenance
+    JetGood:
+      pt: pt
+      eta: eta
+      phi: phi
+      btag: btagDeepFlavB
+      btag_L: btag_L
+      btag_M: btag_M
+      btag_H: btag_H
+    JetGoodMatched:
+      pt: pt
+      eta: eta
+      phi: phi
+      btag: btagDeepFlavB
+      prov: provenance
+      btag_L: btag_L
+      btag_M: btag_M
+      btag_H: btag_H
+    Generator:
+      pdgid1: id1
+      pdgid2: id2
+      x1: x1
+      x2: x2
+      xpdf1: xpdf1
+      xpdf2: xpdf2
+    LeptonGenLevel:
+      pt: pt
+      eta: eta
+      phi: phi
+      mass: mass
+      pdgId: pdgId
+    LeptonGood:
+      pt: pt
+      eta: eta
+      phi: phi
+      pdgId: pdgId
+    MET:
+      pt: pt
+      phi: phi
+      sig: significance
+  by_sample:
+    ttHTobb:
+      HiggsGen:
+        pt: pt
+        eta: eta
+        phi: phi
+        m: mass
+        pdgId: pdgId
+      TopGen:
+        pt: pt
+        eta: eta
+        phi: phi
+        m: mass
+        pdgId: pdgId
+      AntiTopGen:
+        pt: pt
+        eta: eta
+        phi: phi
+        m: mass
+        pdgId: pdgId
+    ttHTobb_ttToSemiLep:
+      HiggsGen:
+        pt: pt
+        eta: eta
+        phi: phi
+        m: mass
+        pdgId: pdgId
+      TopGen:
+        pt: pt
+        eta: eta
+        phi: phi
+        m: mass
+        pdgId: pdgId
+      AntiTopGen:
+        pt: pt
+        eta: eta
+        phi: phi
+        m: mass
+        pdgId: pdgId
+
+features_pad:
+  common:
+    JetGood:
+      m: 0
+    JetGoodMatched:
+      m: 0
+    LeptonGood:
+      m: 0
+    MET:
+      m: 0
+      eta: 0
+  by_sample: {}
+
+awkward_collections:
+  - PartonInitial
+  - JetGood
+  - JetGoodMatched
+  - LeptonGenLevel
+  - HiggsGen
+  - TopGen
+  - AntiTopGen
+
+matched_collections:
+  JetGood: JetGoodMatched
+
