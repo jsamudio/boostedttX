@@ -8,8 +8,12 @@ sig_vars = ['process', 'Zbb', 'Hbb', 'Hnonbb', 'Zqq',
         'matchedGen_ZHbb_bb', 'matchedGen_ZHbb_b', 'matchedGen_ZHbb_nob',
         'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M', 'genZHpt']#, 'ZH_sdm']
 
+trim_vars = []
+
+#bkg_vars = ['process', 'tt_type',
+#        'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']#, 'ZH_sdm']
 bkg_vars = ['process', 'tt_type',
-        'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']#, 'ZH_sdm']
+        'ZH_pt', 'MET_pt', 'ZH_M']#, 'ZH_sdm']
 
 wz_bkg_vars = ['nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']
 

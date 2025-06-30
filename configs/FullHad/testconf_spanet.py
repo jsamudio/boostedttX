@@ -153,7 +153,7 @@ cfg = Configurator(
         },
         columns = {
             "common": {
-                "inclusive": [ColOut("events", ["n_b_inZH"]),
+                "inclusive": [ColOut("events", ["n_b_inZH", "ZH_pt", "ZH_M", "process", "norm_weight", "genWeight"]),
                         ColOut(
                             "Parton",
                             ["pt", "eta", "phi", "mass", "pdgId", "provenance"]
@@ -199,6 +199,7 @@ cfg = Configurator(
                         "btag_mask": [
                             ColOut("HiggsGen",
                                    ["pt", "eta", "phi", "mass", "pdgId"], pos_end=1, store_size=False),
+                            ColOut("events", ['matchedGen_ZHbb_bb']),
                             ]
                         }
                     },
@@ -207,18 +208,19 @@ cfg = Configurator(
                         "btag_mask": [
                             ColOut("HiggsGen",
                                    ["pt", "eta", "phi", "mass", "pdgId"], pos_end=1, store_size=False),
+                            ColOut("events", ['matchedGen_ZHbb_bb']),
                             ]
                         }
-                    }
+                    },
                 #"ttHTobb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
                 #"ttHToNonbb": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
                 #"TTZToQQ": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
                 #"TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
                 #"TTZToBB": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars)]},
-                #"TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                "TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.bkg_vars)]},
                 #"TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
                 #"TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
-                #"TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                "TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.bkg_vars)]},
                 #"TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
                 #"TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
             }

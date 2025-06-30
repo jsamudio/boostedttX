@@ -16,8 +16,8 @@ from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_se
 from custom_cut_functions import sortbyscore
 from cand_helperDi import zh_helper, ak4_truncate
 from genmatcher import match_gen_tt, match_gen_sig
-import dnn_model
-from applyDNN import applyDNN
+#import dnn_model
+#from applyDNN import applyDNN
 from weight_handler import calc_weight, add_weights_to_ttbb
 from coffea.analysis_tools import PackedSelection
 from pocket_coffea.lib.parton_provenance import *
