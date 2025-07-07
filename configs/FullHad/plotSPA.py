@@ -32,8 +32,8 @@ def dnn_cut(df_):
         #(df_['passNotHadLep'] == 1) & # might add
         #(df_['ZH_pt']       >= 300)& # 200
         #(df_['MET_pt']      >= 20)            &
-        (df_['ZH_M']        >= 50)            &
-        (df_['ZH_M']        <= 200)
+        #(df_['ZH_M']        >= 50)            &
+        (df_['ZH_M']        >= 00)
     )
     return base_cuts
 
@@ -73,6 +73,7 @@ bkg = ["TTbb_Hadronic__tt+B",
        #"TTbb_2L2Nu__tt+B",
        #"TTToSemiLeptonic__tt+LF",
        #"TTToSemiLeptonic__tt+C",
+       "QCD_HT",
        #"TTTo2L2Nu__tt+LF",
        #"TTTo2L2Nu__tt+C",
        "TTToHadronic__tt+LF",
@@ -132,6 +133,7 @@ class DNN_datasets:
     def __init__(self):
         self.s_df, self.b_df = self.get_sigbkg()
         self.sb_df = pd.concat([self.s_df,self.b_df])
+        print(self.sb_df)
         self.nn_bins = self.get_NN_bins()
         self.plot_dnnHist()
 
@@ -170,9 +172,9 @@ class DNN_datasets:
         #Make bkg df
 
         for i in bkg:
-            tmp = []
             for j in filein['columns'][f'{i}'].keys():
-                for var in pre_vars+['tt_type']:
+                tmp = []
+                for var in pre_vars:
                     if ((var == 'norm_weight') & ('TTbb' not in j)):
                         inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
                         inner_list = [i / genweight_df[0][f'{j}'] for i in inner_list]
@@ -182,18 +184,21 @@ class DNN_datasets:
                         inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'spanet_outputH_{var}'].value.tolist()
                     else:
                         inner_list = filein['columns'][f'{i}'][f'{j}']['btag_mask'][f'events_{var}'].value.tolist()
+                        #print(i,j)
                     tmp.append(inner_list)
-            tmp = np.transpose(np.asarray(tmp, dtype=object))
-            tmpDF = pd.DataFrame(data=tmp, columns=pre_vars+['tt_type'])
-            dfList.append(tmpDF)
+                tmp = np.transpose(np.asarray(tmp, dtype=object))
+                #print(len(tmp[0].keys()))
+                tmpDF = pd.DataFrame(data=tmp, columns=pre_vars)
+                dfList.append(tmpDF)
         b_df = pd.concat(dfList, ignore_index=True)
+        print(b_df)
 
         #s_df = s_df[s_df[genmatchreq] == True]
         #s_df['sigVsbkg'] = (s_df['ttzbb'] + s_df['tthbb'])/(s_df['ttzbb']+s_df['ttbb']+s_df['ttlf']+s_df['tthbb'])
         #s_df['sigVsbkg'] = s_df['signal']
         #s_df['sigVsbkg'] = (s_df['ttzbb'] + s_df['tthbb'])/(s_df['ttbb']+s_df['ttcc']+s_df['ttlf'])
         #s_df['sigVsbkg'] = s_df[['tthbb', 'ttzbb']].max(axis=1)
-        b_df = b_df[(b_df['process'] == 'TTBar') | (b_df['process'] == 'tt_B')]
+        b_df = b_df[(b_df['process'] == 'TTBar') | (b_df['process'] == 'tt_B') | (b_df['process'] == 'QCD')]
         #b_df['sigVsbkg'] = (b_df['ttzbb'] + b_df['tthbb'])/(b_df['ttzbb']+b_df['ttbb']+b_df['ttlf']+b_df['tthbb'])
         #b_df['sigVsbkg'] = b_df['signal']
         b_df[genmatchreq] = False
@@ -210,7 +215,7 @@ class DNN_datasets:
         cuts = dnn_cut(self.sb_df)
         #plotcut = plot_cut(self.sb_df)
         sig = ['ttZ', 'ttH']
-        bkg = ['tt_B', 'TTBar']
+        bkg = ['tt_B', 'TTBar', 'QCD']
         sumS = []
         sumB = []
 
@@ -219,12 +224,13 @@ class DNN_datasets:
                 "tt_B" : r'$\mathsf{t\bar{t}+b\bar{b}}$',
                 "ttZ" : r'$\mathsf{t\bar{t}Z}$',
                 "ttH" : r'$\mathsf{t\bar{t}H}$',
-                "vjets": r'$\mathsf{V+jets}$'
+                "vjets": r'$\mathsf{V+jets}$',
+                "QCD": r'$\mathsf{QCD}$'
         }
 
         for i in sig + bkg:
             norm_weight = np.asarray(self.sb_df[cuts & (self.sb_df['process'] == i)]['norm_weight'].to_numpy(), dtype = float)
-            print(i, np.unique(self.sb_df[(self.sb_df['process'] == i)]['norm_weight'],return_counts=True))
+            #print(i, np.unique(self.sb_df[(self.sb_df['process'] == i)]['norm_weight'],return_counts=True))
             weight = np.asarray(self.sb_df[cuts & (self.sb_df['process'] == i)]['genWeight'].to_numpy(), dtype = float)
             #topptWeight = np.asarray(self.sb_df[cuts & (self.sb_df['process'] == i)]['topptWeight'].to_numpy(), dtype = float)
 
@@ -260,15 +266,15 @@ class DNN_datasets:
                 sumS.append(n)
             elif i in bkg:
                 sumB.append(n)
-            print(i, np.sum(n))
+            print(i, n)
 
         #vals = pd.DataFrame(np.concatenate(sumS))
         #print(vals)
-        print(np.sum(sumS,axis=0), np.sum(sumB,axis=0))
+        #print(np.sum(sumS,axis=0), np.sum(sumB,axis=0))
         sumS = np.sum(sumS,axis=0)
         sumB = np.sum(sumB,axis=0)
         bin_c = (bins[1:]+bins[:-1])/2
-        print("SoSqrtB", sumS/np.sqrt(sumB))
+        #print("SoSqrtB", sumS/np.sqrt(sumB))
         #ax2.errorbar(x=bin_c, y = sumS/np.sqrt(sumB), xerr=(bins[1:]-bins[:-1])/2,
         #        fmt='.', color='k', label=r'S/$\sqrt{\mathrm{B}}$')
         #ax2.xaxis.set_minor_locator(AutoMinorLocator())
@@ -277,7 +283,7 @@ class DNN_datasets:
         #ax2.tick_params(which='both', direction='in', top=True, right=True, labelsize=10)
         #ax2.set_ylabel(r'$\mathrm{S/}\sqrt{\mathrm{B}}$', fontsize=10)
         #ax2.yaxis.set_label_coords(-0.12,0.45)
-        ax.set_xlabel(r'SPANet Score', fontsize=10)
+        ax.set_xlabel(r'ZH_pt', fontsize=10)
         #ax2.grid(True)
         #ax2.text(0.15,0.25, r'$\mathsf{S/\sqrt{B}}$', fontsize=10)
 
@@ -299,7 +305,7 @@ class DNN_datasets:
             wspace=0.2)
         hep.cms.label("Work in progress", loc=0, ax=ax, fontsize=10)
 
-        plt.savefig("pdf/FH_ZH_pt_test.pdf", bbox_inches='tight')
+        plt.savefig("pdf/FH_ZH_pt_test_QCD.pdf", bbox_inches='tight')
 
     def get_NN_bins(self):
         #cuts = dnn_cut(self.sb_df)
