@@ -14,10 +14,10 @@ from pocket_coffea.lib.objects import (
 )
 from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_sel, fatjet_sel2
 from custom_cut_functions import sortbyscore
-from cand_helper import zh_helper
-from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_tt_products
-import dnn_model
-from applyDNN import applyDNN
+from cand_helperDi import zh_helper
+from genmatcher import match_gen_tt, match_gen_sig
+#import dnn_model
+#from applyDNN import applyDNN
 from weight_handler import calc_weight, add_weights_to_ttbb
 from coffea.analysis_tools import PackedSelection
 from pocket_coffea.lib.parton_provenance import *
@@ -298,11 +298,13 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         #bbtag_sf = sf_btag(self.params, self.event.FatJetGood, self._year, njets=self.events.nFatJetGood, 
         print("BTAG SF: ", btag_sf.keys())
         zh_helper(self.events)
-        match_gen_lep(self.events)
         if self._sample in sig:
             match_gen_sig(self.events, self._sample)
-        else:
+        if (("TTbb" in self._sample) | ("TTTo" in self._sample)):
             match_gen_tt(self.events, self._sample)
+        if "QCD_HT" in self._sample:
+            self.events['process'] = "QCD"
+            self.events['topptWeight'] = 1
             #self.get_ttbb_LHE_info()
         #match_tt_products(self.events)
         #applyDNN(self.events)
@@ -319,9 +321,10 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalanced24.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalancedNoTTCC.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalancedXbbVsQCD.onnx")
-        self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanet_uscms.onnx")
+        #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanet_uscms.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalancedTruncated.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalancedAssignment.onnx")
+        #FIXME add FH inference here
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

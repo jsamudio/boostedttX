@@ -17,7 +17,7 @@ bkg_vars = ['process', 'tt_type',
 
 wz_bkg_vars = ['nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M']
 
-weight_vars = ['genWeight', 'norm_weight', 'topptWeight', 'nAK4inAK8']
+weight_vars = ['genWeight', 'norm_weight', 'topptWeight']#, 'nAK4inAK8']
                #'ele_reco_sf', 'ele_reco_sfup', 'ele_reco_sfdown',
                #'ele_id_sf', 'ele_id_sfup', 'ele_id_sfdown',
                #'mu_id_sf', 'mu_id_sfup', 'mu_id_sfdown',
@@ -55,7 +55,7 @@ NN_vars = [
     #'l_b1_invM','l_b2_invM',
     #'l_b1_dr','l_b2_dr',
     #
-    'spher','aplan',
+    #'spher','aplan',
     'n_b_inZH', 'n_q_inZH',
     'n_b_outZH', 'n_q_outZH', "ZH_bbvLscore"]#, 'min_wpart_ZH_dR', 'max_wpart_ZH_dR', 'n_wpart_ZH_dR_0p4', 'n_wpart_ZH_dR_0p8', 'n_wpart_ZH_dR_1p2', 'min_topb_ZH_dR', 'max_topb_ZH_dR', 'n_topb_ZH_dR_0p4', 'n_topb_ZH_dR_0p8', 'n_topb_ZH_dR_1p2']
     #'ttzbb', 'tthbb', 'ttbb', 'ttlf', 'ttcc']

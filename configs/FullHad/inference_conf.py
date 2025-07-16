@@ -44,7 +44,8 @@ cfg = Configurator(
                       f"{localdir}/datasets/TTbb_SemiLeptonic.json",
                       f"{localdir}/datasets/TTToHadronic.json",
                       f"{localdir}/datasets/TTTo2L2Nu.json",
-                      f"{localdir}/datasets/TTToSemiLeptonic.json"
+                      f"{localdir}/datasets/TTToSemiLeptonic.json",
+                      f"{localdir}/datasets/QCD_HT.json"
                 ],
             "filter": {
                 "samples":  [
@@ -59,6 +60,7 @@ cfg = Configurator(
                             "TTToHadronic",
                             "TTTo2L2Nu",
                             "TTToSemiLeptonic",
+                            "QCD_HT"
                 ],
                 "samples_exclude": [],
                 "year": ['2017']
@@ -187,16 +189,17 @@ cfg = Configurator(
                         #    "JetGoodMatched",
                         #    ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H", "dRMatchedJet"],
                         #),
-                        ColOut("LeptonGood",
-                               ["pt","eta","phi", "pdgId", "charge", "mvaTTH"],
-                               pos_end=1, store_size=False),
+                        #ColOut("LeptonGood",
+                        #       ["pt","eta","phi", "pdgId", "charge", "mvaTTH"],
+                        #       pos_end=1, store_size=False),
                         ColOut("MET", ["phi","pt","significance"]),
                         #ColOut("Generator",["x1","x2","id1","id2","xpdf1","xpdf2"]),
                         #ColOut("LeptonParton",["pt","eta","phi","mass","pdgId"]),
                         ColOut("FatJetSorted",["pt", "eta", "phi", "mass", "particleNetMD_Xbb"], pos_end=1, store_size=False),
                         #ColOut("spanet_outputZ", ["ttzbb"], flatten=False),
                         #ColOut("spanet_outputH", ["ttzbb", "tthbb", "ttbb", "ttlf"], flatten=False),
-                        ColOut("spanet_outputH", ["signal"], flatten=False),
+                        #FIXME add the signal output again
+                        #ColOut("spanet_outputH", ["signal"], flatten=False),
                 ],
                 
                 "bycategory": {}
@@ -223,12 +226,13 @@ cfg = Configurator(
                 "TTZToQQ": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars+["genZHpt"])]},
                 "TTZToLLNuNu": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars+["genZHpt"])]},
                 "TTZToBB": {"inclusive": [ColOut("events", outvars.NN_vars+outvars.sig_vars+["genZHpt"])]},
-                "TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B', "ttbb_full_ht"]+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B', "ttbb_full_ht"]+outvars.NN_vars+outvars.bkg_vars)]},
-                "TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B', "ttbb_full_ht"]+outvars.NN_vars+outvars.bkg_vars)]},
+                "TTbb_Hadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                "TTbb_SemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                "TTbb_2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
                 "TTToHadronic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
                 "TTTo2L2Nu": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
                 "TTToSemiLeptonic": {"inclusive": [ColOut("events", ['tt_B']+outvars.NN_vars+outvars.bkg_vars)]},
+                "QCD_HT": {"inclusive": [ColOut("events", outvars.wz_bkg_vars)]},
             }
         }
         )
