@@ -42,7 +42,8 @@ cfg = Configurator(
                       f"{localdir}/datasets/TTbb_SemiLeptonic.json",
                       f"{localdir}/datasets/TTToHadronic.json",
                       f"{localdir}/datasets/TTTo2L2Nu.json",
-                      f"{localdir}/datasets/TTToSemiLeptonic.json"
+                      f"{localdir}/datasets/TTToSemiLeptonic.json",
+                      f"{localdir}/datasets/QCD_HT.json"
                 ],
             "filter": {
                 "samples":  [
@@ -55,6 +56,7 @@ cfg = Configurator(
                             #"TTbb_SemiLeptonic",
                             #"TTbb_2L2Nu",
                             "TTToHadronic",
+                            "QCD_HT"
                             #"TTTo2L2Nu",
                             #"TTToSemiLeptonic",
                 ],
@@ -166,10 +168,10 @@ cfg = Configurator(
                             "JetGood",
                             ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H"],
                         ),
-                        ColOut(
-                            "JetGoodTruncated",
-                            ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H"],
-                        ),
+                        #ColOut(
+                        #    "JetGoodTruncated",
+                        #    ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H"],
+                        #),
                         ColOut(
                             "JetGoodMatched",
                             ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H", "dRMatchedJet"],

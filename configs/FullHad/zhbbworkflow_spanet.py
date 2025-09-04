@@ -26,6 +26,72 @@ from pocket_coffea.lib.deltaR_matching import object_matching
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
 
+@njit
+def get_partons_provenance_qcd(pdgIds, array_builder):
+    """
+    Pdg Ids can be found here: https://twiki.cern.ch/twiki/bin/view/Main/PdgId
+    These are used for provenance in ttHbb; here we shouldn't have to 
+    worry about higgs, but other flavors of quark pairs can show up.
+    """
+    
+    """
+    10 = gluon
+    11 = quark (any flavor)
+    """
+    for ids in pdgIds:
+        from_part = [-1] * len(ids)
+        
+        # We want to look at outgoing partons, so we skip the first two
+        offset = 0
+        if len(ids) == (offset + 2):
+            # Case where we get either gluon scattering or fusion into quark pair
+            for p in range(len(ids)):
+                from_part[p] = 10 if ids[offset + p] == 21 else 11
+            '''
+            if 21 in ids[offset:len(ids)]:
+                # Gluon scattering
+                from_part[0] = 10
+                from_part[1] = 10
+            else:
+                # Quark pair
+                from_part[0] = 11
+                from_part[1] = 11
+            '''
+            
+        elif len(ids) == (offset + 3):
+            # Case where we get three gluons or gluon plus a quark pair
+            
+            if min(ids[offset:len(ids)]) < 21:
+                # Quark pair either preceded or followed by a gluon
+                for p in range(len(ids)):
+                    from_part[p] = 10 if ids[offset + p] == 21 else 11
+            else:
+                # Three gluons
+                for p in range(len(ids)):
+                    from_part[p] = 10 if ids[offset + p] == 21 else 11
+        elif len(ids) == (offset + 4):
+            # Case where we get: four gluons, or two quark pairs, or a quark pair plus two gluons
+            if min(ids[offset:len(ids)]) == 21:
+                # Four gluons
+                for p in range(len(ids)):
+                    from_part[p] = 10 if ids[offset + p] == 21 else 11
+            elif min(ids[offset:len(ids)]) < 21:
+                # Two quark pairs
+                for p in range(len(ids)):
+                    from_part[p] = 10 if ids[offset + p] == 21 else 11
+            else:
+                # Quark pair preceded or followed by two gluons
+                for p in range(len(ids)):
+                    from_part[p] = 10 if ids[offset + p] == 21 else 11
+        else:
+            print(len(ids))
+            raise ValueError("QCD jet found with either less than 1 or more than 4 partons.")
+        array_builder.begin_list()
+        for i in from_part:
+            array_builder.append(i)
+        array_builder.end_list()
+    return array_builder
+
 class ZHbbBaseProcessor (BaseProcessorABC):
     def __init__(self, cfg: Configurator):
         super().__init__(cfg)
@@ -101,6 +167,9 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         #self.events['MET_pt'] = self.events.MET.pt
         #self.events['MET_eta'] = self.events.LeptonGood.eta
         #self.events['MET_phi'] = self.events.MET.phi
+
+
+
         
     def do_parton_matching(self) -> ak.Array:
         # Selects quarks at LHE level
@@ -169,6 +238,11 @@ class ZHbbBaseProcessor (BaseProcessorABC):
             ak8prov = -1 * ak.ones_like(higgs.pt)
         elif self._sample == "TTToHadronic":
             prov = get_partons_provenance_tt5F(
+                ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
+            ).snapshot()
+            ak8prov = -1 * ak.ones_like(higgs.pt)
+        elif self._sample == "QCD_HT":
+            prov = get_partons_provenance_qcd(
                 ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
             ).snapshot()
             ak8prov = -1 * ak.ones_like(higgs.pt)
@@ -248,8 +322,10 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         #match_gen_lep(self.events)
         if self._sample in sig:
             match_gen_sig(self.events, self._sample)
-        else:
+        if (("TTbb" in self._sample) | ("TTTo" in self._sample)):
             match_gen_tt(self.events, self._sample)
+        if "QCD_HT" in self._sample:
+            self.events['process'] = "QCD"
         #applyDNN(self.events)
         calc_weight(self.events, self.output, self._dataset, self.params)
         print("XSEC: ", self.events.metadata['xsec'])
