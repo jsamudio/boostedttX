@@ -57,8 +57,8 @@ class ParquetDataset:
 
         if len(datasets) == 0:
             raise ValueError(f"No dataset found for sample {sample}.")
-        if len(datasets) > 1:
-            raise ValueError(f"Multiple datasets found for sample {sample}.\nDatasets: {datasets}")
+        #if len(datasets) > 1:
+        #    raise ValueError(f"Multiple datasets found for sample {sample}.\nDatasets: {datasets}")
 
         return datasets
 
