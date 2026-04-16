@@ -1,0 +1,142 @@
+default_jets_calibration:
+  variations:
+    absolute_and_pileup:
+      AK4PFPuppi:
+        '2024':
+          - JES_AbsoluteStat
+          - JES_AbsoluteScale
+          - JES_AbsoluteMPFBias
+          - JES_PileUpDataMC
+          - JES_PileUpPtRef
+          - JES_PileUpPtBB
+          - JES_PileUpPtEC1
+          - JES_PileUpPtEC2
+          - JES_PileUpPtHF
+      AK8PFPuppi:
+        '2024':
+          - JES_AbsoluteStat
+          - JES_AbsoluteScale
+          - JES_AbsoluteMPFBias
+          - JES_PileUpDataMC
+          - JES_PileUpPtRef
+          - JES_PileUpPtBB
+          - JES_PileUpPtEC1
+          - JES_PileUpPtEC2
+          - JES_PileUpPtHF
+    relative_kinematics:
+      AK4PFPuppi:
+        '2024':
+          - JES_RelativeBal
+          - JES_RelativeSample
+          - JES_RelativeJEREC1
+          - JES_RelativeJEREC2
+          - JES_RelativeJERHF
+          - JES_RelativePtBB
+          - JES_RelativePtEC1
+          - JES_RelativePtEC2
+          - JES_RelativePtHF
+      AK8PFPuppi:
+        '2024':
+          - JES_RelativeBal
+          - JES_RelativeSample
+          - JES_RelativeJEREC1
+          - JES_RelativeJEREC2
+          - JES_RelativeJERHF
+          - JES_RelativePtBB
+          - JES_RelativePtEC1
+          - JES_RelativePtEC2
+          - JES_RelativePtHF
+    stats_modeling_jer:
+      AK4PFPuppi:
+        '2024':
+          - JES_RelativeFSR
+          - JES_RelativeStatFSR
+          - JES_RelativeStatEC
+          - JES_RelativeStatHF
+          - JES_PileUpMuZero
+          - JES_PileUpEnvelope
+          - JES_FlavorQCD
+          - JES_Fragmentation
+          - JES_SinglePionECAL
+          - JES_SinglePionHCAL
+          - JES_TimePtEta
+          - JER
+      AK8PFPuppi:
+        '2024':
+          - JES_RelativeFSR
+          - JES_RelativeStatFSR
+          - JES_RelativeStatEC
+          - JES_RelativeStatHF
+          - JES_PileUpMuZero
+          - JES_PileUpEnvelope
+          - JES_FlavorQCD
+          - JES_Fragmentation
+          - JES_SinglePionECAL
+          - JES_SinglePionHCAL
+          - JES_TimePtEta
+          - JER
+    full_variations:
+      AK4PFPuppi:
+        '2024':
+          - JES_AbsoluteStat
+          - JES_AbsoluteScale
+          - JES_AbsoluteMPFBias
+          - JES_RelativeJEREC1
+          - JES_RelativeJEREC2
+          - JES_RelativeJERHF
+          - JES_RelativePtBB
+          - JES_RelativePtEC1
+          - JES_RelativePtEC2
+          - JES_RelativePtHF
+          - JES_RelativeBal
+          - JES_RelativeSample
+          - JES_RelativeFSR
+          - JES_RelativeStatFSR
+          - JES_RelativeStatEC
+          - JES_RelativeStatHF
+          - JES_PileUpDataMC
+          - JES_PileUpPtRef
+          - JES_PileUpPtBB
+          - JES_PileUpPtEC1
+          - JES_PileUpPtEC2
+          - JES_PileUpPtHF
+          - JES_PileUpMuZero
+          - JES_PileUpEnvelope
+          - JES_FlavorQCD
+          - JES_Fragmentation
+          - JES_SinglePionECAL
+          - JES_SinglePionHCAL
+          - JES_TimePtEta
+          - JER
+      AK8PFPuppi:
+        '2024':
+          - JES_AbsoluteStat
+          - JES_AbsoluteScale
+          - JES_AbsoluteMPFBias
+          - JES_RelativeJEREC1
+          - JES_RelativeJEREC2
+          - JES_RelativeJERHF
+          - JES_RelativePtBB
+          - JES_RelativePtEC1
+          - JES_RelativePtEC2
+          - JES_RelativePtHF
+          - JES_RelativeBal
+          - JES_RelativeSample
+          - JES_RelativeFSR
+          - JES_RelativeStatFSR
+          - JES_RelativeStatEC
+          - JES_RelativeStatHF
+          - JES_PileUpDataMC
+          - JES_PileUpPtRef
+          - JES_PileUpPtBB
+          - JES_PileUpPtEC1
+          - JES_PileUpPtEC2
+          - JES_PileUpPtHF
+          - JES_PileUpMuZero
+          - JES_PileUpEnvelope
+          - JES_FlavorQCD
+          - JES_Fragmentation
+          - JES_SinglePionECAL
+          - JES_SinglePionHCAL
+          - JES_TimePtEta
+          - JER

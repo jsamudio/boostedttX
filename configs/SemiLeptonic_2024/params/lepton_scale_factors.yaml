@@ -1,0 +1,39 @@
+lepton_scale_factors:
+  electron_sf:
+    id:
+      cutBasedTight: Tight
+    trigger_sf:
+      '2017':
+        name: sf_Ele32_EleHT
+        file: "${config_dir:}/trigger_sf/sf_trigger_electron_etaSC_pt_leading_2017_2017_Ele32_EleHT_pass.json"
+  muon_sf:
+    collection: MuonGood
+    sf_name:
+      '2017':
+        id: NUM_MediumID_DEN_TrackerMuons
+        iso: NUM_LooseRelIso_DEN_MediumID
+        trigger: NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight
+        reco: NUM_TrackerMuons_DEN_genTracks
+      '2024':
+        id: NUM_MediumID_DEN_TrackerMuons
+        iso: NUM_MediumMiniIso_DEN_MediumID
+        trigger: NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdMedium_and_PFIsoMedium # We may need to rederive this
+    JSONfiles:
+      2016_PreVFP:
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2016preVFP_UL/muon_Z.json.gz
+      2016_PostVFP:
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2016postVFP_UL/muon_Z.json.gz
+      '2017':
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2017_UL/muon_Z.json.gz
+      '2018':
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2018_UL/muon_Z.json.gz
+      2022_preEE:
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2022_Summer22/muon_Z.json.gz
+      2022_postEE:
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2022_Summer22EE/muon_Z.json.gz
+      2023_preBPix:
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2023_Summer23/muon_Z.json.gz
+      2023_postBPix:
+        file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/2023_Summer23BPix/muon_Z.json.gz
+      '2024':
+        file: /cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/latest/muon_Z.json.gz

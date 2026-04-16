@@ -1,0 +1,34 @@
+[
+    {
+        "channel": "Zhpt1",
+        "process": "ttH1"
+    },
+    {
+        "channel": "Zhpt1",
+        "process": "ttH2"
+    },
+    {
+        "channel": "Zhpt1",
+        "process": "ttH3"
+    },
+    {
+        "channel": "Zhpt2",
+        "process": "ttH1"
+    },
+    {
+        "channel": "Zhpt2",
+        "process": "ttH2"
+    },
+    {
+        "channel": "Zhpt2",
+        "process": "ttH3"
+    },
+    {
+        "channel": "Zhpt3",
+        "process": "ttH2"
+    },
+    {
+        "channel": "Zhpt3",
+        "process": "ttH3"
+    }
+]

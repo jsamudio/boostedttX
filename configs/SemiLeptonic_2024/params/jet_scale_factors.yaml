@@ -1,0 +1,15 @@
+jet_scale_factors:
+
+  jet_collection:
+    bbtag: FatJetSorted
+    
+  bbtagSF:
+    '2017':
+      file: 'SemiLeptonic/mycorrections.json'
+      wp: 'L'
+      name: 'particleNetMD_XbbvsQCD_main'
+
+  vetomaps:
+    '2017':
+        file: ${cvmfs:Summer19UL17_V1,JME,jetvetomaps.json.gz}
+        name: "Summer19UL17_V1"
