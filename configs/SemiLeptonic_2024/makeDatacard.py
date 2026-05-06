@@ -78,14 +78,14 @@ class MakeDataCard:
                #'bbtag_sf', 
                   'bbtag_sfup', 'bbtag_sfdown',
                #'btag_sf',
-               'btag_sfhf', 'btag_sfhf_up', 'btag_sfhf_down',
-               'btag_sflf', 'btag_sflf_up', 'btag_sflf_down',
-               'btag_sfhfstats1', 'btag_sfhfstats1_up', 'btag_sfhfstats1_down',
-               'btag_sfhfstats2', 'btag_sfhfstats2_up', 'btag_sfhfstats2_down',
-               'btag_sflfstats1', 'btag_sflfstats1_up', 'btag_sflfstats1_down',
-               'btag_sflfstats2', 'btag_sflfstats2_up', 'btag_sflfstats2_down',
-               'btag_sfcferr1', 'btag_sfcferr1_up', 'btag_sfcferr1_down',
-               'btag_sfcferr2', 'btag_sfcferr2_up', 'btag_sfcferr2_down',
+               #'btag_sfhf', 'btag_sfhf_up', 'btag_sfhf_down',
+               #'btag_sflf', 'btag_sflf_up', 'btag_sflf_down',
+               #'btag_sfhfstats1', 'btag_sfhfstats1_up', 'btag_sfhfstats1_down',
+               #'btag_sfhfstats2', 'btag_sfhfstats2_up', 'btag_sfhfstats2_down',
+               #'btag_sflfstats1', 'btag_sflfstats1_up', 'btag_sflfstats1_down',
+               #'btag_sflfstats2', 'btag_sflfstats2_up', 'btag_sflfstats2_down',
+               #'btag_sfcferr1', 'btag_sfcferr1_up', 'btag_sfcferr1_down',
+               #'btag_sfcferr2', 'btag_sfcferr2_up', 'btag_sfcferr2_down',
                #'puWeight', 
                 'puWeight_up', 'puWeight_down',
                'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
@@ -103,7 +103,9 @@ class MakeDataCard:
     accepted_data = ['data_obs']
     all_sys_samples = ['ttZ_jesAbsoluteStatUp', 'ttZ_jesAbsoluteStatDown']
 
+    # directory where the output goes
     dc_dir = './datacards'
+    # tags the file name
     tag = 'run3test_'
 
     def __init__(self,
@@ -141,11 +143,33 @@ class MakeDataCard:
         self.sig  = [f'{sig}_{y}'   for sig  in self.sig  for y in self.years]
         self.bkg  = [f'{bkg}_{y}'   for bkg  in self.bkg  for y in self.years]
         self.data = [f'{data}_{y}'  for data in self.data for y in self.years]
+        
+        # Define all Shape Systematics you want to load
+        # In get_data() and add_Systematics()
+        
+        base_shape_sys = ["JES_RelativePtEC2Up"] # Add all 30 here
+        
+        # Build the actual list with prefixes
+        shape_sys_names = []
+        for sys in base_shape_sys:
+            shape_sys_names.append(f"AK4PFPuppi_{sys}")
+            shape_sys_names.append(f"AK8PFPuppi_{sys}")
+        
+        # Build the list of expected systematic samples (e.g., ttZ_2024_JERUp)
+        # Apply these to your required MC (e.g., ttz_sig + tth_sig + ttbar_mc)
+        affected_mc = ['ttZ', 'ttH', 'TTBar', 'tt_B'] 
+        self.sys_samples = [f'{mc}_{y}_{sys}{ud}' 
+                            for mc in affected_mc 
+                            for y in self.years 
+                            for sys in shape_sys_names 
+                            for ud in ['Up', 'Down']]
+        
+        all_samples = self.sig + self.bkg + self.data + self.sys_samples
+        
         pool = Pool(6)
-        all_samples = self.sig+self.bkg+self.data
-        #print(all_samples)
         results = pool.map(self.worker, all_samples)
         pool.close()
+        
         for results in results:
             if results is None: continue
             for key, value in results.items(): # should be one
@@ -158,77 +182,47 @@ class MakeDataCard:
         
 
     def worker(self, process):
-        #y = re.search(r'201\d',process).group()
         y = '2024'
-        p_vars = None
-        p_vars = self.sig_v if process in self.sig else self.bkg_v
-        p_vars = p_vars
-        # add rate uncertanties to the processing
+        
+        is_signal = any(sig_base in process for sig_base in ['ttH', 'ttZ'])
+        p_vars = self.sig_v if is_signal else self.bkg_v
+        # ------------------------------------------------------------------------
         if 'TTBar' in process : p_vars = p_vars + ['tt_type']
         if 'tt_B' in process : p_vars = p_vars + ['tt_type']
         if 'data'  in process : p_vars = p_vars + ['tt_type']
-        #print(process.replace(f'_{y}', ''))
+        
         return self.updatedict(process.replace(f'_{y}', ''), p_vars, y)
 
     def updatedict(self, p, v, y=''):
-        if p in self.all_sys_samples:
-            v = [var for var in v if var not in self.weight_sys] # save memory
-            df = pd.read_pickle(f'pickled/topitx/{p}_val.pkl').filter(items=v)
-            print(df.keys())
-        else:
-            if p in ['ttZ', 'ttH', 'tt_B', 'TTBar']: #, 'VJets']:
-                v += [''] # add in a bunch of the pdf weights
-            #df = pd.read_pickle(f'pickled/SpanetInferenceTruncated_{p}.pkl').filter(items=v)
-            #df = pd.read_pickle(f'pickled/SpanetInferenceDoubleWithGenPt_{p}.pkl').filter(items=v)
-            #df = pd.read_pickle(f'pickled/SpanetInferenceAssignment_{p}.pkl').filter(items=v)
-            #df = pd.read_pickle(f'pickled/SpanetBalanced24SDM_{p}.pkl').filter(items=v)
-            #df = pd.read_pickle(f'pickled/SpanetNoTTCC_{p}.pkl').filter(items=v)
-            #df = pd.read_pickle(f'pickled/DNNInference_{p}.pkl').filter(items=v)
-            #df = pd.read_pickle(f'pickled/XbbVsQCD_{p}.pkl').filter(items=v)
-            #df = pd.read_pickle(f'pickled/DataCardSys_{p}.pkl').filter(items=v)
-            df = pd.read_pickle(f'pickled/Inference_{p}.pkl').filter(items=v)
-            #print(p)
-            #print(df)
-            df = df[cuts(df)]
-            #print(df)
-        # Next add the mu_rf, isr/fsr, pdf 3 siga, etc. but we don't have it currently
-        df = df.astype({k:'float32' for k in df if df[k].dtype == 'float64'}) # memory saving operation
+        # p comes in as 'ttZ' or 'ttZ_JERUp'
+        
+        # Determine if this is a systematic run by checking if the file exists
+        filepath = f'pickled/Inference_{p}.pkl'
+        
+        if not os.path.exists(filepath):
+            # If the specific process/syst variation doesn't exist, skip it
+            return {}
+
+        df = pd.read_pickle(filepath).filter(items=v)
+        df = df[cuts(df)]
+        
+        df = df.astype({k:'float32' for k in df if df[k].dtype == 'float64'}) 
         df.loc[:,'ZH_pt'] = df['ZH_pt'].clip(pt_bins[0]+1, pt_bins[-1]+1)
         df['pt_bin'] = pd.cut(df['ZH_pt'], bins=pt_bins+[np.inf], labels=[i_bin for i_bin in range(len(pt_bins))])
-        #print(df)
+        
         df = df[self.cut(df)]
-        #df = df[(df[nn] > 0.0)])
         group = df.groupby(by='process')
         
-        if 'data_obs' not in p: # Data -> data_obs
-            for n,g in group:
-                if n not in ['ttZ', 'ttH'] + self.accepted_bkg:
-                    df.drop(g.index, inplace=True)
-        group = df.groupby(by='process')
-       # del df #FIXME
-        # then extract systematics (for which there are none currently)
-        sys = ''
-        data_dict = {}
-        if p in self.all_sys_samples: 
-            #print(p)
-            if __name__ != '__main__': return data_dict
-            sys =  '_'+p.split('_')[-1] # format [process_name]_[systype]
-            #print(sys)
-            if 'sys' in p: # hdamp and UE here
-                data_dict.update({f"{n}_{y}_hdamp{'_ttbb' if 'ttbb' in p else ''}Up": g[g['sample'].str.contains('hdampUp')] for n,g in group})
-                data_dict.update({f"{n}_{y}_hdamp{'_ttbb' if 'ttbb' in p else ''}Down": g[g['sample'].str.contains('hdampDown')] for n,g in group})
-                if 'ttbb' not in p:
-                    data_dict.update({f'{n}_{y}_UEUp': g[g['sample'].str.contains('UEUp')] for n,g in group})
-                    data_dict.update({f'{n}_{y}_UEDown': g[g['sample'].str.contains('UEDown')] for n,g in group})
-                return data_dict
-        # ... working on sys
-        data_dict = {f"{n.replace('Data', 'data_obs')}_{y}{sys}": g for n,g in group}
-        #data_dict = {f"{n}_{y}{sys}": g for n,g in group}
-        #print(data_dict)
+        # Because we already separated the PKLs by process in outputToPkl, 
+        # this dataframe only has ONE process in it, but we group to maintain your dictionary structure
+        
+        sys_suffix = ""
+        # Extract the systematic suffix (e.g., _JERUp) if it exists in 'p'
+        if "Up" in p or "Down" in p:
+            base_proc = p.split('_')[0] if not 'tt_B' in p else 'tt_B'
+            sys_suffix = "_" + p.replace(f"{base_proc}_", "")
 
-        if not data_dict:
-            process_name = p.replace('Data', 'data_obs')
-            data_dict = {f"{process_name}_{y}{sys}": df}
+        data_dict = {f"{n.replace('Data', 'data_obs')}_{y}{sys_suffix}": g for n,g in group}
         return data_dict
 
     def process_sig(self, data_dict_, y='2024'):
@@ -250,7 +244,8 @@ class MakeDataCard:
             #data_dict_[f"{s_pre}0{sig_name.replace(s_pre, '')}"] = df[df['genZHpt'] >= self.pt_bins[-1]]
             data_dict_.pop(sig_name)
         #print(data_dict_)
-            
+
+    # this is in datacard shaped
     #def getZhbbWeight(self, df_, year):
     #    tot_weight = (df_['norm_weight'] * np.sign(df_['genWeight']) * df_['topptWeight'] * 
     #              df_['ele_reco_sf'] * df_['ele_id_sf'] * df_['mu_id_sf'] * df_['mu_iso_sf'] *
@@ -306,13 +301,14 @@ class MakeDataCard:
         for y in self.years:
             self.dc_dict[y].write(str2write)
     def add_Systematics(self):
+        # Most of these are placeholders to ensure the functionality actually works. Any rates are based on the full Run 2 analysis datacard
         all_mc = self.accepted_sig + self.accepted_bkg
         all_but_ttbb = self.accepted_sig + ['TTBar'] #,'ttX','VJets','single_t']
         tth_sig = [s for s in self.accepted_sig if 'ttH' in s]
         ttz_sig = [s for s in self.accepted_sig if 'ttZ' in s]
         ttbar_mc = ['TTBar','tt_B']
         #jec_mc   = ttbar_mc + ['single_t'] + tth_sig + ttz_sig FIXME
-        jec_mc   = ttz_sig
+        jec_mc   = all_mc
         #
         self.write2dc(f'# Rate uncertainties\n')
         # new lumi
@@ -348,13 +344,27 @@ class MakeDataCard:
         # Shape Systematics
         self.write2dc(100*'-'+'\n')
         self.write2dc('# Shape uncertainties \n')
+        # Define the exact same list you used in get_data
+        # In get_data() and add_Systematics()
+        
+        base_shape_sys = ["JES_RelativePtEC2"] # Add all 30 here
+        
+        # Build the actual list with prefixes
+        shape_sys_names = []
+        for sys in base_shape_sys:
+            shape_sys_names.append(f"AK4PFPuppi_{sys}")
+            shape_sys_names.append(f"AK8PFPuppi_{sys}")
+        
+        # Register them as JEC shapes
+        for sys in shape_sys_names:
+            self.histos = ShapeSystematic(sys, 'shape', 'jec', jec_mc, 1, f'{sys}Up', f'{sys}Down').get_shape()
         #ShapeSystematic.set_df_histos_histfuncs(self.data_dict, self.histos)#, self.hist3d, self.ptclip)
         # when defining shape, must incluse whether it is a mcsta, scale, or up/down syst
         # correlation is determined via having the same across datacards
-        # for y in self.years:
-        #     # lepton sfs
-        #     self.histos = ShapeSystematic(f'ele_id_sf_{y}', 'shape', 'up/down', all_mc, 1, 'ele_id_sfup','ele_id_sfdown').get_shape()
-        #     self.histos = ShapeSystematic(f'ele_reco_sf_{y}', 'shape', 'up/down', all_mc, 1, 'ele_reco_sfup','ele_reco_sfdown').get_shape()
+        for y in self.years:
+            # lepton sfs
+            self.histos = ShapeSystematic(f'ele_id_sf_{y}', 'shape', 'up/down', all_mc, 1, 'ele_id_sfup','ele_id_sfdown').get_shape()
+            self.histos = ShapeSystematic(f'ele_reco_sf_{y}', 'shape', 'up/down', all_mc, 1, 'ele_reco_sfup','ele_reco_sfdown').get_shape()
             
         #     # btag sfs
         #     self.histos = ShapeSystematic(f'btag_sf_hf_{y}', 'shape', 'up/down', all_mc, 1, 'btag_sfhf_up','btag_sfhf_down').get_shape()
@@ -371,27 +381,27 @@ class MakeDataCard:
         #     # jec
         # self.histos = ShapeSystematic(f'jesAbsoluteStat', 'shape', 'qconly', jec_mc, 1, extraQC=True).get_shape()
             
-        # #self.histos = ShapeSystematic(f'toppt', 'shape', 'up/down', ttbar_mc, 1, 'topptWeight_Up' ,'topptWeight_Down').get_shape() # using hacky unc. FIXME
-        # self.histos = ShapeSystematic(f'mu_id_sf', 'shape', 'up/down', all_mc, 1, 'mu_id_sfup','mu_id_sfdown').get_shape()
-        # self.histos = ShapeSystematic(f'mu_iso_sf', 'shape', 'up/down', all_mc, 1, 'mu_iso_sfup','mu_iso_sfdown').get_shape()
-        # self.histos = ShapeSystematic(f'mu_reco_sf', 'shape', 'up/down', all_mc, 1, 'mu_reco_sfup','mu_reco_sfdown').get_shape()
-        # self.histos = ShapeSystematic(f'isr_tt', 'shape', 'ps', ['TTBar'], 1, 'isr_up','isr_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'fsr_tt', 'shape', 'ps', ['TTBar'], 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'isr_tth', 'shape', 'normup/down', tth_sig, 1, 'isr_up','isr_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'isr_ttz', 'shape', 'normup/down', ttz_sig, 1, 'isr_up','isr_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'fsr_tth', 'shape', 'normup/down', tth_sig, 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'fsr_ttz', 'shape', 'normup/down', ttz_sig, 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic('isr_ttbb', 'shape', 'ps', ['tt_B'], 1, 'isr_up','isr_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic('fsr_ttbb', 'shape', 'ps', ['tt_B'], 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
+        #self.histos = ShapeSystematic(f'toppt', 'shape', 'up/down', ttbar_mc, 1, 'topptWeight_Up' ,'topptWeight_Down').get_shape() # using hacky unc. FIXME
+        self.histos = ShapeSystematic(f'mu_id_sf', 'shape', 'up/down', all_mc, 1, 'mu_id_sfup','mu_id_sfdown').get_shape()
+        self.histos = ShapeSystematic(f'mu_iso_sf', 'shape', 'up/down', all_mc, 1, 'mu_iso_sfup','mu_iso_sfdown').get_shape()
+        #self.histos = ShapeSystematic(f'mu_reco_sf', 'shape', 'up/down', all_mc, 1, 'mu_reco_sfup','mu_reco_sfdown').get_shape()
+        self.histos = ShapeSystematic(f'isr_tt', 'shape', 'ps', ['TTBar'], 1, 'isr_up','isr_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'fsr_tt', 'shape', 'ps', ['TTBar'], 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'isr_tth', 'shape', 'normup/down', tth_sig, 1, 'isr_up','isr_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'isr_ttz', 'shape', 'normup/down', ttz_sig, 1, 'isr_up','isr_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'fsr_tth', 'shape', 'normup/down', tth_sig, 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'fsr_ttz', 'shape', 'normup/down', ttz_sig, 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic('isr_ttbb', 'shape', 'ps', ['tt_B'], 1, 'isr_up','isr_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic('fsr_ttbb', 'shape', 'ps', ['tt_B'], 1, 'fsr_up','fsr_down', extraQC=True).get_shape()
 
-        # self.histos = ShapeSystematic(f'mu_r_tt', 'shape', 'normup/down', ['TTBar'], 1, 'mu_r_up','mu_r_down').get_shape()
-        # self.histos = ShapeSystematic(f'mu_f_tt', 'shape', 'normup/down', ['TTBar'], 1, 'mu_f_up','mu_f_down').get_shape()
-        # self.histos = ShapeSystematic(f'mu_r_tth', 'shape', 'normup/down', tth_sig, 1, 'mu_r_up','mu_r_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'mu_f_tth', 'shape', 'normup/down', tth_sig, 1, 'mu_f_up','mu_f_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'mu_r_ttz', 'shape', 'normup/down', ttz_sig, 1, 'mu_r_up','mu_r_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic(f'mu_f_ttz', 'shape', 'normup/down', ttz_sig, 1, 'mu_f_up','mu_f_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic('mu_r_ttbb', 'shape', 'normup/down', ['tt_B'], 1, 'mu_r_up','mu_r_down', extraQC=True).get_shape()
-        # self.histos = ShapeSystematic('mu_f_ttbb', 'shape', 'normup/down', ['tt_B'], 1, 'mu_f_up','mu_f_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'mu_r_tt', 'shape', 'normup/down', ['TTBar'], 1, 'mu_r_up','mu_r_down').get_shape()
+        self.histos = ShapeSystematic(f'mu_f_tt', 'shape', 'normup/down', ['TTBar'], 1, 'mu_f_up','mu_f_down').get_shape()
+        self.histos = ShapeSystematic(f'mu_r_tth', 'shape', 'normup/down', tth_sig, 1, 'mu_r_up','mu_r_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'mu_f_tth', 'shape', 'normup/down', tth_sig, 1, 'mu_f_up','mu_f_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'mu_r_ttz', 'shape', 'normup/down', ttz_sig, 1, 'mu_r_up','mu_r_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic(f'mu_f_ttz', 'shape', 'normup/down', ttz_sig, 1, 'mu_f_up','mu_f_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic('mu_r_ttbb', 'shape', 'normup/down', ['tt_B'], 1, 'mu_r_up','mu_r_down', extraQC=True).get_shape()
+        self.histos = ShapeSystematic('mu_f_ttbb', 'shape', 'normup/down', ['tt_B'], 1, 'mu_f_up','mu_f_down', extraQC=True).get_shape()
         
         Systematic('UE'         , 'lnN', ['TTBar'], 1.01, 0.99) # from .2 %
         Systematic('hdamp'      , 'lnN', ['TTBar'], 1.049, 0.954)
@@ -413,8 +423,8 @@ class MakeDataCard:
         #self.write2dc('theo group = CMS_ttbbnorm tt2bxsec ttCxsec hdamp_ttbb hdamp UE toppt pdf_ttbb pdf alphas\n')
         #self.write2dc('theo group = CMS_ttbbnorm hdamp_ttbb hdamp UE toppt\n')
         self.write2dc('theo group = CMS_ttbbnorm hdamp_ttbb hdamp UE\n')
-        #self.write2dc('theo group += mu_f_ttbb mu_r_ttbb mu_f_tt mu_r_tt mu_f_tth mu_r_tth mu_f_ttz mu_r_ttz\n')
-        #self.write2dc('theo group += isr_ttbb fsr_ttbb isr_tt fsr_tt isr_tth fsr_tth isr_ttz fsr_ttz\n')
+        self.write2dc('theo group += mu_f_ttbb mu_r_ttbb mu_f_tt mu_r_tt mu_f_tth mu_r_tth mu_f_ttz mu_r_ttz\n')
+        self.write2dc('theo group += isr_ttbb fsr_ttbb isr_tt fsr_tt isr_tth fsr_tth isr_ttz fsr_ttz\n')
         #self.write2dc('theo group += tth_ggpdf ttz_ggpdf tth_qsc ttz_qsc ggpdf qqpdf qgpdf tt_qsc ttx_qsc singlet_qsc v_qsc\n')
         #
         
@@ -731,33 +741,46 @@ class ShapeSystematic(Systematic): # Class to handle Datacard shape systematics
     def handleQC(self):
         for process in self.ids:
             for y in self.years:
-                nom     = np.float32(self.histos[f'{process}_{y}']['sumw'])
-                nom_err = np.sqrt(np.float32(self.histos[f'{process}_{y}']['sumw2']))
-                #print(f'{process}_{y}_{self.name}Up')
-                if re.search(r'(jms)|(jmr)', self.name) is not None and f'{process}_{y}_{self.name}Up' not in self.histos:
+                nom_key = f'{process}_{y}'
+
+                # SAFEGUARD 1: Check if the nominal process survived cuts at all
+                if nom_key not in self.histos:
+                    continue
+
+                nom     = np.float32(self.histos[nom_key]['sumw'])
+                nom_err = np.sqrt(np.float32(self.histos[nom_key]['sumw2']))
+
+                if re.search(r'(jms)|(jmr)', self.name) is not None and f'{nom_key}_{self.name}Up' not in self.histos:
                     tmp_name = re.search(r'(jms)|(jmr)', self.name).group()+f'_{y}'
-                    self.histos[f'{process}_{y}_{self.name}Up'] = {'sumw':[], 
-                                                                   'sumw2':self.histos[f'{process}_{y}_{tmp_name}Up']['sumw2']}     # need to initiate 
-                    self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw':[], 
-                                                                     'sumw2':self.histos[f'{process}_{y}_{tmp_name}Down']['sumw2']}
                 else:
                     tmp_name = self.name
-                up   = np.float32(self.histos[f'{process}_{y}_{tmp_name}Up']['sumw'])
-                down = np.float32(self.histos[f'{process}_{y}_{tmp_name}Down']['sumw'])
+
+                up_key = f'{nom_key}_{tmp_name}Up'
+                down_key = f'{nom_key}_{tmp_name}Down'
+
+                # SAFEGUARD 2: If the systematic variation was wiped out by cuts, fall back to nominal
+                if up_key not in self.histos:
+                    self.histos[up_key] = {'sumw': np.copy(nom), 'sumw2': np.copy(nom_err**2)}
+                if down_key not in self.histos:
+                    self.histos[down_key] = {'sumw': np.copy(nom), 'sumw2': np.copy(nom_err**2)}
+
+                up   = np.float32(self.histos[up_key]['sumw'])
+                down = np.float32(self.histos[down_key]['sumw'])
+                
                 # Step 1: kill_sys for bins where the stat err is larger than the nominal
                 up   = np.where(nom<nom_err, nom, up)   
                 down = np.where(nom<nom_err, nom, down)
+                
                 # Step 3: one_sided_sys
-                #one_sided_sys = (((UpRatio > 1) & (DownRatio > 1)) | ((UpRatio < 1) & (DownRatio < 1)))
                 is_onesided = (( (up > nom) & (down > nom) ) | ( (up < nom) & (down < nom) ))
                 geo_mean = np.sqrt( up * down )
                 up , down = np.where(is_onesided, np.divide(up*nom, geo_mean) , up), np.where(is_onesided, np.divide(down*nom, geo_mean) , down) 
-                #
-                up, down = np.where((np.isinf(up)) | (np.isnan(up)), nom, up), np.where((np.isinf(down)) | (np.isnan(down)), nom, down) # handle cases where div by zero goes to inf
+                
+                up, down = np.where((np.isinf(up)) | (np.isnan(up)), nom, up), np.where((np.isinf(down)) | (np.isnan(down)), nom, down) 
                 
                 # save hists 
-                self.histos[f'{process}_{y}_{self.name}Up']['sumw']   = up     # handle nan later
-                self.histos[f'{process}_{y}_{self.name}Down']['sumw'] = down   # handle nan later in TH1
+                self.histos[up_key]['sumw']   = up      
+                self.histos[down_key]['sumw'] = down
         
     def handle_extraQC(self):
         for process in self.ids:

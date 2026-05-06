@@ -14,9 +14,10 @@ import functools
 
 def getZhbbWeight(df_, year):
     print(df_.keys())
-    tot_weight = (df_['norm_weight'] * np.sign(df_['genWeight'] * df_['topptWeight'])) # * 
-                  #df_['ele_reco_sf'] * df_['ele_id_sf'] * df_['mu_id_sf'] * df_['mu_iso_sf'] *
-                  #df_['bbtag_sf'] * df_['btag_sf'] * df_['puWeight']) # and other weights
+    tot_weight = (df_['norm_weight'] * np.sign(df_['genWeight'] * df_['topptWeight']) * 
+                  df_['ele_reco_sf'] * df_['ele_id_sf'] * df_['mu_id_sf'] * df_['mu_iso_sf'] *
+                  #df_['bbtag_sf'] * df_['btag_sf'] *
+                  df_['puWeight']) # and other weights
     return tot_weight
 
 def weighted_quantile(values, quantiles, sample_weight=None,
@@ -75,14 +76,7 @@ class DataCardShapes():
         
     def init_hist_funcs(self):
         for y in  self.years:
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/SpanetInferenceTruncated_{s}.pkl'))
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/SpanetInferenceDoubleWithGenPt_{s}.pkl'))
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/SpanetInferenceAssignment_{s}.pkl'))
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/SpanetBalanced24SDM_{s}.pkl'))
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/SpanetNoTTCC_{s}.pkl'))
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/DNNInference_{s}.pkl'))
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/XbbVsQCD_{s}.pkl'))
-            #get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/DataCardSys_{s}.pkl'))
+            # The file path is hardcoded, sorry, this should really be a CLI argument
             get_pickle= (lambda s: pd.read_pickle(f'{self.file_dir}/Inference_{s}.pkl'))
             df = pd.concat([get_pickle(s) for s in self.ref_samples], axis='rows', ignore_index=True)
             #print(df)
