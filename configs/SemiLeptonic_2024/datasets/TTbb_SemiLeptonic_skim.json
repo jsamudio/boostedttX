@@ -1,0 +1,20 @@
+{
+  "TTBBtoLNu2Q_2024": {
+    "metadata": {
+      "das_names": "['/TTBBtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM']",
+      "sample": "TTbb_SemiLeptonic",
+      "year": "2024",
+      "isMC": "True",
+      "xsec": "17.36875",
+      "nevents": "3194013",
+      "size": "11499248006",
+      "skim_efficiency": "0.14212414302026902",
+      "skim_rescale_genweights": "7.384139",
+      "isSkim": "True"
+    },
+    "files": [
+      "file:/cms/data/store/user/jsamudio/NanoAODv15/skimmed//TTBBtoLNu2Q_2024/TTBBtoLNu2Q_2024_1.root",
+      "file:/cms/data/store/user/jsamudio/NanoAODv15/skimmed//TTBBtoLNu2Q_2024/TTBBtoLNu2Q_2024_2.root"
+    ]
+  }
+}

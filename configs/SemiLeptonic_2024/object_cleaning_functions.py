@@ -242,7 +242,7 @@ def jet_selection_custom(events, jet_type, params, year, leptons_collection="", 
     elif jet_type == "FatJet":
         # Apply the msd and preselection cuts
         regressed_mass = events.FatJet.globalParT3_massCorrX2p * events.FatJet.mass * (1 - events.FatJet.rawFactor)
-        mask_msd = regressed_mass > cuts["mass"]
+        mask_msd = (regressed_mass > cuts["mass_min"]) & (regressed_mass < cuts["mass_max"])
         mask_good_jets = mask_presel & mask_msd & mask_lepton_cleaning
 
         if jet_tagger != "":

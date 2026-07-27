@@ -40,10 +40,10 @@ cfg = Configurator(
                       f"{localdir}/datasets/TTZToQQ.json",
                       #f"{localdir}/datasets/TTZToLLNuNu.json",
                       #f"{localdir}/datasets/TTbb_Hadronic.json",
-                      #f"{localdir}/datasets/TTbb_2L2Nu.json",
+                      f"{localdir}/datasets/TTbb_2L2Nu.json",
                       f"{localdir}/datasets/TTbb_SemiLeptonic.json",
                       #f"{localdir}/datasets/TTToHadronic.json",
-                      #f"{localdir}/datasets/TTTo2L2Nu.json",
+                      f"{localdir}/datasets/TTTo2L2Nu.json",
                       f"{localdir}/datasets/TTToSemiLeptonic.json"
                 ],
             "filter": {
@@ -172,10 +172,10 @@ cfg = Configurator(
                             "JetGood",
                             ["pt", "eta", "phi", "hadronFlavour", "btagB"],
                         ),
-                        ColOut(
-                            "JetGoodTruncated",
-                            ["pt", "eta", "phi", "hadronFlavour", "btagB"],
-                        ),
+                        # ColOut(
+                        #     "JetGoodTruncated",
+                        #     ["pt", "eta", "phi", "hadronFlavour", "btagB"],
+                        # ),
                         ColOut(
                             "JetGoodMatched",
                             ["pt", "eta", "phi", "hadronFlavour", "btagB", "dRMatchedJet"],

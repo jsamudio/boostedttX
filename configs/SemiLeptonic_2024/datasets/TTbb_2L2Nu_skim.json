@@ -1,0 +1,20 @@
+{
+  "TTBBto2L2Nu_2024": {
+    "metadata": {
+      "das_names": "['/TTBBto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM']",
+      "sample": "TTbb_2L2Nu",
+      "year": "2024",
+      "isMC": "True",
+      "xsec": "3.74766",
+      "nevents": "2346709",
+      "size": "8368300246",
+      "skim_efficiency": "0.1877487960025589",
+      "skim_rescale_genweights": "5.502128",
+      "isSkim": "True"
+    },
+    "files": [
+      "file:/cms/data/store/user/jsamudio/NanoAODv15/skimmed//TTBBto2L2Nu_2024/TTBBto2L2Nu_2024_1.root",
+      "file:/cms/data/store/user/jsamudio/NanoAODv15/skimmed//TTBBto2L2Nu_2024/TTBBto2L2Nu_2024_2.root"
+    ]
+  }
+}

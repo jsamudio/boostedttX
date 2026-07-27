@@ -5,7 +5,7 @@
             "sample": "DYJets",
             "year": "2024",
             "isMC": "True",
-            "xsec": "17230",
+            "xsec": "5743",
             "nevents": "403551955",
             "size": "472662027831"
         },
@@ -2443,7 +2443,7 @@
             "sample": "DYJets",
             "year": "2024",
             "isMC": "True",
-            "xsec": "5481",
+            "xsec": "1827",
             "nevents": "494826377",
             "size": "976059230727"
         },
@@ -5277,7 +5277,7 @@
             "sample": "DYJets",
             "year": "2024",
             "isMC": "True",
-            "xsec": "17410",
+            "xsec": "5803",
             "nevents": "465720002",
             "size": "531247131720"
         },
@@ -8370,7 +8370,7 @@
             "sample": "DYJets",
             "year": "2024",
             "isMC": "True",
-            "xsec": "5447",
+            "xsec": "1815",
             "nevents": "530955854",
             "size": "865536530579"
         },
@@ -11577,7 +11577,7 @@
             "sample": "DYJets",
             "year": "2024",
             "isMC": "True",
-            "xsec": "17420",
+            "xsec": "5806",
             "nevents": "487548385",
             "size": "523952628663"
         },
@@ -14541,7 +14541,7 @@
             "sample": "DYJets",
             "year": "2024",
             "isMC": "True",
-            "xsec": "5448",
+            "xsec": "1816",
             "nevents": "534679865",
             "size": "829909019407"
         },

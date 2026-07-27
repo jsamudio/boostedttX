@@ -1,4 +1,21 @@
 default_jets_calibration:
+  factory_config_clib:
+    AK4PFPuppi:
+      "2024":
+        json_path: /cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-12-02/jet_jerc.json.gz
+        jec_mc: Summer24Prompt24_V2_MC
+        jec_data: Summer24Prompt24_V2_DATA
+        jer: Summer23BPixPrompt23_RunD_JRV1_MC
+        level: L1L2L3Res
+
+    AK8PFPuppi:
+      "2024":
+        json_path: /cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-12-02/fatJet_jerc.json.gz
+        jec_mc: Summer24Prompt24_V2_MC
+        jec_data: Summer24Prompt24_V2_DATA
+        jer: Summer23BPixPrompt23_RunD_JRV1_MC
+        level: L1L2L3Res 
+
   variations:
     absolute_and_pileup:
       AK4PFPuppi:
@@ -140,3 +157,12 @@ default_jets_calibration:
           - JES_SinglePionHCAL
           - JES_TimePtEta
           - JER
+jet_scale_factors:
+  jet_collection:
+    btag: JetGood
+    ctag: JetGood
+    puId: JetGood
+  btagSF:
+    '2024':
+      file: /cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/latest/btagging.json.gz
+      name: UParTAK4_comb

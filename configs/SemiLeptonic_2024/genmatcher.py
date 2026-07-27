@@ -79,10 +79,10 @@ def match_gen_tt(events, sample):
     tt_pt = gen_pt[(abs(gen_id) == 6)]
     # Using the newer theo (NNLO QCD + NLO EW) corrections which is better for BSM analysis aspects
     sf = (lambda x: 0.103*np.exp(-0.0118*np.clip(x,0,np.inf)) - 0.000134*np.clip(x,0,np.inf) + 0.973) #https://twiki.cern.ch/twiki/bin/viewauth/CMS/TopPtReweighting#Case_3_3_The_Effective_Field_The
-
+    sf13p6 = (lambda x: 0.991 - 0.000075*np.clip(x,0,np.inf))
     #https://indico.cern.ch/event/904971/contributions/3857701/attachments/2036949/3410728/TopPt_20.05.12.pdf'
     # the theo toppt event re-weighting unc. is based on [1, w**2] where w is the event reweighting
-    toppt_rwgt = np.sqrt(sf(tt_pt[:,0]) * sf(tt_pt[:,1]))
+    toppt_rwgt = np.sqrt(sf13p6(sf(tt_pt[:,0])) * sf13p6(sf(tt_pt[:,1]))) # modified for 13p6 TeV based on TOP-25-018
     toppt_rwgt_up = np.where(toppt_rwgt > 1.0, toppt_rwgt**2,  1.0)
     toppt_rwgt_dn = np.where(toppt_rwgt < 1.0, toppt_rwgt**2,  1.0)
     events['tt_pt1'], events['tt_pt2'] = tt_pt[:,0], tt_pt[:,1]

@@ -6,6 +6,8 @@ object_preselection:
         mass: 50
         jetId: 2
         msd: 50
+        mass_min: 50
+        mass_max: 200
     Jet:
         dr_lepton: 0.4
         pt: 30

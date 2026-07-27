@@ -23,6 +23,21 @@ precut = Cut(
         function = precut,
 )
 
+def inc_precut(events, params, year, sample, **kwargs):
+    #Precut Mask
+    mask = (
+            (ak.num(events.Muon) + ak.num(events.Electron) >= 1) &
+            (ak.num(events.Jet) >= 3) &
+            (events.PuppiMET.pt >= 10) )
+    # Pad None values with False
+    return ak.where(ak.is_none(mask), False, mask)
+
+inc_precut = Cut(
+        name = "preSkimCut",
+        params = {},
+        function = inc_precut,
+)
+
 def network_cut(events, params, year, sample, **kwargs):
     #Event selection mask
     mask = (
@@ -50,7 +65,7 @@ def event_selection(events, params, year, sample, **kwargs):
     mask = (
             (events.nJetGood >= 5) &
             (events.nFatJetGood >= 1) &
-            (events.PuppiMET.pt > 20) &
+            (events.PuppiMET.pt >= 20) &
             (events.nMuonGood + events.nElectronGood == 1)
             #(events.nSoftElectronGood < 2) &
             #(events.nSoftMuonGood < 2)
@@ -62,6 +77,75 @@ event_selection = Cut(
         name = "eventSelection",
         params = {},
         function = event_selection,
+)
+
+# This is mostly used for b-tag efficiency calculation, and Ken wants to start from the full spectrum
+
+def zh_event_cuts(events, params, year, sample, **kwargs):
+    #Event selection mask
+    mask = (
+            (events.ZH_M >= 50) &
+            (events.ZH_M <= 200) &
+            (events.ZH_pt >= 200) &
+            #(events.ZH_xbb >= 0.4) & 
+            (events.nJetGood >= 5)
+            )
+    # Pad None values with False
+    return ak.where(ak.is_none(mask), False, mask)
+
+zh_event_cuts = Cut(
+        name = "zhEventCuts",
+        params = {},
+        function = zh_event_cuts,
+)
+
+'''
+Inclusive baseline event selection
+'''
+
+def inc_event_selection(events, params, year, sample, **kwargs):
+    #Event selection mask
+    mask = (
+            (events.nJetGood >= 4) &
+            (events.PuppiMET.pt >= 20) &
+            (events.nMuonGood + events.nElectronGood == 1)
+            #(events.nSoftElectronGood < 2) &
+            #(events.nSoftMuonGood < 2)
+            )
+    # Pad None values with False
+    return ak.where(ak.is_none(mask), False, mask)
+
+inc_event_selection = Cut(
+        name = "eventSelection",
+        params = {},
+        function = inc_event_selection,
+)
+
+
+'''
+Trigger efficiency event selection
+'''
+
+def trig_event_selection(events, params, year, sample, **kwargs):
+    #Event selection mask
+    mask = (
+            (events.nJetGood >= 4) &
+            (events.nFatJetGood >= 1) &
+            (events.PuppiMET.pt >= 20) &
+            (events.nMuonGood == 1) &
+            (events.nElectronGood == 1) &
+            (events.nbJetGood > 0) &
+            (events.nbJetGood <= 2)
+            #(events.nSoftElectronGood < 2) &
+            #(events.nSoftMuonGood < 2)
+            )
+    # Pad None values with False
+    return ak.where(ak.is_none(mask), False, mask)
+
+trig_event_selection = Cut(
+        name = "trigEventSelection",
+        params = {},
+        function = trig_event_selection,
 )
 
 def njet_cut(events, params, year, sample, **kwargs):

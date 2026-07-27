@@ -3,6 +3,36 @@ import awkward as ak
 import correctionlib
 from coffea.lookup_tools import txt_converters, rochester_lookup
 
+def sf_ele_trig(events):
+    # Load the correction set once at the start of your processor
+    cset = correctionlib.CorrectionSet.from_file("/cms/data/jsamudio/boosted/boostedttX/configs/SemiLeptonic_2024/ele_trig_sf_2024.json.gz")
+    evaluator = cset["EleTrigSF"]
+
+    # In your event loop (assuming you have flat awkward arrays of lepton pT and Eta)
+    ele_pt = events.ElectronGood.pt
+    ele_eta = events.ElectronGood.eta
+
+    ele_pt_flat, ele_eta_flat, ele_counts = (
+        ak.flatten(ele_pt).to_numpy(),
+        ak.flatten(ele_eta).to_numpy(),
+        ak.num(ele_pt),
+    )
+
+    scale_factors = [
+        ak.unflatten(
+            evaluator.evaluate(ele_eta_flat, ele_pt_flat, variation),
+            ele_counts,
+        )
+        for variation in ("nominal", "up", "down")
+    ]
+    
+
+    # return a per-event scale factor by multiplying all electron scale factors
+    return tuple(ak.prod(sf, axis=1) for sf in scale_factors)
+
+
+    
+
 def sf_bbtag(params, fatjets, year, njets, variations=["central"]):
     '''
     Application of custom bbtag SFs. These should be applied to fatjets passing the WP threshold.
@@ -593,3 +623,164 @@ def recompute_type1_met_correctionlib(
         {"pt": new_met_pt, "phi": new_met_phi},
         with_name="PtEtaPhiMLorentzVector"
     )
+
+import numpy as np
+import awkward as ak
+import correctionlib
+
+import numpy as np
+import awkward as ak
+import correctionlib
+
+def sf_btag_wp(params, jets, year, njets, mc_efficiencies, wp_threshold, variations=["central"], working_point='M'):
+    btagSF = params.jet_scale_factors.btagSF[year]
+    btag_discriminator = params.btagging.working_point[year]["btagging_algorithm"]
+    cset = correctionlib.CorrectionSet.from_file(btagSF.file)
+    
+    # 1. LOAD BOTH CORRECTION OBJECTS
+    corr_bc = cset["UParTAK4_comb"]   # Heavy flavor (b, c)
+    corr_light = cset["UParTAK4_light"]  # Light flavor (udsg)
+
+    # Flatten inputs
+    flavour = ak.to_numpy(ak.flatten(jets.hadronFlavour))
+    abseta = np.abs(ak.to_numpy(ak.flatten(jets.eta)))
+    pt = ak.to_numpy(ak.flatten(jets.pt))
+    discr = ak.to_numpy(ak.flatten(jets[btag_discriminator]))
+    
+    eff = ak.to_numpy(ak.flatten(mc_efficiencies))
+
+    # Evaluate WP Pass/Fail Mask
+    is_tagged = discr >= wp_threshold
+
+    def _get_method1a_weight(variation_str, mask):
+        # Force any weird flavors to 0
+        clean_flavour = np.where((flavour != 5) & (flavour != 4), 0, flavour)
+        
+        # Reconstruct the full SF array for this variation, default to 1.0
+        full_sfs = np.ones_like(flavour, dtype=float)
+        
+        if np.any(mask):
+            # Extract the subset of jets passing the mask
+            f_sub = clean_flavour[mask]
+            a_sub = abseta[mask]
+            p_sub = pt[mask]
+            
+            # Prepare an array to hold the raw SFs for this subset
+            raw_sfs = np.ones_like(f_sub, dtype=float)
+            
+            # Create sub-masks for heavy vs light flavor
+            bc_idx = (f_sub == 5) | (f_sub == 4)
+            l_idx = (f_sub == 0)
+            
+            # EVALUATE HEAVY AND LIGHT SEPARATELY
+            if np.any(bc_idx):
+                raw_sfs[bc_idx] = corr_bc.evaluate(variation_str, working_point, f_sub[bc_idx], a_sub[bc_idx], p_sub[bc_idx])
+            
+            if np.any(l_idx):
+                raw_sfs[l_idx] = corr_light.evaluate(variation_str, working_point, f_sub[l_idx], a_sub[l_idx], p_sub[l_idx])
+                
+            # Place the evaluated SFs back into the full array
+            full_sfs[mask] = raw_sfs
+
+        # ==========================================
+        # --- PURE METHOD 1a MATH ---
+        # ==========================================
+        # Tagged jets get their true data SF
+        weight_tagged = np.where(is_tagged, full_sfs, 1.0)
+        
+        # 1. Floating-Point Safety Net
+        # We clip to 0.99999 strictly to prevent Numpy from throwing a Divide-by-Zero 
+        # exception in statistically starved bins that hit exactly 1.0.
+        safe_eff = np.clip(eff, 0.0, 0.99999)
+        
+        # 2. Pure Failing Weight Calculation (No Jet-Level Clamps)
+        weight_untagged = np.where(~is_tagged, (1.0 - (full_sfs * safe_eff)) / (1.0 - safe_eff), 1.0)
+        
+        # 3. Combine passing and failing jets
+        jet_weights = weight_tagged * weight_untagged
+        
+        # 4. Total Event Weight (No Event-Level Clamps)
+        event_weights = ak.prod(ak.unflatten(jet_weights, njets), axis=1)
+        
+        return event_weights
+
+    output = {}
+    all_jets_mask = np.ones_like(flavour, dtype=bool)
+
+    for variation in variations:
+        if variation == "central":
+            output[variation] = [_get_method1a_weight("central", all_jets_mask)]
+        else:
+            nominal = np.ones(ak.num(njets, axis=0)) 
+            
+            if variation in ["up", "down"]:
+                output[variation] = [_get_method1a_weight(variation, all_jets_mask)]
+                
+            elif "cferr" in variation:
+                c_mask = flavour == 4
+                output[variation] = [
+                    nominal,
+                    _get_method1a_weight(f"up_{variation}", c_mask),
+                    _get_method1a_weight(f"down_{variation}", c_mask),
+                ]
+
+            elif variation.startswith("JES") and "AK4" in variation:
+                btag_jes_var = variation.replace("_AK4PFchs", "").replace("_AK4PFPuppi", "")
+                if btag_jes_var.startswith("JES_Total") and btag_jes_var.endswith("Up"):
+                    btag_jes_var = "up_jes"
+                elif btag_jes_var.startswith("JES_Total") and btag_jes_var.endswith("Down"):
+                    btag_jes_var = "down_jes"
+                else:
+                    if btag_jes_var.endswith("Up"):
+                        btag_jes_var = f"up_jes{btag_jes_var[4:-2]}"
+                    elif btag_jes_var.endswith("Down"):
+                        btag_jes_var = f"down_jes{btag_jes_var[4:-4]}"
+
+                # Evaluate JES variations only on non-c jets
+                notc_mask = flavour != 4 
+                output[variation] = [_get_method1a_weight(btag_jes_var, notc_mask)]
+
+    return output
+    
+def apply_btag_sf(params, events, year, eff_lookup, working_point="M"):
+    """
+    Wrapper function to calculate b-tagging Method 1a scale factors.
+    Handles data safety, flavor cleaning, and efficiency map evaluation.
+    """
+    jets = events.JetGood
+    
+    # --- 1. DATA SAFETY CHECK ---
+    # If this is Data, return neutral event weights (1.0)
+    if "hadronFlavour" not in jets.fields:
+        ones = np.ones(len(events))
+        return ones, ones, ones
+
+    # --- 2. PREPARE KINEMATICS ---
+    # Clean the flavor array so it strictly matches [0, 4, 5]
+    raw_flavor = jets.hadronFlavour
+    clean_flavour = ak.where((raw_flavor != 5) & (raw_flavor != 4), 0, raw_flavor)
+    
+    # Evaluate the lookup tool to get MC efficiencies
+    mc_efficiencies = eff_lookup(
+        jets.pt, 
+        np.abs(jets.eta), 
+        clean_flavour
+    )
+    
+    # --- 3. APPLY SCALE FACTORS ---
+    # Get the Working Point threshold from parameters
+    wp_threshold = params.btagging.working_point[year]["btagging_WP"][working_point]
+    
+    # Call the core Method 1a math function
+    btag_sf_dict = sf_btag_wp(
+        params, 
+        jets, 
+        year, 
+        njets=events.nJetGood, 
+        mc_efficiencies=mc_efficiencies, 
+        wp_threshold=wp_threshold,       
+        variations=['central', 'up', 'down'], 
+        working_point=working_point
+    )
+    
+    return btag_sf_dict['central'][0], btag_sf_dict['up'][0], btag_sf_dict['down'][0]

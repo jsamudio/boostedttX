@@ -2,10 +2,17 @@ lepton_scale_factors:
   electron_sf:
     id:
       cutBasedTight: Tight
+    era_mapping:
+        '2024':
+            trigger: 2024Prompt
     trigger_sf:
       '2017':
         name: sf_Ele32_EleHT
         file: "${config_dir:}/trigger_sf/sf_trigger_electron_etaSC_pt_leading_2017_2017_Ele32_EleHT_pass.json"
+      '2024':
+        name: Electron-HLT-SF
+        file: /cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/latest/electronHlt.json.gz
+        path: HLT_SF_Ele30_MVAiso90ID
   muon_sf:
     collection: MuonGood
     sf_name:

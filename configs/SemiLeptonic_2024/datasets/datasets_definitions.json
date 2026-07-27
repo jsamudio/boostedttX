@@ -8,7 +8,7 @@
               "metadata": {
                 "year": "2024",
                 "isMC": true,
-                "xsec": 0.5742
+                "xsec": 0.331
               }
             }
         ]
@@ -23,7 +23,7 @@
               "metadata": {
                 "year": "2024",
                 "isMC": true,
-                "xsec": 0.5742
+                "xsec": 0.238
               }
             }
         ]
@@ -38,7 +38,7 @@
               "metadata": {
                 "year": "2024",
                 "isMC": true,
-                "xsec": 0.6426
+                "xsec": 0.786
               }
             }
         ]
@@ -186,155 +186,85 @@
         "files": [
             {
                 "das_names": [
-                    "/EGamma0/Run2024C-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "EGamma0",
-                    "era": "C"
-                }
-            },
-            {
-                "das_names": [
+                    "/EGamma0/Run2024C-MINIv6NANOv15-v1/NANOAOD",
                     "/EGamma1/Run2024C-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "EGamma1",
+                    "primaryDataset": "EGamma",
                     "era": "C"
                 }
             },
             {
                 "das_names": [
-                    "/EGamma0/Run2024D-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "EGamma0",
-                    "era": "D"
-                }
-            },
-            {
-                "das_names": [
+                    "/EGamma0/Run2024D-MINIv6NANOv15-v1/NANOAOD",
                     "/EGamma1/Run2024D-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "EGamma1",
+                    "primaryDataset": "EGamma",
                     "era": "D"
                 }
             },
             {
                 "das_names": [
-                    "/EGamma0/Run2024E-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "EGamma0",
-                    "era": "E"
-                }
-            },
-            {
-                "das_names": [
+                    "/EGamma0/Run2024E-MINIv6NANOv15-v1/NANOAOD",
                     "/EGamma1/Run2024E-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "EGamma1",
+                    "primaryDataset": "EGamma",
                     "era": "E"
                 }
             },
             {
                 "das_names": [
-                    "/EGamma0/Run2024F-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "EGamma0",
-                    "era": "F"
-                }
-            },
-            {
-                "das_names": [
+                    "/EGamma0/Run2024F-MINIv6NANOv15-v1/NANOAOD",
                     "/EGamma1/Run2024F-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "EGamma1",
+                    "primaryDataset": "EGamma",
                     "era": "F"
                 }
             },
             {
                 "das_names": [
-                    "/EGamma0/Run2024G-MINIv6NANOv15-v2/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "EGamma0",
-                    "era": "G"
-                }
-            },
-            {
-                "das_names": [
+                    "/EGamma0/Run2024G-MINIv6NANOv15-v2/NANOAOD",
                     "/EGamma1/Run2024G-MINIv6NANOv15-v2/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "EGamma1",
+                    "primaryDataset": "EGamma",
                     "era": "G"
                 }
             },
             {
                 "das_names": [
-                    "/EGamma0/Run2024H-MINIv6NANOv15-v2/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "EGamma0",
-                    "era": "H"
-                }
-            },
-            {
-                "das_names": [
+                    "/EGamma0/Run2024H-MINIv6NANOv15-v2/NANOAOD",
                     "/EGamma1/Run2024H-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "EGamma1",
+                    "primaryDataset": "EGamma",
                     "era": "H"
                 }
             },
             {
                 "das_names": [
-                    "/EGamma0/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "EGamma0",
-                    "era": "I"
-                }
-            },
-            {
-                "das_names": [
+                    "/EGamma0/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD",
                     "/EGamma1/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "EGamma1",
+                    "primaryDataset": "EGamma",
                     "era": "I"
                 }
             }
@@ -347,155 +277,85 @@
         "files": [
             {
                 "das_names": [
-                    "/Muon0/Run2024C-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "Muon0",
-                    "era": "C"
-                }
-            },
-            {
-                "das_names": [
+                    "/Muon0/Run2024C-MINIv6NANOv15-v1/NANOAOD",
                     "/Muon1/Run2024C-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "Muon1",
+                    "primaryDataset": "Muon",
                     "era": "C"
                 }
             },
             {
                 "das_names": [
-                    "/Muon0/Run2024D-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "Muon0",
-                    "era": "D"
-                }
-            },
-            {
-                "das_names": [
+                    "/Muon0/Run2024D-MINIv6NANOv15-v1/NANOAOD",
                     "/Muon1/Run2024D-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "Muon1",
+                    "primaryDataset": "Muon",
                     "era": "D"
                 }
             },
             {
                 "das_names": [
-                    "/Muon0/Run2024E-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "Muon0",
-                    "era": "E"
-                }
-            },
-            {
-                "das_names": [
+                    "/Muon0/Run2024E-MINIv6NANOv15-v1/NANOAOD",
                     "/Muon1/Run2024E-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "Muon1",
+                    "primaryDataset": "Muon",
                     "era": "E"
                 }
             },
             {
                 "das_names": [
-                    "/Muon0/Run2024F-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "Muon0",
-                    "era": "F"
-                }
-            },
-            {
-                "das_names": [
+                    "/Muon0/Run2024F-MINIv6NANOv15-v1/NANOAOD",
                     "/Muon1/Run2024F-MINIv6NANOv15-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "Muon1",
+                    "primaryDataset": "Muon",
                     "era": "F"
                 }
             },
             {
                 "das_names": [
-                    "/Muon0/Run2024G-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "Muon0",
-                    "era": "G"
-                }
-            },
-            {
-                "das_names": [
+                    "/Muon0/Run2024G-MINIv6NANOv15-v1/NANOAOD",
                     "/Muon1/Run2024G-MINIv6NANOv15-v2/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "Muon1",
+                    "primaryDataset": "Muon",
                     "era": "G"
                 }
             },
             {
                 "das_names": [
-                    "/Muon0/Run2024H-MINIv6NANOv15-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "Muon0",
-                    "era": "H"
-                }
-            },
-            {
-                "das_names": [
+                    "/Muon0/Run2024H-MINIv6NANOv15-v1/NANOAOD",
                     "/Muon1/Run2024H-MINIv6NANOv15-v2/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "Muon1",
+                    "primaryDataset": "Muon",
                     "era": "H"
                 }
             },
             {
                 "das_names": [
-                    "/Muon0/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD"
-                ],
-                "metadata": {
-                    "year": "2024",
-                    "isMC": false,
-                    "primaryDataset": "Muon0",
-                    "era": "I"
-                }
-            },
-            {
-                "das_names": [
+                    "/Muon0/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD",
                     "/Muon1/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD"
                 ],
                 "metadata": {
                     "year": "2024",
                     "isMC": false,
-                    "primaryDataset": "Muon1",
+                    "primaryDataset": "Muon",
                     "era": "I"
                 }
             }
@@ -581,7 +441,7 @@
                 "metadata": {
                     "year": "2024",
                     "isMC": true,
-                    "xsec": 17230	
+                    "xsec": 5743	
                 }
             }
         ]
@@ -598,7 +458,7 @@
                 "metadata": {
                     "year": "2024",
                     "isMC": true,
-                    "xsec": 5481
+                    "xsec": 1827
                 }
             }
         ]
@@ -615,7 +475,7 @@
                 "metadata": {
                     "year": "2024",
                     "isMC": true,
-                    "xsec": 17410
+                    "xsec": 5803
                 }
             }
         ]
@@ -632,7 +492,7 @@
                 "metadata": {
                     "year": "2024",
                     "isMC": true,
-                    "xsec": 5447	
+                    "xsec": 1815	
                 }
             }
         ]
@@ -649,7 +509,7 @@
                 "metadata": {
                     "year": "2024",
                     "isMC": true,
-                    "xsec": 17420
+                    "xsec": 5806
                 }
             }
         ]
@@ -666,9 +526,537 @@
                 "metadata": {
                     "year": "2024",
                     "isMC": true,
-                    "xsec": 5448
+                    "xsec": 1816
+                }
+            }
+        ]
+    },
+
+    "ST_tW_top-4Q": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TWminusto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 19.9533
+                }
+            }
+        ]
+    },
+
+    "ST_tW_top-LNu2Q": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TWminustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 19.29405
+                }
+            }
+        ]
+    },
+
+    "ST_tW_top-2L2Nu": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 4.6587
+                }
+            }
+        ]
+    },
+
+    "ST_tW_antitop-4Q": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TbarWplusto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 19.9533
+                }
+            }
+        ]
+    },
+
+    "ST_tW_antitop-LNu2Q": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TbarWplustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 19.29405
+                }
+            }
+        ]
+    },
+
+    "ST_tW_antitop-2L2Nu": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TbarWplusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 4.6587
+                }
+            }
+        ]
+    },
+
+    "ST_top_s_lep": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TBbartoLplusNuBbar-s-channel-4FS_TuneCP5_13p6TeV_amcatnlo-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 2.278
+                }
+            }
+        ]
+    },
+
+    "ST_antitop_s_lep": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TbarBtoLminusNuB-s-channel-4FS_TuneCP5_13p6TeV_amcatnlo-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 1.43
+                }
+            }
+        ]
+    },
+
+    "ST_top_t_2Q": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TBbarQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97.74
+                }
+            }
+        ]
+    },
+
+    "ST_top_t_LNu": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TBbarQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 47.26
+                }
+            }
+        ]
+    },
+
+    "ST_antitop_t_2Q": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TbarBQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 58.78
+                }
+            }
+        ]
+    },
+
+    "ST_antitop_t_LNu": {
+        "sample": "SingleTop",
+        "json_output": "datasets/SingleTop.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TbarBQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 28.42
+                }
+            }
+        ]
+    },
+
+    "TTWJets": {
+        "sample": "TTX",
+        "json_output": "datasets/TTX.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 0.4678
+                }
+            }
+        ]
+    },
+
+    "TTTT": {
+        "sample": "TTX",
+        "json_output": "datasets/TTX.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTTT_TuneCP5_13p6TeV_amcatnlo-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 0.009652
+                }
+            }
+        ]
+    },
+
+    "THW": {
+        "sample": "TTX",
+        "json_output": "datasets/TTX.json",
+        "files": [
+            {
+                "das_names": [
+                    "/THW-5FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 0.0172
+                }
+            }
+        ]
+    },
+
+    "THQ": {
+        "sample": "TTX",
+        "json_output": "datasets/TTX.json",
+        "files": [
+            {
+                "das_names": [
+                    "/THQ-4FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 0.08362
+                }
+            }
+        ]
+    },
+
+    "TZQ_ll": {
+        "sample": "TTX",
+        "json_output": "datasets/TTX.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TZQB-Zto2L-4FS_Bin-MLL-30_TuneCP5_13p6TeV_amcatnlo-pythia8/RunIII2024Summer24NanoAODv15-Madgraph_2_6_5_150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 0.07968
+                }
+            }
+        ]
+    },
+
+    "WW": {
+        "sample": "VV",
+        "json_output": "datasets/VV.json",
+        "files": [
+            {
+                "das_names": [
+                    "/WW_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 125.8
+                }
+            }
+        ]
+    },
+
+    "WZ": {
+        "sample": "VV",
+        "json_output": "datasets/VV.json",
+        "files": [
+            {
+                "das_names": [
+                    "/WZ_TuneCP5_13p6TeV_pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 54.7
+                }
+            }
+        ]
+    },
+
+    "ZZ": {
+        "sample": "VV",
+        "json_output": "datasets/VV.json",
+        "files": [
+            {
+                "das_names": [
+                    "/ZZ_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 16.7
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_40_70": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-40to70_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 312300000
+                }
+            }
+        ]
+    },
+    
+    "QCD-HT_70_100": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-70to100_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 58470000
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_100_200": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-100to200_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 25310000
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_200_400": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-200to400_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 1960000
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_400_600": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-400to600_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97400
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_600_800": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-600to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 13560
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_800_1000": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-800to1000_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 3010
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_1000_1200": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-1000to1200_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 890.3
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_1200_1500": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-1200to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 384.8
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_1500_2000": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-1500to2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 127.3
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_2000": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 26.26
                 }
             }
         ]
     }
+    
 }

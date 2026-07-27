@@ -27,7 +27,8 @@ from pocket_coffea.lib.deltaR_matching import object_matching
 from pocket_coffea.lib.jets import compute_jetId, jet_selection
 from pocket_coffea.lib.scale_factors import *
 from dask.distributed import get_worker
-from custom_scale_factors import sf_scaleweights
+from custom_scale_factors import sf_scaleweights, sf_btag_wp, sf_ele_trig, apply_btag_sf
+from get_controlvars import get_controlvars
 import cachetools
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu', 'ttHSMEFT', 'TTLL', 'TTNuNu']
@@ -45,6 +46,10 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
             raise ValueError("Key `spanet_model` not found in workflow options. Please specify the path to the ONNX model.")
         elif not self.workflow_options["spanet_model"].endswith(".onnx"):
             raise ValueError("Key `spanet_model` should be the path of an ONNX model.")
+        import pickle
+        eff_map_path = "/cms/data/jsamudio/boosted/boostedttX/configs/SemiLeptonic_2024/BtagEff/semileptonic_btag_eff_2024.pkl"
+        with open(eff_map_path, "rb") as f_eff:
+            self.btag_eff_maps = pickle.load(f_eff)
 
     def skim_events(self):
         self._skim_masks = PackedSelection()
@@ -222,6 +227,7 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         self.events["PartonMatched"] = ak.with_field(
             matched_quarks, deltaR_matched, "dRMatchedJet"
         )
+        
         self.events["JetGoodMatched"] = ak.with_field(
             matched_jets, deltaR_matched, "dRMatchedJet"
         )
@@ -311,10 +317,10 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
             print("ele_reco", self.events.ele_reco_sf)
             self.events['ele_id_sf'], self.events['ele_id_sfup'], self.events['ele_id_sfdown'] = sf_ele_id(self.params, self.events, self._year)
             print("ele_id", self.events.ele_id_sf)
+            self.events['ele_trig_sf'], self.events['ele_trig_sfup'], self.events['ele_trig_sfdown'] = sf_ele_trig(self.events)
+            print("ele_trig", self.events.ele_trig_sf)
             self.events['mu_id_sf'], self.events['mu_id_sfup'], self.events['mu_id_sfdown'] = sf_mu(self.params, self.events, self._year, 'id')
             print("mu_id", self.events.mu_id_sf)
-            print("mu_id", self.events.mu_id_sfup)
-            print("mu_id", self.events.mu_id_sfdown)
             self.events['mu_iso_sf'], self.events['mu_iso_sfup'], self.events['mu_iso_sfdown'] = sf_mu(self.params, self.events, self._year, 'iso')
             print("mu_iso", self.events.mu_iso_sf)
             self.events['mu_trig_sf'], self.events['mu_trig_sfup'], self.events['mu_trig_sfdown'] = sf_mu(self.params, self.events, self._year, 'trigger')
@@ -327,10 +333,27 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
             #self.events['MuonGood'] = ak.with_field(self.events.MuonGood, corrected_muon_pt, 'pt_corrected')
             #print("Rochester output:", ApplyRochesterCorrections(self._year, self.events.MuonGood, False))
             #btag_variations = ['hf', 'lf', 'hfstats1', 'hfstats2', 'lfstats1', 'lfstats2', 'cferr1', 'cferr2']
-            #btag_variations = []
-            #btag_sf = sf_btag(self.params, self.events.JetGood, self._year, njets=self.events.nJetGood, variations=['central']+btag_variations)
+            btag_variations = []
+            #btag_sf = sf_btag_wp(self.params, self.events.JetGood, self._year, njets=self.events.nJetGood, variations=['central', 'up', 'down'], working_point="M")
+            #print(btag_sf['central'][0])
             # btagging
-            #self.events['btag_sf'] = btag_sf['central'][0]
+            # 1. Grab the specific lookup tool for this sample chunk
+            # If unmapped (or if Data), default to a lambda that returns 1.0s
+            eff_lookup = self.btag_eff_maps.get(
+                self._sample, 
+                lambda pt, eta, flav: ak.ones_like(pt)
+            )
+            
+            # 2. Call the clean wrapper function
+            # (Make sure apply_btag_sf is imported at the top of your file!)
+            self.events['btag_sf'], self.events['btag_sfup'], self.events['btag_sfdown'] = apply_btag_sf(
+                self.params, 
+                self.events, 
+                self._year, 
+                eff_lookup, 
+                working_point="M"
+            )
+            print("BTAG:", self.events['btag_sf'])
             #self.events['btag_sfhf'] = btag_sf['hf'][0]
             #self.events['btag_sfhf_up'] = btag_sf['hf'][1]
             #self.events['btag_sfhf_down'] = btag_sf['hf'][2]
@@ -366,12 +389,12 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
             self.events['puWeight'], self.events['puWeight_up'], self.events['puWeight_down'] = sf_pileup_reweight(self.params, self.events, self._year)
             self.events['isr'], self.events['isr_up'], self.events['isr_down'] = sf_partonshower_isr(self.events)
             self.events['fsr'], self.events['fsr_up'], self.events['fsr_down'] = sf_partonshower_fsr(self.events)
-            self.events['mu_r_up'], self.events['mu_r_down'], self.events['mu_f_up'], self.events['mu_f_down'], self.events['mu_rf_up'], self.events['mu_rf_down'], = sf_scaleweights(self.events)
+            #self.events['mu_r_up'], self.events['mu_r_down'], self.events['mu_f_up'], self.events['mu_f_down'], self.events['mu_rf_up'], self.events['mu_rf_down'], = sf_scaleweights(self.events)
             #print("fsr_up", self.events.fsr_up)
             #print("isr_up", self.events.isr_up)
             match_gen_lep(self.events)
-            self.do_parton_matching()
-            self.count_partons()
+            #self.do_parton_matching()
+            #self.count_partons()
             
         zh_helper(self.events)
         if self._sample in sig:
@@ -385,12 +408,15 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
             self.events['topptWeight_Down'] = 1
         #match_tt_products(self.events)
         #applyDNN(self.events)
-        calc_weight(self.events, self.output, self._dataset, self.params)
+        calc_weight(self.events, self.output, self._dataset, self.params, self._year)
         #print("XSEC: ", self.events.metadata['xsec'])
         #print("LUMI: ", self.params.sample_params['lumi']['lumi'])
         #print("genWeights total: ", self.output['sum_signOf_genweights'][self._dataset])
         #if 'TTbb' in self._sample:
         #    add_weights_to_ttbb(self.events, self._sample)
+
+        # Add outputs for data/mc plots
+        get_controlvars(self.events)
 
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanet1.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetZonly.onnx")
@@ -401,7 +427,7 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/delete.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/withcuts.onnx")
 
-        self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanet2024.onnx")
+        self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanet2024_encoderFeatures.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalancedTruncated.onnx")
         #self.onnx_inference(model_file=f"/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalancedAssignment.onnx")
 
@@ -426,6 +452,8 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         if worker is None:
             import onnxruntime as ort
             sess_options = ort.SessionOptions()
+            sess_options.intra_op_num_threads = 1
+            sess_options.inter_op_num_threads = 1
             sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
             model_session = ort.InferenceSession(
                 model_file,
@@ -482,7 +510,7 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         #else:
         #output_names = ["EVENT/ttzbb", "EVENT/tthbb", "EVENT/ttbb", "EVENT/ttcc", "EVENT/ttlf"]
         #output_names = ["EVENT/ttzbb", "EVENT/tthbb", "EVENT/ttbb", "EVENT/ttlf"]
-        output_names = ["EVENT/signal"]#, "encoder_event_vector"]
+        output_names = ["EVENT/signal", "encoder_event_vector"]
         outputs = model_session.run(input_feed={
             "Jet_data": data,
             "Jet_mask": mask,
@@ -512,7 +540,7 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         #print("2", (ak.from_numpy(value[:,2]) for key, value in outputs_zipped.items()))
         #print("3", (ak.from_numpy(value[:,3]) for key, value in outputs_zipped.items()))
         #print("4", (ak.from_numpy(value[:,4]) for key, value in outputs_zipped.items()))
-        #print(outputs_zipped)
+        print(len(outputs_zipped[keys[1]][0,:]))
         if "Zonly" in model_file:
             self.events["spanet_outputZ"] = ak.zip(
                 {
@@ -532,37 +560,37 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         self.events["sig_score"] = ak.from_numpy(outputs_zipped[keys[0]][:,1])
         self.events["ttbb_score"] = ak.from_numpy(outputs_zipped[keys[0]][:,2])
         self.events["ttlf_score"] = ak.from_numpy(outputs_zipped[keys[0]][:,3])
-        # self.events["encoderFeature1"] = ak.from_numpy(outputs_zipped[keys[1]][:,0])
-        # self.events["encoderFeature2"] = ak.from_numpy(outputs_zipped[keys[1]][:,1])
-        # self.events["encoderFeature3"] = ak.from_numpy(outputs_zipped[keys[1]][:,2])
-        # self.events["encoderFeature4"] = ak.from_numpy(outputs_zipped[keys[1]][:,3])
-        # self.events["encoderFeature5"] = ak.from_numpy(outputs_zipped[keys[1]][:,4])
-        # self.events["encoderFeature6"] = ak.from_numpy(outputs_zipped[keys[1]][:,5])
-        # self.events["encoderFeature7"] = ak.from_numpy(outputs_zipped[keys[1]][:,6])
-        # self.events["encoderFeature8"] = ak.from_numpy(outputs_zipped[keys[1]][:,7])
-        # self.events["encoderFeature9"] = ak.from_numpy(outputs_zipped[keys[1]][:,8])
-        # self.events["encoderFeature10"] = ak.from_numpy(outputs_zipped[keys[1]][:,9])
-        # self.events["encoderFeature11"] = ak.from_numpy(outputs_zipped[keys[1]][:,10])
-        # self.events["encoderFeature12"] = ak.from_numpy(outputs_zipped[keys[1]][:,11])
-        # self.events["encoderFeature13"] = ak.from_numpy(outputs_zipped[keys[1]][:,12])
-        # self.events["encoderFeature14"] = ak.from_numpy(outputs_zipped[keys[1]][:,13])
-        # self.events["encoderFeature15"] = ak.from_numpy(outputs_zipped[keys[1]][:,14])
-        # self.events["encoderFeature16"] = ak.from_numpy(outputs_zipped[keys[1]][:,15])
-        # self.events["encoderFeature17"] = ak.from_numpy(outputs_zipped[keys[1]][:,16])
-        # self.events["encoderFeature18"] = ak.from_numpy(outputs_zipped[keys[1]][:,17])
-        # self.events["encoderFeature19"] = ak.from_numpy(outputs_zipped[keys[1]][:,18])
-        # self.events["encoderFeature20"] = ak.from_numpy(outputs_zipped[keys[1]][:,19])
-        # self.events["encoderFeature21"] = ak.from_numpy(outputs_zipped[keys[1]][:,20])
-        # self.events["encoderFeature22"] = ak.from_numpy(outputs_zipped[keys[1]][:,21])
-        # self.events["encoderFeature23"] = ak.from_numpy(outputs_zipped[keys[1]][:,22])
-        # self.events["encoderFeature24"] = ak.from_numpy(outputs_zipped[keys[1]][:,23])
-        # self.events["encoderFeature25"] = ak.from_numpy(outputs_zipped[keys[1]][:,24])
-        # self.events["encoderFeature26"] = ak.from_numpy(outputs_zipped[keys[1]][:,25])
-        # self.events["encoderFeature27"] = ak.from_numpy(outputs_zipped[keys[1]][:,26])
-        # self.events["encoderFeature28"] = ak.from_numpy(outputs_zipped[keys[1]][:,27])
-        # self.events["encoderFeature29"] = ak.from_numpy(outputs_zipped[keys[1]][:,28])
-        # self.events["encoderFeature30"] = ak.from_numpy(outputs_zipped[keys[1]][:,29])
-        # self.events["encoderFeature31"] = ak.from_numpy(outputs_zipped[keys[1]][:,30])
-        # self.events["encoderFeature32"] = ak.from_numpy(outputs_zipped[keys[1]][:,31])
-        # print(self.events.encoderFeature20)
+        self.events["encoderFeature1"] = ak.from_numpy(outputs_zipped[keys[1]][:,0])
+        self.events["encoderFeature2"] = ak.from_numpy(outputs_zipped[keys[1]][:,1])
+        self.events["encoderFeature3"] = ak.from_numpy(outputs_zipped[keys[1]][:,2])
+        self.events["encoderFeature4"] = ak.from_numpy(outputs_zipped[keys[1]][:,3])
+        self.events["encoderFeature5"] = ak.from_numpy(outputs_zipped[keys[1]][:,4])
+        self.events["encoderFeature6"] = ak.from_numpy(outputs_zipped[keys[1]][:,5])
+        self.events["encoderFeature7"] = ak.from_numpy(outputs_zipped[keys[1]][:,6])
+        self.events["encoderFeature8"] = ak.from_numpy(outputs_zipped[keys[1]][:,7])
+        self.events["encoderFeature9"] = ak.from_numpy(outputs_zipped[keys[1]][:,8])
+        self.events["encoderFeature10"] = ak.from_numpy(outputs_zipped[keys[1]][:,9])
+        self.events["encoderFeature11"] = ak.from_numpy(outputs_zipped[keys[1]][:,10])
+        self.events["encoderFeature12"] = ak.from_numpy(outputs_zipped[keys[1]][:,11])
+        self.events["encoderFeature13"] = ak.from_numpy(outputs_zipped[keys[1]][:,12])
+        self.events["encoderFeature14"] = ak.from_numpy(outputs_zipped[keys[1]][:,13])
+        self.events["encoderFeature15"] = ak.from_numpy(outputs_zipped[keys[1]][:,14])
+        self.events["encoderFeature16"] = ak.from_numpy(outputs_zipped[keys[1]][:,15])
+        self.events["encoderFeature17"] = ak.from_numpy(outputs_zipped[keys[1]][:,16])
+        self.events["encoderFeature18"] = ak.from_numpy(outputs_zipped[keys[1]][:,17])
+        self.events["encoderFeature19"] = ak.from_numpy(outputs_zipped[keys[1]][:,18])
+        self.events["encoderFeature20"] = ak.from_numpy(outputs_zipped[keys[1]][:,19])
+        self.events["encoderFeature21"] = ak.from_numpy(outputs_zipped[keys[1]][:,20])
+        self.events["encoderFeature22"] = ak.from_numpy(outputs_zipped[keys[1]][:,21])
+        self.events["encoderFeature23"] = ak.from_numpy(outputs_zipped[keys[1]][:,22])
+        self.events["encoderFeature24"] = ak.from_numpy(outputs_zipped[keys[1]][:,23])
+        self.events["encoderFeature25"] = ak.from_numpy(outputs_zipped[keys[1]][:,24])
+        self.events["encoderFeature26"] = ak.from_numpy(outputs_zipped[keys[1]][:,25])
+        self.events["encoderFeature27"] = ak.from_numpy(outputs_zipped[keys[1]][:,26])
+        self.events["encoderFeature28"] = ak.from_numpy(outputs_zipped[keys[1]][:,27])
+        self.events["encoderFeature29"] = ak.from_numpy(outputs_zipped[keys[1]][:,28])
+        self.events["encoderFeature30"] = ak.from_numpy(outputs_zipped[keys[1]][:,29])
+        self.events["encoderFeature31"] = ak.from_numpy(outputs_zipped[keys[1]][:,30])
+        self.events["encoderFeature32"] = ak.from_numpy(outputs_zipped[keys[1]][:,31])
+        print(self.events.encoderFeature20)
         #print(self.events.spanet_outputH)

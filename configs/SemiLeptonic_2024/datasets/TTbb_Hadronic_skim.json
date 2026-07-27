@@ -1,0 +1,20 @@
+{
+  "TTBBto4Q_2024": {
+    "metadata": {
+      "das_names": "['/TTBBto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM']",
+      "sample": "TTbb_Hadronic",
+      "year": "2024",
+      "isMC": "True",
+      "xsec": "19.15297",
+      "nevents": "156671",
+      "size": "558500156",
+      "skim_efficiency": "0.010451296747690884",
+      "skim_rescale_genweights": "104.440216",
+      "isSkim": "True"
+    },
+    "files": [
+      "file:/cms/data/store/user/jsamudio/NanoAODv15/skimmed//TTBBto4Q_2024/TTBBto4Q_2024_1.root",
+      "file:/cms/data/store/user/jsamudio/NanoAODv15/skimmed//TTBBto4Q_2024/TTBBto4Q_2024_2.root"
+    ]
+  }
+}

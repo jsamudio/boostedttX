@@ -14,7 +14,7 @@ from pocket_coffea.lib.objects import (
 )
 from object_cleaning_functions import soft_lep_sel, lep_sel, fatjet_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_sel, fatjet_sel2
 from custom_cut_functions import sortbyscore
-from cand_helper import zh_helper, ak4_truncate
+from cand_helper import zh_helper#, ak4_truncate
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig
 #import dnn_model
 #from applyDNN import applyDNN
@@ -211,6 +211,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.events["PartonMatched"] = ak.with_field(
             matched_quarks, deltaR_matched, "dRMatchedJet"
         )
+        print("Provenance: ", self.events.PartonMatched.provenance)
         self.events["JetGoodMatched"] = ak.with_field(
             matched_jets, deltaR_matched, "dRMatchedJet"
         )
@@ -245,7 +246,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         #self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
         ### Add function to implement combinatorics now that we have the sorted list
         zh_helper(self.events)
-        ak4_truncate(self.events)
+        #ak4_truncate(self.events)
         match_gen_lep(self.events)
         if self._sample in sig:
             match_gen_sig(self.events, self._sample)

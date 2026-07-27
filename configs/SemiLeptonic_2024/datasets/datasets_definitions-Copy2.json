@@ -1,0 +1,189 @@
+{
+    "QCD-HT_40_70": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-40to70_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 312300000
+                }
+            }
+        ]
+    },
+    
+    "QCD-HT_70_100": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-70to100_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 58470000
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_100_200": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-100to200_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 25310000
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_200_400": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-200to400_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 1960000
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_400_600": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-400to600_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97400
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_600_800": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-600to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 13560
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_800_1000": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-800to1000_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 3010
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_1000_1200": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-1000to1200_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 890.3
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_1200_1500": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-1200to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 384.8
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_1500_2000": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-1500to2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 127.3
+                }
+            }
+        ]
+    },
+
+    "QCD-HT_2000": {
+        "sample": "QCD",
+        "json_output": "datasets/QCD.json",
+        "files": [
+            {
+                "das_names": [
+                    "/QCD-4Jets_Bin-HT-2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 26.26
+                }
+            }
+        ]
+    }
+    
+}

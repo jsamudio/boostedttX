@@ -1,0 +1,52 @@
+{
+    "WW": {
+        "sample": "VV",
+        "json_output": "datasets/VV.json",
+        "files": [
+            {
+                "das_names": [
+                    "/WW_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 125.8
+                }
+            }
+        ]
+    },
+
+    "WZ": {
+        "sample": "VV",
+        "json_output": "datasets/VV.json",
+        "files": [
+            {
+                "das_names": [
+                    "/WZ_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 54.7
+                }
+            }
+        ]
+    },
+
+    "ZZ": {
+        "sample": "VV",
+        "json_output": "datasets/VV.json",
+        "files": [
+            {
+                "das_names": [
+                    "/ZZ_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 16.7
+                }
+            }
+        ]
+    }
+}
