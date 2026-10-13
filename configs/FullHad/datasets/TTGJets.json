@@ -1,0 +1,86 @@
+{
+  "TTGJets_2016_PostVFP": {
+    "metadata": {
+      "das_names": "['/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM']",
+      "sample": "TTGJets",
+      "year": "2016_PostVFP",
+      "isMC": "True",
+      "xsec": "0.0092",
+      "nevents": "1416230",
+      "size": "3559088278"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/120000/40245E81-67EF-5944-B335-2BB3F5F348B3.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/120000/C8108845-919A-BE44-B56E-5A7D04513E3C.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/130000/44D8B382-3FBE-F24D-AF28-A308B49023F2.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/280000/C9C9C6DB-B4AF-8641-A1DC-2B46817BDF9A.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/70000/22E95738-5DA4-C449-ABC3-D202A6E98BE8.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/70000/9C0F9DF5-BD63-0E4A-A8AB-B275620A3A25.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/70000/C04ADE08-7980-E149-BBD4-6580AD61AA24.root"
+    ]
+  },
+  "TTGJets_2017": {
+    "metadata": {
+      "das_names": "['/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM']",
+      "sample": "TTGJets",
+      "year": "2017",
+      "isMC": "True",
+      "xsec": "0.0092",
+      "nevents": "3534208",
+      "size": "9150089029"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/4841B901-E9A5-2A49-B774-447C39D8D8B5.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/984C5CE3-BCE3-8F46-BAE0-DE0CA71796AF.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/E7FED13F-BD56-2C4E-BD5E-87E2193BA090.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/4645F539-F7CA-564A-A949-E2D78D5A496D.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/50DB6B2E-5279-E642-A0BF-F57BF4D7F70E.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/A2204F43-75E3-C947-99CA-7865DA0977DA.root"
+    ]
+  },
+  "TTGJets_2018": {
+    "metadata": {
+      "das_names": "['/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM']",
+      "sample": "TTGJets",
+      "year": "2018",
+      "isMC": "True",
+      "xsec": "0.0092",
+      "nevents": "4437068",
+      "size": "11282996971"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/120000/9F799FF9-53C4-4145-9171-B410A7D47F46.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/130000/778FE2D0-C4E4-6E4C-8FC8-1F3D3335664F.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/1AB50185-598F-9E4C-98A2-0CCB8AD1FFEB.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/ED1281D7-8E9F-594B-94BD-04800FE9C26D.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/AED7D89A-4576-774F-B879-632BD10F0CE8.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/425C3118-0098-544A-8676-83298C2D301A.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/C2BF524C-C67B-3E46-A7D9-50406654A634.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/D0DB4F2C-3BE6-B54A-A419-1F1F2285F4C1.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/F916823A-00CF-914B-9D2E-7D82100ED27B.root"
+    ]
+  },
+  "TTGJets_2016_PreVFP": {
+    "metadata": {
+      "das_names": "['/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM']",
+      "sample": "TTGJets",
+      "year": "2016_PreVFP",
+      "isMC": "True",
+      "xsec": "0.0092",
+      "nevents": "1511805",
+      "size": "3816895415"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/2520000/3743876F-ADA4-CE42-A823-4C14F889C3BE.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/2530000/810C1184-2FB4-FA49-96AE-46ADA95C28D3.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/2530000/82629925-902B-5744-80AC-5A5A9770A0A0.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/260000/29D0C9D1-6930-1248-AEB7-ADA8A8E82416.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/260000/7438D96E-4E18-9E47-B01C-40E1548D12A9.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/260000/A932246D-D33C-CD43-B5D5-2BC9AA0CC3B0.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/270000/34885CCC-C8FD-CF46-8161-265C9BC7E52C.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/270000/797C3866-DD64-CF43-93CF-776F25877F5B.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/270000/ABA2D66F-BC30-404B-B64B-97B83816EA41.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTGJets_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v2/270000/E9AB8BC6-625E-4147-98E7-151110CA3F4B.root"
+    ]
+  }
+}

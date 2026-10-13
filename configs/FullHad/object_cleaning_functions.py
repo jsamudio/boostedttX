@@ -178,29 +178,27 @@ def is_lep_cleaned(events, lepton_collection, jet_collection, cut=0.4):
     return jet_mask
 
 def jet_sel(events, jet_type, params, leptons_collection=""):
-
     jets = events[jet_type]
     cuts = params.object_preselection[jet_type]
-    # Only jets that are more distant than dr to ALL leptons are tagged as good jets
-    # Mask for  jets not passing the preselection
+    
+    # Mask for jets not passing the preselection
     mask_presel = (
         (jets.pt > cuts["pt"])
         & (np.abs(jets.eta) < cuts["eta"])
         & (jets.jetId >= cuts["jetId"])
     )
-    # Lepton cleaning
+    
+    # Lepton cleaning - only if a collection is provided
     if leptons_collection != "":
-        dR_jets_lep = jets.metric_table(events[leptons_collection])
-        #mask_lepton_cleaning = ak.prod(dR_jets_lep >= cuts["dr_lepton"], axis=2) == 1
         mask_lepton_cleaning = is_lep_cleaned(events, leptons_collection, "Jet", 0.4)
-
+    else:
+        # If no lepton collection, all jets pass lepton cleaning
+        mask_lepton_cleaning = True
+    
     if jet_type == "Jet":
         # Selection on PUid. Only available in Run2 UL, thus we need to determine which sample we run over;
-
         mask_jetpuid = (jets.puId >= 4) | (jets.pt > 50)
-
         mask_good_jets = mask_presel & mask_lepton_cleaning & mask_jetpuid
-
     elif jet_type == "FatJet":
         # Apply the msd and preselection cuts
         mask_msd = events.FatJet.msoftdrop > cuts["msd"]
@@ -209,7 +207,6 @@ def jet_sel(events, jet_type, params, leptons_collection=""):
     return jets[mask_good_jets], mask_good_jets
 
 def fatjet_sel(events, params, leptons_collection=""):
-
     fatjets = events['FatJet']
     cuts = params.object_preselection['FatJet']
 
@@ -218,14 +215,16 @@ def fatjet_sel(events, params, leptons_collection=""):
     passes_id = fatjets.jetId >= cuts['jetId']
     passes_massLow = fatjets.particleNet_mass >= cuts['mass']['low']
     passes_massHigh = fatjets.particleNet_mass <= cuts['mass']['high']
+    
     if leptons_collection != "":
-        dR_jets_lep = fatjets.metric_table(events[leptons_collection])
-        #mask_lepton_cleaning = ak.prod(dR_jets_lep > cuts["dr_lepton"], axis=2) == 1
         mask_lepton_cleaning = is_lep_cleaned(events, leptons_collection, "FatJet", 0.8)
+    else:
+        mask_lepton_cleaning = True
 
     good_fatjets = passes_eta & passes_pt & passes_id & passes_massLow & passes_massHigh & mask_lepton_cleaning
 
     return fatjets[good_fatjets]
+
 
 def fatjet_sel2(events, params, leptons_collection=""):
 

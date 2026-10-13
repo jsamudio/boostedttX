@@ -7,7 +7,7 @@ object_preselection:
         jetId: 2
     Jet:
         dr_lepton: 0.4
-        pt: 25
+        pt: 30
         eta: 2.4
         jetId: 2
         puId:

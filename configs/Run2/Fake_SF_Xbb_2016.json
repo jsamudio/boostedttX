@@ -1,0 +1,302 @@
+{
+  "schema_version": 2,
+  "corrections": [
+    {
+      "name": "Fake_SF_Xbb_2016",
+      "description": "Exclusive Fake Scale Factors for Xbb in 2016, with combined statistical, 20% real rate, and real SF propagation uncertainties.",
+      "version": 1,
+      "inputs": [
+        {
+          "name": "WorkingPoint",
+          "type": "string",
+          "description": "'HP', 'MP', 'LP', or 'Fail'"
+        },
+        {
+          "name": "systematic",
+          "type": "string",
+          "description": "'nominal', 'up', or 'down'"
+        },
+        {
+          "name": "jet_pt",
+          "type": "real",
+          "description": "Fatjet pT [GeV]"
+        }
+      ],
+      "output": {
+        "name": "weight",
+        "type": "real",
+        "description": "Multiplicative Fake SF"
+      },
+      "data": {
+        "nodetype": "category",
+        "input": "WorkingPoint",
+        "content": [
+          {
+            "key": "HP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.88159612893121,
+                      0.9397177982381228,
+                      0.8477981555634603
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9033977077574662,
+                      0.9634890437950467,
+                      0.883084192133692
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.8597945501049538,
+                      0.915946552681199,
+                      0.8125121189932285
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "MP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9750793056536935,
+                      0.9816444837571967,
+                      0.869752532655308
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9937274725558627,
+                      1.0068226225103691,
+                      0.9107904068672664
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9564311387515243,
+                      0.9564663450040242,
+                      0.8287146584433497
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "LP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9008956836070064,
+                      0.9457435899631759,
+                      0.8802608963277725
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9166798781864487,
+                      0.9686219904817245,
+                      0.9186704136839063
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.8851114890275642,
+                      0.9228651894446273,
+                      0.8418513789716386
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "Fail",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9690201597793061,
+                      0.9960722966316703,
+                      0.8693445999457954
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.990284514764347,
+                      1.0233794891450216,
+                      0.9084066056385567
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9477558047942652,
+                      0.9687651041183191,
+                      0.8302825942530341
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

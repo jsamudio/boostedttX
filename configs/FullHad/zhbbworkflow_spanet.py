@@ -6,7 +6,7 @@ from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.hist_manager import Axis
 #from pocket_coffea.lib.weights_manager import WeightsManager
 from pocket_coffea.lib.objects import (
-    jet_correction,
+    jet_correction_corrlib,
     lepton_selection,
     jet_selection,
     btagging,
@@ -18,13 +18,21 @@ from cand_helperDi import zh_helper, ak4_truncate
 from genmatcher import match_gen_tt, match_gen_sig
 #import dnn_model
 #from applyDNN import applyDNN
-from weight_handler import calc_weight, add_weights_to_ttbb
+from weight_handler import calc_weight
+#, add_weights_to_ttbb
 from coffea.analysis_tools import PackedSelection
 from pocket_coffea.lib.parton_provenance import *
 from pocket_coffea.lib.deltaR_matching import metric_eta, metric_phi
 from pocket_coffea.lib.deltaR_matching import object_matching
+from parton_provenance_hadronic import (
+    get_partons_provenance_ttHbb_fullhadronic,
+    get_partons_provenance_TTZToBB_fullhadronic,
+    get_partons_provenance_ttbb4F_fullhadronic,
+    get_partons_provenance_tt5F_fullhadronic,
+)
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
+
 
 @njit
 def get_partons_provenance_qcd(pdgIds, array_builder):
@@ -99,8 +107,16 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         self.dr_min_postfsr = self.workflow_options.get("parton_jet_min_dR_postfsr", 1.)
 
     def process_extra_before_skim(self):
-        self.events['sum_sign_genw'] = np.sum(np.sign(self.events['genWeight']))
+        #self.events['sum_sign_genw'] = np.sum(np.sign(self.events['genWeight']))
 
+        if hasattr(self.events, 'genWeight') and 'genWeight' in self.events.fields:
+            self.events['sum_sign_genw'] = np.sum(np.sign(self.events['genWeight']))
+        else:
+            # Data has no genWeight — set to 1
+            self.events['sum_sign_genw'] = ak.ones_like(self.events.event, dtype=np.float32)
+            # Add genWeight=1 for data so ColOut weight_vars works correctly
+            self.events['genWeight'] = ak.ones_like(self.events.event, dtype=np.float32)
+            self.events['topptWeight']  = ak.ones_like(self.events.event, dtype=np.float32)
     def skim_events(self):
         self._skim_masks = PackedSelection()
         mask_flags = np.ones(self.nEvents_initial, dtype=bool)
@@ -180,6 +196,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
 
         # Select b-quarks at Gen level, coming from Z/H->bb decay
         # for now seeing if we reuse the higgs collection for both
+
         if self._sample in ['ttHTobb', 'TTZToBB']:
             higgs = self.events.GenPart[
                 ((self.events.GenPart.pdgId == 25) | (self.events.GenPart.pdgId == 23))
@@ -214,7 +231,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
         print("quarks", quarks.pdgId)
         # Get the interpretation
         if self._sample in ['ttHTobb', 'ttHTobb_ttToSemiLep']:
-            prov = get_partons_provenance_ttHbb(
+            prov = get_partons_provenance_ttHbb_fullhadronic(
                 ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
             ).snapshot()
             self.events["HiggsParton"] = self.events.LHEPart[
@@ -222,8 +239,9 @@ class ZHbbBaseProcessor (BaseProcessorABC):
             ]
             higgs = higgs[higgs.pdgId == 25]
             ak8prov = 1 * ak.ones_like(higgs.pt)
+            
         elif self._sample in ['TTZToBB']:
-            prov = get_partons_provenance_ttHbb(
+            prov = get_partons_provenance_TTZToBB_fullhadronic(
                 ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
             ).snapshot()
             self.events["HiggsParton"] = self.events.LHEPart[
@@ -231,16 +249,18 @@ class ZHbbBaseProcessor (BaseProcessorABC):
             ]
             higgs = higgs[higgs.pdgId == 23]
             ak8prov = 1 * ak.ones_like(higgs.pt)
+            
         elif self._sample == "TTbb_Hadronic":
-            prov = get_partons_provenance_ttbb4F(
+            prov = get_partons_provenance_ttbb4F_fullhadronic(
                 ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
             ).snapshot()
             ak8prov = -1 * ak.ones_like(higgs.pt)
+            
         elif self._sample == "TTToHadronic":
-            prov = get_partons_provenance_tt5F(
+            prov = get_partons_provenance_tt5F_fullhadronic(
                 ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
             ).snapshot()
-            ak8prov = -1 * ak.ones_like(higgs.pt)
+            ak8prov = -1 * ak.ones_like(higgs.pt)            
         elif self._sample == "QCD_HT":
             prov = get_partons_provenance_qcd(
                 ak.Array(quarks.pdgId, behavior={}), ak.ArrayBuilder()
@@ -299,42 +319,76 @@ class ZHbbBaseProcessor (BaseProcessorABC):
     def define_common_variables_after_presel(self, variation):
         super().define_common_variables_before_presel(variation=variation)
 
-        # Define labels for btagged jets at different working points
+        # btag working points
         for wp, val in self.params.btagging.working_point[self._year]["btagging_WP"].items():
             self.events["JetGood"] = ak.with_field(
                 self.events.JetGood,
                 ak.values_astype(self.events.JetGood.btagDeepFlavB > val, int),
                 f"btag_{wp}"
             )
-        #self.events.FatJetGood['xbbVsQCD'] = self.events.FatJetGood.particleNetMD_Xbb / (self.events.FatJetGood.particleNetMD_Xbb + self.events.FatJetGood.particleNetMD_QCD)
-        xbbVsQCD = self.events.FatJetGood.particleNetMD_Xbb / (self.events.FatJetGood.particleNetMD_Xbb + self.events.FatJetGood.particleNetMD_QCD)
-        self.events['FatJetGood'] = ak.with_field(self.events.FatJetGood, xbbVsQCD, 'xbbVsQCD')
 
+        # xbbVsQCD for fat jets
+        xbbVsQCD = self.events.FatJetGood.particleNetMD_Xbb / (
+            self.events.FatJetGood.particleNetMD_Xbb + 
+            self.events.FatJetGood.particleNetMD_QCD
+        )
+        self.events['FatJetGood'] = ak.with_field(
+            self.events.FatJetGood, xbbVsQCD, 'xbbVsQCD'
+        )
+        
+        # Sort fat jets to get leading fat jet for dR computation
+        fatjet_sorted = sortbyscore(self.events.FatJetGood, "xbbVsQCD")
+        
+        # pt_frac: relative pT of each jet
+        HT = ak.sum(self.events.JetGood.pt, axis=1)
+        self.events['JetGood'] = ak.with_field(
+            self.events.JetGood,
+            self.events.JetGood.pt / HT,
+            'pt_frac'
+        )
 
+        # dR_fatjet: distance of each jet to leading fat jet
+        leading_fj_eta = fatjet_sorted[:, 0].eta
+        leading_fj_phi = fatjet_sorted[:, 0].phi
+        deta = self.events.JetGood.eta - leading_fj_eta
+        dphi = self.events.JetGood.phi - leading_fj_phi
+        dphi = ak.where(dphi >  np.pi, dphi - 2*np.pi, dphi)
+        dphi = ak.where(dphi < -np.pi, dphi + 2*np.pi, dphi)
+        self.events['JetGood'] = ak.with_field(
+            self.events.JetGood,
+            np.sqrt(deta**2 + dphi**2),
+            'dR_fatjet'
+        )
     def process_extra_after_presel(self, variation):
         print(self.events.FatJetGood.xbbVsQCD)
         self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "xbbVsQCD")
-        #self.events['passSingleLepElec'] = (ak.count(self.events['ElectronGood']) == 1)
-        #self.events['passSingleLepMuon'] = (ak.count(self.events['MuonGood']) == 1)
-        ### Add function to implement combinatorics now that we have the sorted list
         zh_helper(self.events)
         ak4_truncate(self.events)
-        #match_gen_lep(self.events)
+        self.events['process'] = self._sample
+        self.events['topptWeight'] = ak.ones_like(
+            self.events.event, dtype=np.float32
+        )
         if self._sample in sig:
             match_gen_sig(self.events, self._sample)
         if (("TTbb" in self._sample) | ("TTTo" in self._sample)):
             match_gen_tt(self.events, self._sample)
         if "QCD_HT" in self._sample:
             self.events['process'] = "QCD"
-        #applyDNN(self.events)
         calc_weight(self.events, self.output, self._dataset, self.params)
+
         print("XSEC: ", self.events.metadata['xsec'])
         print("LUMI: ", self.params.sample_params['lumi']['lumi'])
         print("genWeights total: ", self.output['sum_signOf_genweights'][self._dataset])
-        if 'TTbb' in self._sample:
-            add_weights_to_ttbb(self.events, self._sample)
+        #if 'TTbb' in self._sample:
+        #    add_weights_to_ttbb(self.events, self._sample)
+        self.events['HT']          = ak.sum(self.events.JetGood.pt, axis=1)
+        self.events['nJetGood']    = ak.num(self.events.JetGood)
+        self.events['nbJetGood']   = ak.num(self.events.bJetGood)
+        self.events['nFatJetGood'] = ak.num(self.events.FatJetGood)
+
         self.do_parton_matching()
         self.count_partons()
+
 
     def count_objects(self, variation):
         self.events['nMuonGood'] = ak.num(self.events.MuonGood)

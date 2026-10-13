@@ -19,6 +19,13 @@ localdir = os.path.dirname(os.path.abspath(__file__))
 # Load defaults?
 
 from pocket_coffea.parameters import defaults
+from pocket_coffea.lib.weights.common.common import (
+    common_weights,
+    SF_L1prefiring,
+    SF_PSWeight_isr,
+    SF_PSWeight_fsr,
+)
+
 default_parameters = defaults.get_default_parameters()
 defaults.register_configuration_dir("config_dir", localdir+"/params")
 
@@ -27,24 +34,31 @@ parameters = defaults.merge_parameters_from_files(default_parameters,
                                                   f"{localdir}/params/skim_params.yaml",
                                                   f"{localdir}/params/sample_params.yaml",
                                                   f"{localdir}/params/event_flags.yaml",
+                                                  f"{localdir}/params/triggers.yaml",
                                                   update = True)
 
 cfg = Configurator(
         parameters = parameters,
+        weights_classes = common_weights + [SF_L1prefiring],
         datasets = {
-            "jsons": [f"{localdir}/datasets/ttHTobb_M125.json",
-                      f"{localdir}/datasets/ttHToNonbb_M125.json",
-                      f"{localdir}/datasets/TTZToBB.json",
-                      f"{localdir}/datasets/TTZToQQ.json",
-                      f"{localdir}/datasets/TTZToLLNuNu.json",
-                      f"{localdir}/datasets/TTbb_Hadronic.json",
-                      f"{localdir}/datasets/TTbb_2L2Nu.json",
-                      f"{localdir}/datasets/TTbb_SemiLeptonic.json",
-                      f"{localdir}/datasets/TTToHadronic.json",
-                      f"{localdir}/datasets/TTTo2L2Nu.json",
-                      f"{localdir}/datasets/TTToSemiLeptonic.json",
-                      f"{localdir}/datasets/QCD_HT.json"
-                ],
+            "jsons": [                
+                f"{localdir}/datasets/ttHTobb.json",
+                f"{localdir}/datasets/ttHToNonbb.json",
+                f"{localdir}/datasets/TTZToBB.json",
+                f"{localdir}/datasets/TTZToQQ.json",
+                f"{localdir}/datasets/TTbb_Hadronic.json",
+                f"{localdir}/datasets/TTbb_SemiLeptonic.json",
+                f"{localdir}/datasets/TTbb_2L2Nu.json",                
+                f"{localdir}/datasets/TTToHadronic.json",
+                f"{localdir}/datasets/TTToSemiLeptonic.json",
+                f"{localdir}/datasets/TTTo2L2Nu.json",                
+                f"{localdir}/datasets/QCD_HT500to700.json",
+                f"{localdir}/datasets/QCD_HT700to1000.json",
+                f"{localdir}/datasets/QCD_HT1000to1500.json",
+                f"{localdir}/datasets/QCD_HT1500to2000.json",
+                f"{localdir}/datasets/QCD_HT2000toInf.json",
+                #f"{localdir}/datasets/TTZToLLNuNu.json",
+            ],
             "filter": {
                 "samples":  [
                             "ttHTobb",
@@ -56,13 +70,14 @@ cfg = Configurator(
                             #"TTbb_SemiLeptonic",
                             #"TTbb_2L2Nu",
                             "TTToHadronic",
-                            "QCD_HT"
+                            "QCD_HT",
                             #"TTTo2L2Nu",
                             #"TTToSemiLeptonic",
                 ],
                 "samples_exclude": [],
                 "year": ['2017']
                 },
+                #categroies the background
                 "subsamples": {
                     'TTbb_SemiLeptonic': {
                         'tt+LF'   : [get_genTtbarId_100_eq(0)],
@@ -122,6 +137,7 @@ cfg = Configurator(
                             "parton_jet_min_dR_postfsr": 1.0},
                            #"dump_columns_as_arrays_per_chunk": "/cms/data/jsamudio/boosted/boostedttX/configs/SemiLeptonic/output_columns_parton_matching/" },
 
+        #skim = [precut, get_HLTsel(primaryDatasets=["JetHT","BTagCSV"])],
         skim = [precut],
         preselections = [event_selection],
         categories = {
@@ -129,13 +145,23 @@ cfg = Configurator(
             },
         weights = {
             "common": {
-                "inclusive": ["genWeight", "lumi", "XS", "pileup"],
+                "inclusive": ["genWeight", "lumi", "XS", "pileup",
+                              "sf_L1prefiring",
+                              "sf_btag",               
+                              "sf_jet_puId",           
+                              "sf_partonshower_isr",   
+                              "sf_partonshower_fsr",  ],
             }
         },
         variations = {
             "weights": {
                 "common": {
-                    "inclusive": ["pileup"],
+                    "inclusive": ["pileup",
+                                  "sf_L1prefiring",
+                                  "sf_jet_puId",
+                                  "sf_btag",
+                                  "sf_partonshower_isr",
+                                  "sf_partonshower_fsr",]
                 }
             }
         },
@@ -153,9 +179,9 @@ cfg = Configurator(
             #"newgenm_NN" : HistConf([Axis(coll="events", field="newgenm_NN", bins = [0., 0.08306063, 0.43137971, 0.55986929, 0.73463416, 0.8649936, 1. ], start=0, stop=1, label=r"$DNN Score$", pos=0, underflow=False, overflow=False)]),
             #"outZH_b1_pt" : HistConf([Axis(coll="events", field="outZH_b1_pt", bins = 100, start=0, stop=200, label=r"$Xbb_{pNet}$", pos=0)])
         },
-        columns = {
+    columns = {
             "common": {
-                "inclusive": [ColOut("events", ["n_b_inZH", "ZH_pt", "ZH_M", "process", "norm_weight", "genWeight"]),
+                "inclusive": [ColOut("events", ["n_b_inZH", "ZH_pt", "ZH_M", "process", "norm_weight", "topptWeight" ,"genWeight", "nJetGood", "nbJetGood", "nFatJetGood", "HT"]),
                         ColOut(
                             "Parton",
                             ["pt", "eta", "phi", "mass", "pdgId", "provenance"]
@@ -166,7 +192,13 @@ cfg = Configurator(
                         ),
                         ColOut(
                             "JetGood",
-                            ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H"],
+                            ["pt", "eta", "phi",
+                             "btagDeepFlavB",
+                             "btagDeepFlavCvL",
+                             "btagDeepFlavCvB",
+                             "btagDeepFlavQG",
+                             "btag_L", "btag_M", "btag_H",
+                             "pt_frac", "dR_fatjet"],
                         ),
                         #ColOut(
                         #    "JetGoodTruncated",
@@ -174,7 +206,13 @@ cfg = Configurator(
                         #),
                         ColOut(
                             "JetGoodMatched",
-                            ["pt", "eta", "phi", "hadronFlavour", "btagDeepFlavB", "btag_L", "btag_M", "btag_H", "dRMatchedJet"],
+                            ["pt", "eta", "phi",
+                             "btagDeepFlavB",
+                             "btagDeepFlavCvL",
+                             "btagDeepFlavCvB",
+                             "btagDeepFlavQG",
+                             "btag_L", "btag_M", "btag_H",
+                             "dRMatchedJet", "pt_frac", "dR_fatjet"],
                         ),
                         #ColOut("LeptonGood",
                         #       ["pt","eta","phi", "pdgId", "charge", "mvaTTH"],
@@ -182,10 +220,18 @@ cfg = Configurator(
                         ColOut("MET", ["phi","pt","significance"]),
                         ColOut("Generator",["x1","x2","id1","id2","xpdf1","xpdf2"]),
                         #ColOut("LeptonParton",["pt","eta","phi","mass","pdgId"]),
-                        ColOut("FatJetSorted",["pt", "eta", "phi", "mass", "xbbVsQCD"], pos_end=1, store_size=False),
+                        ColOut("FatJetSorted",["pt", "eta", "phi", "mass",
+                                               "xbbVsQCD",
+                                               "deepTagMD_ZHbbvsQCD",
+                                               "deepTagMD_TvsQCD",
+                                               "particleNet_TvsQCD",
+                                               "particleNetMD_Xcc", "particleNetMD_Xqq",
+                                               "deepTagMD_bbvsLight", "deepTagMD_ccvsLight"],
+                               pos_end=1, store_size=False),
                         ColOut(
                             "FatJetMatched",
-                            ["pt", "eta", "phi", "mass", "particleNetMD_Xbb", "dRMatchedJet", "xbbVsQCD"],
+                            ["pt", "eta", "phi", "mass", "particleNetMD_Xbb", "dRMatchedJet", "xbbVsQCD",
+                             "particleNetMD_Xcc", "particleNetMD_Xqq", "deepTagMD_bbvsLight", "deepTagMD_ccvsLight"],
                         ),
                         ColOut(
                             "HiggsMatched",

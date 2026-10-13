@@ -1,0 +1,230 @@
+{
+  "schema_version": 2,
+  "description": "JMAR ParticleNet Mass Calibrations",
+  "corrections": [
+    {
+      "name": "FatJet_PNet_JMR",
+      "description": "ParticleNet Regressed Mass JMR for Run 2 UL (JMAR April 2024)",
+      "version": 1,
+      "inputs": [
+        {
+          "name": "year",
+          "type": "string",
+          "description": "Era: 2016APV, 2016, 2017, 2018"
+        },
+        {
+          "name": "syst",
+          "type": "string",
+          "description": "Systematic variation: nominal, up, down"
+        }
+      ],
+      "output": {
+        "name": "sf",
+        "type": "real",
+        "description": "JMR Scale Factor"
+      },
+      "data": {
+        "nodetype": "category",
+        "input": "year",
+        "content": [
+          {
+            "key": "2016APV",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 1.013
+                },
+                {
+                  "key": "up",
+                  "value": 1.023
+                },
+                {
+                  "key": "down",
+                  "value": 1.003
+                }
+              ]
+            }
+          },
+          {
+            "key": "2016",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 1.015
+                },
+                {
+                  "key": "up",
+                  "value": 1.025
+                },
+                {
+                  "key": "down",
+                  "value": 1.005
+                }
+              ]
+            }
+          },
+          {
+            "key": "2017",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 1.009
+                },
+                {
+                  "key": "up",
+                  "value": 1.016
+                },
+                {
+                  "key": "down",
+                  "value": 1.002
+                }
+              ]
+            }
+          },
+          {
+            "key": "2018",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 1.01
+                },
+                {
+                  "key": "up",
+                  "value": 1.016
+                },
+                {
+                  "key": "down",
+                  "value": 1.004
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "FatJet_PNet_JMS",
+      "description": "ParticleNet Regressed Mass JMS for Run 2 UL (JMAR April 2024)",
+      "version": 1,
+      "inputs": [
+        {
+          "name": "year",
+          "type": "string",
+          "description": "Era: 2016APV, 2016, 2017, 2018"
+        },
+        {
+          "name": "syst",
+          "type": "string",
+          "description": "Systematic variation: nominal, up, down"
+        }
+      ],
+      "output": {
+        "name": "sf",
+        "type": "real",
+        "description": "JMS Scale Factor"
+      },
+      "data": {
+        "nodetype": "category",
+        "input": "year",
+        "content": [
+          {
+            "key": "2016APV",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 0.985
+                },
+                {
+                  "key": "up",
+                  "value": 0.9875
+                },
+                {
+                  "key": "down",
+                  "value": 0.9825
+                }
+              ]
+            }
+          },
+          {
+            "key": "2016",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 0.988
+                },
+                {
+                  "key": "up",
+                  "value": 0.9905
+                },
+                {
+                  "key": "down",
+                  "value": 0.9855
+                }
+              ]
+            }
+          },
+          {
+            "key": "2017",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 0.9945
+                },
+                {
+                  "key": "up",
+                  "value": 0.996
+                },
+                {
+                  "key": "down",
+                  "value": 0.993
+                }
+              ]
+            }
+          },
+          {
+            "key": "2018",
+            "value": {
+              "nodetype": "category",
+              "input": "syst",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": 0.998
+                },
+                {
+                  "key": "up",
+                  "value": 0.9995
+                },
+                {
+                  "key": "down",
+                  "value": 0.9965
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

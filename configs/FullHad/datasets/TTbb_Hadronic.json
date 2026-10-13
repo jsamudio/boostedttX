@@ -1,25 +1,79 @@
 {
-    "TTbb_Hadronic__2017": {
-        "metadata": {
-            "das_names": "['/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM']",
-            "sample": "TTbb_Hadronic",
-            "year": "2017",
-            "isMC": "True",
-            "xsec": "9.286",
-            "part": "",
-            "nevents": "5694656",
-            "size": "14656938944"
-        },
-        "files": [
-            "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/1DD1BB46-D65F-B148-965E-8DB20A33BE8C.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/2C5102B9-7027-3E4E-836C-06A981E74AF3.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/653BA400-3833-5F48-A42F-23B3F86AB049.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/4C17381F-D004-7743-A44E-671BD3E84D4C.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/57DCB40E-7DC0-1A49-A140-4E69BD6D2A62.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/D6993B20-9974-AD42-B574-FE6CADF82731.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/DD9BC642-AF87-C144-9E6A-18B9A3EA0E2E.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/DEFFBFFE-764B-5746-9DC0-243494FE6267.root",
-"file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/A2529DC7-00B6-C446-A40A-BC543359773D.root"
-        ]
-    }
+  "TTbb_Hadronic_2016_PostVFP": {
+    "metadata": {
+      "das_names": "['/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM']",
+      "sample": "TTbb_Hadronic",
+      "year": "2016_PostVFP",
+      "isMC": "True",
+      "xsec": "9.286",
+      "nevents": "2597868",
+      "size": "6441431436"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/270000/00CECCE5-54A2-D447-AE38-E47D6DFAC8C8.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/270000/7848F171-FF02-994A-8F0E-75F3876A7324.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/270000/92F15153-B41F-904D-9811-4126258E906E.root"
+    ]
+  },
+  "TTbb_Hadronic_2017": {
+    "metadata": {
+      "das_names": "['/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM']",
+      "sample": "TTbb_Hadronic",
+      "year": "2017",
+      "isMC": "True",
+      "xsec": "9.286",
+      "nevents": "5694656",
+      "size": "14656938944"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/1DD1BB46-D65F-B148-965E-8DB20A33BE8C.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/2C5102B9-7027-3E4E-836C-06A981E74AF3.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/653BA400-3833-5F48-A42F-23B3F86AB049.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/4C17381F-D004-7743-A44E-671BD3E84D4C.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/57DCB40E-7DC0-1A49-A140-4E69BD6D2A62.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/D6993B20-9974-AD42-B574-FE6CADF82731.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/DD9BC642-AF87-C144-9E6A-18B9A3EA0E2E.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/270000/DEFFBFFE-764B-5746-9DC0-243494FE6267.root",
+      "file:/cms/data/store/mc/RunIISummer20UL17NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/280000/A2529DC7-00B6-C446-A40A-BC543359773D.root"
+    ]
+  },
+  "TTbb_Hadronic_2018": {
+    "metadata": {
+      "das_names": "['/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM']",
+      "sample": "TTbb_Hadronic",
+      "year": "2018",
+      "isMC": "True",
+      "xsec": "9.286",
+      "nevents": "8049064",
+      "size": "20318983212"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/4A992832-1590-F94E-B89C-A2AB5E015477.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/A2B9B14C-ECC0-6B48-8BDA-1E88BA248E11.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/1D0E4D49-773F-DC46-AE5D-A542B45ACD16.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/38C0300D-EB2D-1840-8F71-A903B7B99AF5.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/843F3E27-DD3A-734F-B8AF-D25A162F5F00.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/A4493071-A59D-0349-A29B-9CD222298A1D.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/C5C2D349-9247-F141-AD89-63CE311967E0.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/0B525D47-BEA6-094E-9BE2-4B682A3C3EF3.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/8DBB75B2-D671-E64C-97CC-12808338B775.root",
+      "file:/cms/data/store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/B3D9F7E0-B234-4042-AFF7-0FDDD2AA47F5.root"
+    ]
+  },
+  "TTbb_Hadronic_2016_PreVFP": {
+    "metadata": {
+      "das_names": "['/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM']",
+      "sample": "TTbb_Hadronic",
+      "year": "2016_PreVFP",
+      "isMC": "True",
+      "xsec": "9.286",
+      "nevents": "2303410",
+      "size": "5734539937"
+    },
+    "files": [
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/130000/4AFA59E6-8C85-F74A-836A-CF350C3CD5F2.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/130000/9E3F6C6E-F304-514A-A8EC-5EAD4CDF5E03.root",
+      "file:/cms/data/store/mc/RunIISummer20UL16NanoAODAPVv9/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_mcRun2_asymptotic_preVFP_v11-v1/130000/AB247A09-2A21-7343-903D-97C8163ED05E.root"
+    ]
+  }
 }

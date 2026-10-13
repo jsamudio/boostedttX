@@ -1,0 +1,2599 @@
+{
+  "schema_version": 2,
+  "corrections": [
+    {
+      "name": "Fake_SF_Xbb_2017",
+      "description": "Exclusive fake Xbb scale factors for 2017. WorkingPoint is the exclusive tagger category (HP/MP/LP/Fail). systematic keys: 'nominal', 'statUp'/'statDown' (Clopper-Pearson), 'sigRateUp'/'sigRateDown' (+/-20% ttZ+ttH rate), 'realSFUp'/'realSFDown' (real-SF uncertainty propagated through), 'up'/'down' (quadrature total).",
+      "version": 1,
+      "inputs": [
+        {
+          "name": "WorkingPoint",
+          "type": "string",
+          "description": "Exclusive category: 'HP', 'MP', 'LP', or 'Fail'"
+        },
+        {
+          "name": "systematic",
+          "type": "string",
+          "description": "See Correction description for the full list of keys"
+        },
+        {
+          "name": "jet_pt",
+          "type": "real",
+          "description": "Z/H candidate transverse momentum [GeV]"
+        },
+        {
+          "name": "fatjet_msd",
+          "type": "real",
+          "description": "Z/H candidate soft-drop mass [GeV]"
+        }
+      ],
+      "output": {
+        "name": "weight",
+        "type": "real",
+        "description": "Multiplicative fake-candidate scale factor"
+      },
+      "data": {
+        "nodetype": "category",
+        "input": "WorkingPoint",
+        "content": [
+          {
+            "key": "HP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3751734290506006,
+                          1.2409027728865856,
+                          1.0327327298710567,
+                          1.268557106874497
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2417050552916433,
+                          1.2461210428165914,
+                          1.266107745176812,
+                          0.9586590697324704
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          2.354466609811447,
+                          1.05602279762916,
+                          1.4012581848770522,
+                          1.1251100452195835
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4911659735952143,
+                          1.312840252320169,
+                          1.1630677080372822,
+                          1.7133485000315822
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.481017234841624,
+                          1.3596012098910197,
+                          1.3610525993597347,
+                          1.0713583768320636
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          3.222237638883206,
+                          1.3726569192682319,
+                          1.607324075258987,
+                          1.237646841881544
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2591808845059869,
+                          1.1689652934530022,
+                          0.9023977517048312,
+                          0.8237657137174117
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0023928757416627,
+                          1.132640875742163,
+                          1.1711628909938891,
+                          0.8459597626328772
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.486695580739688,
+                          0.7393886759900882,
+                          1.1951922944951174,
+                          1.0125732485576229
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.379713871003903,
+                          1.2494092102763736,
+                          1.038137130548872,
+                          1.2727458154027296
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2476713413892817,
+                          1.2615520690630633,
+                          1.27376249825997,
+                          0.9611197932165042
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          2.3652215414113384,
+                          1.0898612852885492,
+                          1.4143222051771973,
+                          1.12806168781008
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3706161601317908,
+                          1.232355161223377,
+                          1.0272996495262192,
+                          1.2643464178061687
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2357156031340177,
+                          1.23060679443419,
+                          1.2584169615648946,
+                          0.9561893822697276
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          2.343660992501675,
+                          1.0218955364019204,
+                          1.3881187900635346,
+                          1.1221457066545
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3917018463153747,
+                          1.2525441068696805,
+                          1.0389521030180218,
+                          1.2708661063555946
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2506367011543202,
+                          1.254082819766474,
+                          1.270512029001256,
+                          0.9604022548905767
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          2.3610725880013357,
+                          1.064480137152442,
+                          1.4045808660657735,
+                          1.1260869934169402
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3587265682107916,
+                          1.2293188809178273,
+                          1.0265440450732093,
+                          1.2662595007252535
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2326613574937437,
+                          1.2380593814188967,
+                          1.2616482074234294,
+                          0.9568940154504173
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          2.347759831736316,
+                          1.0474364085043049,
+                          1.3978848032662445,
+                          1.1241181898785226
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4924256127417541,
+                          1.3142708932198037,
+                          1.1633278855339604,
+                          1.7133742155656522
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4812581603614323,
+                          1.3609219782764523,
+                          1.3614624424737298,
+                          1.0713987152671656
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          3.2223294252366865,
+                          1.3745722236607154,
+                          1.6077645044306776,
+                          1.237689782404824
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2579320612599756,
+                          1.1675389591529328,
+                          0.9021378420876865,
+                          0.8237398496518618
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0021471681579268,
+                          1.1313019215579696,
+                          1.1707475807193424,
+                          0.8459188879270882
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4866023916679323,
+                          0.737439114708609,
+                          1.194746261302511,
+                          1.0125298441046382
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "MP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.457220859286955,
+                          1.0877523730373124,
+                          1.0893060558981829,
+                          1.010434136697277
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.5083074400497436,
+                          1.0280405978038487,
+                          1.0719533028703536,
+                          1.0924446452259906
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          0.9209854525951534,
+                          0.9788422350522273,
+                          1.073469889888096,
+                          1.2146426172173121
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.530752335055672,
+                          1.130762861607248,
+                          1.1798085832261123,
+                          1.3214204684956827
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.6856214522729014,
+                          1.0970670376903873,
+                          1.1286093492816742,
+                          1.168293668727274
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.417433828886792,
+                          1.1888076504169953,
+                          1.1911195648177972,
+                          1.2897379038119658
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3836893835182382,
+                          1.0447418844673768,
+                          0.9988035285702533,
+                          0.6994478048988715
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3309934278265858,
+                          0.9590141579173102,
+                          1.015297256459033,
+                          1.0165956217247072
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          0.4245370763035149,
+                          0.7688768196874594,
+                          0.955820214958395,
+                          1.1395473306226584
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4607521622280084,
+                          1.0914098198077105,
+                          1.0927956032927293,
+                          1.0133430788055984
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.5127588437533284,
+                          1.033091884447547,
+                          1.0754775614793342,
+                          1.0945886938411693
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          0.9244721500640214,
+                          0.987401444779894,
+                          1.0782021075120867,
+                          1.2175168002067995
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4536778596512265,
+                          1.084081934964934,
+                          1.0858020997895075,
+                          1.007512968073862
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.5038379671530053,
+                          1.0229685675954656,
+                          1.0684150114239401,
+                          1.0902936000683958
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          0.9174780467272111,
+                          0.9702326281193316,
+                          1.068714883913663,
+                          1.2117566919044411
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4662351255021928,
+                          1.093232948805738,
+                          1.0926436164974478,
+                          1.0114849771286447
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.515733587951235,
+                          1.0320976387084322,
+                          1.0745712606224638,
+                          1.0937613304087663
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          0.9260230826681461,
+                          0.9820313129847371,
+                          1.0750545514114687,
+                          1.2155465959897758
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4481976108327206,
+                          1.0822632614378995,
+                          1.0859633021359372,
+                          1.0093800852001018
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.5009040575840649,
+                          1.02400899854663,
+                          1.0693471182979226,
+                          1.091131783136087
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          0.9162879338597208,
+                          0.9759556666201622,
+                          1.0719996599909163,
+                          1.2137848510016371
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.5313869231206658,
+                          1.1312646213664475,
+                          1.179937307155766,
+                          1.3214358485498485
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.685832710358681,
+                          1.0973704216970925,
+                          1.1287791921858452,
+                          1.1683353888673138
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.4174716307497885,
+                          1.1890062327742952,
+                          1.191225361297491,
+                          1.2897983234159187
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3830531453690311,
+                          1.0442379548656473,
+                          0.9986740573332766,
+                          0.6994322993777635
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.330782666593806,
+                          0.9587107435820527,
+                          1.0151270826956222,
+                          1.0165537698308855
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          0.4245024630569452,
+                          0.7686805514413667,
+                          0.955714984814754,
+                          1.139487002679705
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "LP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3372551398033778,
+                          1.1578081546110595,
+                          1.1755005938428842,
+                          1.340943823943577
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.199865580008252,
+                          1.220716676196203,
+                          1.1563269712308626,
+                          1.0355894894378972
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.198402866399585,
+                          1.112913568314525,
+                          1.1540565512244,
+                          1.0115867675947579
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3554390989168132,
+                          1.1711291104372394,
+                          1.2062699335683433,
+                          1.491192813633614
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2459897035419307,
+                          1.242801178665637,
+                          1.1761299757400712,
+                          1.0635500826559725
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3651230462327213,
+                          1.1805033706799424,
+                          1.193555366138378,
+                          1.0370941264776552
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3190711806899424,
+                          1.1444871987848795,
+                          1.144731254117425,
+                          1.19069483425354
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.1537414564745734,
+                          1.198632173726769,
+                          1.136523966721654,
+                          1.0076288962198219
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0316826865664486,
+                          1.0453237659491077,
+                          1.1145577363104222,
+                          0.9860794087118606
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.339840294585964,
+                          1.1601989958199295,
+                          1.1781368548528375,
+                          1.3439202421529357
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.202779034553313,
+                          1.2237191964999021,
+                          1.1589046027204544,
+                          1.037474844840518
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2022011942853439,
+                          1.1181102458502876,
+                          1.1574450227874713,
+                          1.0138948210056156
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3346623104154027,
+                          1.1554102155707546,
+                          1.1728549934789159,
+                          1.3379557944731018
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.1969408921236906,
+                          1.21770372028259,
+                          1.153740199824815,
+                          1.0336981765220574
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.1945865870908794,
+                          1.1076866988055656,
+                          1.1506526125686158,
+                          1.0092694187536704
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3435252131508075,
+                          1.1619834579403119,
+                          1.1784831965916356,
+                          1.3420636052500823
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2056123157481076,
+                          1.2233799132812968,
+                          1.1580608530244112,
+                          1.036601199148521
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2032234769708976,
+                          1.1152279324732275,
+                          1.1553517181655588,
+                          1.012312781238427
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3309135661006133,
+                          1.1535809180981127,
+                          1.1724817969848538,
+                          1.3398078897083394
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.1939802355955107,
+                          1.2179774143786812,
+                          1.1545434348291732,
+                          1.0345503853953
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.193745437529576,
+                          1.110681577950551,
+                          1.1528062546765747,
+                          1.010885571953449
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.356662695395754,
+                          1.17197138671748,
+                          1.206526358271987,
+                          1.491226463920416
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.2464375454037548,
+                          1.2431629054846154,
+                          1.1763721581285165,
+                          1.0636318305427235
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.3652359684644968,
+                          1.1807423462975166,
+                          1.1937215934725547,
+                          1.0372086247393733
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.317823343944481,
+                          1.1436283272390337,
+                          1.1444705341765444,
+                          1.190660832325829
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.153275604156909,
+                          1.1982599019851827,
+                          1.1362762511441666,
+                          1.007545745485571
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0315739900171237,
+                          1.0450852310973653,
+                          1.1143916244068888,
+                          0.985964762634966
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "Fail",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "statDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "sigRateDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFUp",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "realSFDown",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      },
+                      {
+                        "nodetype": "binning",
+                        "input": "fatjet_msd",
+                        "edges": [
+                          50.0,
+                          80.0,
+                          115.0,
+                          155.0,
+                          200.0
+                        ],
+                        "content": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "flow": "clamp"
+                      }
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

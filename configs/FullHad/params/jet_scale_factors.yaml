@@ -2,6 +2,9 @@ jet_scale_factors:
 
   jet_collection:
     bbtag: FatJetSorted
+    btag: JetGood
+    ctag: JetGood
+    puId: JetGood
     
   bbtagSF:
     '2017':

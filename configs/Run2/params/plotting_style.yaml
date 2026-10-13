@@ -1,0 +1,48 @@
+plotting_style:
+  opts_mc:
+    stack: False
+    histtype: step
+    
+
+  no_weights: True
+  
+  samples_groups:
+    ttbb (4FS):
+      - TTbb_Hadronic___tt+B
+      - TTbb_SemiLeptonic___tt+B
+      - TTbb_2L2Nu___tt+B
+    TTBar (5FS):
+      - TTToSemiLeptonic__TTToSemiLeptonic_tt+LF
+      - TTToSemiLeptonic__TTToSemiLeptonic_tt+C
+      - TTTo2L2Nu__TTTo2L2Nu_tt+LF
+      - TTTo2L2Nu__TTTo2L2Nu_tt+C
+      - TTToHadronic__TTToHadronic_tt+LF
+      - TTToHadronic__TTToHadronic_tt+C
+    ttH (genm):
+      - ttHTobb__genMatch
+      - ttHToNonbb__genMatch
+    ttZ (genm):
+      - TTZToQQ__genMatch
+      - TTZToLLNuNu__genMatch
+      - TTZToBB__genMatch
+  exclude_samples:
+    - TTZToQQ__non_genMatch
+    - TTZToBB__non_genMatch
+    - TTZToLLNuNu__non_genMatch
+    - ttHTobb__non_genMatch
+    - ttHToNonbb__non_genMatch
+    - TTToSemiLeptonic
+    - TTbb_SemiLeptonic
+    - TTToHadronic
+    - TTbb_Hadronic
+    - TTTo2L2Nu
+    - TTbb_2L2Nu
+    - TTToSemiLeptonic__TTToSemiLeptonic_tt+B
+    - TTbb_SemiLeptonic__tt+C
+    - TTbb_SemiLeptonic__tt+LF
+    - TTToHadronic__tt+B
+    - TTbb_Hadronic__tt+C
+    - TTbb_Hadronic__tt+LF
+    - TTTo2L2Nu__tt+B
+    - TTbb_2L2Nu__tt+C
+    - TTbb_2L2Nu__tt+LF

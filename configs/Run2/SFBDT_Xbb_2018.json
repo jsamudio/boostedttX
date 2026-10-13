@@ -1,0 +1,1718 @@
+{
+  "schema_version": 2,
+  "corrections": [
+    {
+      "name": "SFBDT_Xbb_SF_2018",
+      "description": "ParticleNet SFBDT Xbb data/MC scale factors and full systematic breakdown for 2018.",
+      "version": 1,
+      "inputs": [
+        {
+          "name": "WorkingPoint",
+          "type": "string",
+          "description": "Tagger working point: 'HP', 'MP', or 'LP'"
+        },
+        {
+          "name": "systematic",
+          "type": "string",
+          "description": "Variation: 'nominal', 'up', 'down', or nuisance-specific (e.g., 'jes_up')"
+        },
+        {
+          "name": "jet_pt",
+          "type": "real",
+          "description": "Fatjet transverse momentum [GeV]"
+        }
+      ],
+      "output": {
+        "name": "weight",
+        "type": "real",
+        "description": "Multiplicative event scale factor"
+      },
+      "data": {
+        "nodetype": "category",
+        "input": "WorkingPoint",
+        "content": [
+          {
+            "key": "HP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.961381174635206,
+                      0.9858659480221665,
+                      1.0169320196602738
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      1.0096325631652765,
+                      1.019121253321104,
+                      1.048614460326691
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9122233175933117,
+                      0.9508840070640581,
+                      0.9884807695401263
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extSfBDTVariation_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9716113550369887,
+                      1.0075017590901678,
+                      1.03957090908297
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extSfBDTVariation_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9458345949749568,
+                      0.9656545355611843,
+                      0.9989355839002283
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extVarRwgt_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      1.0003859310270409,
+                      0.998063122602629,
+                      1.026654061633211
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extVarRwgt_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9223764182433711,
+                      0.9736687734417041,
+                      1.0072099776873367
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracBB_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.973709880953203,
+                      0.9955429639127035,
+                      1.023149686177007
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracBB_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9502692761412278,
+                      0.980465753850052,
+                      1.0103159902122407
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracCC_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9689123887439258,
+                      0.9919460124909394,
+                      1.0205914505514995
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracCC_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.954419932443434,
+                      0.9814652384794341,
+                      1.0135442016794287
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracLight_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9630184603722519,
+                      0.9860704993991647,
+                      1.0169320196602738
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracLight_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9591193786360362,
+                      0.9849466689264214,
+                      1.0164517769861197
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jer_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9618558634543546,
+                      0.9869131968412727,
+                      1.01763986706883
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jer_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.960840520294138,
+                      0.983628438655914,
+                      1.016389386298068
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jes_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9617546227455104,
+                      0.9909013544319635,
+                      1.0211551517671504
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jes_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9612255148503444,
+                      0.9807529471522805,
+                      1.0117257754290803
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "l1PreFiring_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.961381174635206,
+                      0.9858659480221665,
+                      1.0169320196602738
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "l1PreFiring_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.961381174635206,
+                      0.9858659480221665,
+                      1.0169320196602738
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "lumi_13TeV_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9615422588202075,
+                      0.9861767736089277,
+                      1.0172065314811676
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "lumi_13TeV_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9611950922288091,
+                      0.9858659480221665,
+                      1.0165049889092352
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightFsr_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9706210773755708,
+                      0.9858659480221665,
+                      1.0169320196602738
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightFsr_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9530842616291398,
+                      0.9790721007100781,
+                      1.0154850778262001
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightIsr_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9670007080586285,
+                      0.9911492742444914,
+                      1.0219044380531626
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightIsr_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9561680588378589,
+                      0.9798986720293719,
+                      1.011801808481441
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "pu_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9663848185069668,
+                      0.9899377975494057,
+                      1.0208015257217486
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "pu_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.956346595487478,
+                      0.9819362138934506,
+                      1.0131855310166196
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "stats_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9800463786577804,
+                      1.0034199913465849,
+                      1.0338723810937203
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "stats_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.942548613635464,
+                      0.9637548027276924,
+                      1.0006355975356187
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "MP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9422597010980435,
+                      0.957266089761979,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9857277203972648,
+                      0.9863910740881549,
+                      1.010717963452041
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.8977627751778081,
+                      0.92324874253736,
+                      0.9652510073345115
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extSfBDTVariation_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9514935053887311,
+                      0.9727438672942762,
+                      1.0030529799000716
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extSfBDTVariation_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9279943589912286,
+                      0.9335408056037858,
+                      0.9694176004075278
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extVarRwgt_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9784104364114911,
+                      0.972590455122411,
+                      0.9927832025053543
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extVarRwgt_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9061089657845959,
+                      0.941941724401547,
+                      0.9855311483552033
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracBB_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9548646651115879,
+                      0.9645643751488909,
+                      0.9986428548383649
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracBB_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9302295605385478,
+                      0.9504385185465108,
+                      0.9808286622666351
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracCC_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9491917888245835,
+                      0.9618187164934894,
+                      0.9929172791407646
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracCC_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9354614908478545,
+                      0.9528294262848064,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracLight_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9438797096918282,
+                      0.95783832517866,
+                      0.9902158735212417
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracLight_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9407698067216514,
+                      0.957266089761979,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jer_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9432152215395916,
+                      0.9588761716066573,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jer_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9412997978542266,
+                      0.9555038490048927,
+                      0.989020785895169
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jes_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9463843598237289,
+                      0.9609220523734275,
+                      0.9892410670356557
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jes_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9386940747014995,
+                      0.9538686444306033,
+                      0.9860470251538228
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "l1PreFiring_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9422597010980435,
+                      0.957266089761979,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "l1PreFiring_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9422597010980435,
+                      0.957266089761979,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "lumi_13TeV_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9423526729950271,
+                      0.95750696240175,
+                      0.9891946926126659
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "lumi_13TeV_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9420418026641144,
+                      0.9571200579467704,
+                      0.9888344711656419
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightFsr_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9490384316208093,
+                      0.9588891151482775,
+                      0.9907697775913248
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightFsr_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9358400915630319,
+                      0.9564316697085606,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightIsr_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9476950296305209,
+                      0.9617832591604071,
+                      0.9925288815729232
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightIsr_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9371319139273379,
+                      0.9529071563619282,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "pu_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.947377959032733,
+                      0.9623784305070805,
+                      0.9891571754302788
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "pu_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9371945422789515,
+                      0.952262962562366,
+                      0.9869657467104832
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "stats_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9552266394339501,
+                      0.9725747998114628,
+                      1.0009644383277703
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "stats_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.929236758642274,
+                      0.941972971469225,
+                      0.9799470838968012
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "LP",
+            "value": {
+              "nodetype": "category",
+              "input": "systematic",
+              "content": [
+                {
+                  "key": "nominal",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9086502180646601,
+                      0.9432255429631669,
+                      0.9778414155126962
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9519986141119213,
+                      0.9713715023314147,
+                      1.000425418891721
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.8585174509647586,
+                      0.9063787491609774,
+                      0.9525352959072695
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extSfBDTVariation_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9289820870018954,
+                      0.9585256308511731,
+                      0.994157085723874
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extSfBDTVariation_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.875949767057924,
+                      0.9149087099431458,
+                      0.9577275916795032
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extVarRwgt_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9400390847529716,
+                      0.9579728885599379,
+                      0.9795626924522023
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "extVarRwgt_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.8772613513763485,
+                      0.9284781973663958,
+                      0.9761201385731901
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracBB_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9224577522444432,
+                      0.9529832394502732,
+                      0.9869063647180003
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracBB_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.8972146293652944,
+                      0.9336884001592053,
+                      0.9691887478342316
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracCC_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9151069361442412,
+                      0.9494090377971369,
+                      0.9820535990630815
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracCC_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9025397639730193,
+                      0.9369514693074898,
+                      0.9736561626322469
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracLight_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9132772926097427,
+                      0.9449698398312583,
+                      0.979980732817908
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "fracLight_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9043406988437778,
+                      0.9420054244780136,
+                      0.9758998131862899
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jer_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9099908580385578,
+                      0.9442634017721176,
+                      0.9779418463710311
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jer_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9075760423034595,
+                      0.9420109434964132,
+                      0.9777347790252153
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jes_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9118454672543262,
+                      0.947712952859683,
+                      0.9792072504298659
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "jes_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9062229547179625,
+                      0.938708794292085,
+                      0.9765388550986898
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "l1PreFiring_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9086502180646601,
+                      0.9432255429631669,
+                      0.9778414155126962
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "l1PreFiring_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9086502180646601,
+                      0.9432255429631669,
+                      0.9778414155126962
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "lumi_13TeV_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9087296533525099,
+                      0.9432255429631669,
+                      0.9778768816584197
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "lumi_13TeV_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9084956471394843,
+                      0.9431050624564603,
+                      0.977654047726176
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightFsr_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9116288632154204,
+                      0.9437870924513223,
+                      0.98044204558748
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightFsr_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9061794695918978,
+                      0.9432255429631669,
+                      0.9752617153258196
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightIsr_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.912490810302622,
+                      0.9457608651958936,
+                      0.9793910535985524
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "psWeightIsr_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9050972637921862,
+                      0.940421790716662,
+                      0.9760998246665363
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "pu_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9149559286175099,
+                      0.9479646636859047,
+                      0.9811655348118762
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "pu_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9022611274250624,
+                      0.9383141486809833,
+                      0.9745323530917432
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "stats_up",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.9209503344033168,
+                      0.9556239967664031,
+                      0.988532045693757
+                    ],
+                    "flow": "clamp"
+                  }
+                },
+                {
+                  "key": "stats_down",
+                  "value": {
+                    "nodetype": "binning",
+                    "input": "jet_pt",
+                    "edges": [
+                      200.0,
+                      300.0,
+                      450.0,
+                      10000.0
+                    ],
+                    "content": [
+                      0.8943179579260728,
+                      0.9308615077294804,
+                      0.9671486544439912
+                    ],
+                    "flow": "clamp"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
