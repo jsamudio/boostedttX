@@ -18,5 +18,6 @@ merge-mem: 32gb             # merge job (1 core)
 scratch-dir: /tmp           # job working directory (bound into the image)
 apptainer-image: /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
 apptainer-binds: [/cvmfs, /cms/data, /home/$USER, /tmp]
-ignore-grid-certificate: true   # inputs are local files (file:/cms/data/store/...)
+ignore-grid-certificate: false  # jobs get the VOMS proxy (X509_USER_PROXY), copied to $HOME and
+                                # refreshed at every (re)submission: run voms-proxy-init beforehand
 split-by-category: false

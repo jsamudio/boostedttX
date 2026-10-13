@@ -47,6 +47,15 @@ Each group / jet variation becomes a PBS job array: pocket-coffea splits the fil
 8 cores inside the pocketcoffea apptainer image, and a merge job (queued after the array)
 writes `output_all.coffea`. Settings (queue, cores, memory, image, binds) are in `run_options_pbs.yaml`.
 
+The jobs need a VOMS proxy. Create it first (inside the apptainer image if `voms-proxy-init` is
+not available on the host; it lands in `/tmp/x509up_u<uid>`, visible to both):
+```bash
+voms-proxy-init -voms cms -rfc --valid 168:0
+```
+Every `submit` / `resubmit` copies the current proxy to `$HOME` (exported to the jobs as
+`X509_USER_PROXY`) and refuses to submit if it has less than 1 h left, so renew it before
+resubmitting.
+
 From the host (where `qsub` is available; pocket-coffea is run inside apptainer automatically):
 ```bash
 python run_pipeline.py inference --backend pbs --groups signal bkg minor --eras 2018 --jec-variations JES_Total JER

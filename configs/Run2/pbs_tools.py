@@ -171,11 +171,44 @@ cd {settings['analysis-dir']}
     return path
 
 
+# ---------------------------------------------------------------- grid proxy
+PROXY_MIN_HOURS = 1        # refuse to submit below this
+PROXY_WARN_HOURS = 24      # warn below this (jobs may queue / run long)
+
+
+def refresh_proxy(settings):
+    """Copy the current VOMS proxy to the path the jobs use (X509_USER_PROXY in job.sh) and check
+    its lifetime, so that (re)submissions always ship a valid proxy. No-op without a proxy."""
+    dest = settings.get("x509-path")
+    if not dest:
+        return
+    src = os.environ.get("X509_USER_PROXY") or f"/tmp/x509up_u{os.getuid()}"
+    if os.path.isfile(src) and os.path.abspath(src) != os.path.abspath(dest):
+        shutil.copyfile(src, dest)
+        os.chmod(dest, 0o600)
+    if not os.path.isfile(dest):
+        sys.exit(f"No VOMS proxy found ({src}). Run `voms-proxy-init -voms cms -rfc --valid 168:0` "
+                 f"(e.g. inside the apptainer image) and submit again.")
+    if shutil.which("voms-proxy-info") is None:
+        print(f"  proxy: {dest} (voms-proxy-info not available here, lifetime not checked)")
+        return
+    res = subprocess.run(["voms-proxy-info", "-file", dest, "-timeleft"], capture_output=True, text=True)
+    hours = int(res.stdout.strip() or 0) / 3600. if res.returncode == 0 else 0.
+    if hours < PROXY_MIN_HOURS:
+        sys.exit(f"VOMS proxy {dest} expired or invalid ({hours:.1f} h left). "
+                 f"Run `voms-proxy-init -voms cms -rfc --valid 168:0` and submit again.")
+    if hours < PROXY_WARN_HOURS:
+        print(f"  [WARNING] VOMS proxy has only {hours:.1f} h left; jobs starting later will fail.")
+    else:
+        print(f"  proxy: {dest} ({hours:.0f} h left)")
+
+
 # ---------------------------------------------------------------- commands
 def submit(path, ids=None, tag="all"):
     """Submit the job array (all jobs, or `ids`) and a merge job that runs after it."""
     jobs_dir = jobs_dir_of(path)
     settings = load_settings(jobs_dir)
+    refresh_proxy(settings)
     os.makedirs(os.path.join(jobs_dir, "logs"), exist_ok=True)
     ids = job_ids(jobs_dir) if ids is None else ids
     for i in ids:

@@ -18,7 +18,7 @@ import sys
 
 from pocket_coffea.executors.executors_base import IterativeExecutorFactory, FuturesExecutorFactory
 from pocket_coffea.executors.executors_lxplus import ExecutorFactoryCondorCERN, build_job_script, get_worker_env
-from pocket_coffea.executors.executors_manual_jobs import write_inner_run_options
+from pocket_coffea.executors.executors_manual_jobs import write_inner_run_options, INNER_RUN_OPTIONS_WHITELIST
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pbs_tools  # noqa: E402
@@ -42,7 +42,9 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
         env = get_worker_env(self.run_options, getattr(self, "x509_path", None), "condor")
         env.append(f"export PYTHONPATH={analysis_dir}:$PYTHONPATH")
 
-        inner_yaml = write_inner_run_options(self.jobs_dir, self.run_options)
+        # The per-job `pocket-coffea run` must also know whether a grid proxy is required
+        inner_yaml = write_inner_run_options(self.jobs_dir, self.run_options,
+                                             whitelist=INNER_RUN_OPTIONS_WHITELIST + ("ignore-grid-certificate",))
         script = build_job_script(
             env_extras="\n".join(env),
             abs_jobdir_path=jobs_dir,
@@ -69,6 +71,8 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
             "analysis-dir": analysis_dir,
             "output-dir": output_dir,
             "inner-yaml": os.path.basename(inner_yaml),
+            # proxy used by the jobs (refreshed by pbs_tools at every submission); None = no proxy
+            "x509-path": None if self.run_options["ignore-grid-certificate"] else self.x509_path,
             "chunksizes": chunksizes,
         })
         with open(os.path.join(jobs_dir, pbs_tools.SETTINGS_FILE), "w") as f:
