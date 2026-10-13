@@ -8,7 +8,6 @@ Helper to manually deal with weights and export in flat n-tuple
 
 def calc_weight(events, output, dataset, params, year):
     if events.metadata['isMC'] == 'True':
-        print("LUMI:", params['lumi']['picobarns'][year]['tot'])
         norm_weight = (float(events.metadata['xsec'])*params['lumi']['picobarns'][year]['tot'])
         events['norm_weight'] = norm_weight
     else:

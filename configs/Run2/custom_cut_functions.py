@@ -2,7 +2,8 @@ import awkward as ak
 import numpy as np
 from pocket_coffea.lib.cut_definition import Cut
 from collections.abc import Iterable
-import correctionlib
+from pocket_coffea.lib.correction_cache import load_correction_set
+from analysis_years import xbb_wp_cuts
 
 '''
 Trigger Efficiency Selection
@@ -49,16 +50,8 @@ precut = Cut(
 )
 
 def network_cut(events, params, year, sample, **kwargs):
-    # Standard ParticleNet-MD XbbvsQCD Run 2 UL cuts (Loose WP)
-    wp_cuts_map = {
-        "2016_PreVFP":  0.9088,
-        "2016_PostVFP": 0.9137,
-        "2017":         0.9105,
-        "2018":         0.9172,
-    }
-    
-    # Safely fetch the cut for the current year (fallback to 2018 if not found)
-    xbb_loose_wp = wp_cuts_map.get(year, 0.9172)
+    # Standard ParticleNet-MD XbbvsQCD Run 2 UL cuts (Loose WP, see analysis_years.XBB_WP_DICT)
+    xbb_loose_wp = xbb_wp_cuts(year)["L"]
 
     # Event selection mask
     mask = (
@@ -345,114 +338,35 @@ genMatch = Cut(
 )
 
 non_genMatch = Cut(
-        name = "genMatch",
+        name = "non_genMatch",
         params = {},
         function = non_genMatchZHbb,
 )
 
 ###########################
-## Implementation of JetVetoMaps 
-## (Recommended for Run 3, see https://cms-jerc.web.cern.ch/Recommendations/#jet-veto-maps)
-## This is mostly a default pocketcoffea function, but I am customizing to use the correct jet collection aka JetGood
-def get_nano_version(events, params, year):
-    '''Helper function to get the nano version from the events metadata or from the default parameters.'''
-    if "nano_version" in events.metadata:
-        nano_version = events.metadata["nano_version"]
-    else:
-        if events.metadata.get("isMC", False):
-            # Try to extract from the sample name
-            if "NanoAODv12" in events.metadata["filename"]:
-                nano_version = 12
-            elif "NanoAODv15" in events.metadata["filename"]:
-                nano_version = 15
-            else:
-                # For MC if it's not defined we take the default nano version
-                #nano_version = params["default_nano_version"][year]
-                nano_version = 9
-        else:
-            # For data if it's not defined we take the default nano version
-            #nano_version = params["default_nano_version"][year]
-            nano_version = 9
-
-    return nano_version
-
-def compute_jetId(events, jet_type, params, year):
-    """
-    Add (or recompute) jet ID to the jets object based on the NanoAOD version.
-    Inspired by https://gitlab.cern.ch/cms-analysis/general/HiggsDNA/-/blob/master/higgs_dna/tools/jetID.py
-    """
-    jets = events[jet_type]
-    # Get the nano version from events metadata or from default parameters
-    nano_version = get_nano_version(events, params, year)
-    abs_eta = abs(jets.eta)
-    # Return the existing jetId for NanoAOD versions below 12
-    if nano_version < 12:
-        return jets.jetId
-
-    # For NanoAOD version 12 and above, we recompute the jet ID criteria
-    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID13p6TeV
-    elif nano_version == 12:
-        if jet_type == "Jet":
-            # Default tight
-            passJetIdTight = ak.where(
-                abs_eta <= 2.7,
-                (jets.jetId & (1 << 1)) > 0,  # Tight criteria for abs_eta <= 2.7
-                ak.where(
-                    (abs_eta > 2.7) & (abs_eta <= 3.0),
-                    ((jets.jetId & (1 << 1)) > 0) & (jets.neHEF < 0.99),  # Tight criteria for 2.7 < abs_eta <= 3.0
-                    ((jets.jetId & (1 << 1)) > 0) & (jets.neEmEF < 0.4)  # Tight criteria for 3.0 < abs_eta
-                )
-            )
-            # Default tight lepton veto
-            passJetIdTightLepVeto = ak.where(
-                abs_eta <= 2.7,
-                passJetIdTight & (jets.muEF < 0.8) & (jets.chEmEF < 0.8),  # add lepton veto for abs_eta <= 2.7
-                passJetIdTight  # No lepton veto for 2.7 < abs_eta
-            )
-            return (passJetIdTight * (1 << 1)) | (passJetIdTightLepVeto * (1 << 2))
-
-        elif jet_type == "FatJet":
-            # For nanoAOD v12, only using the original branch in the tracker acceptance
-            passJetIdTight = ak.where(
-                abs_eta <= 2.7,
-                (jets.jetId & (1 << 1)) > 0,  # Tight criteria for abs_eta <= 2.7
-                ak.zeros_like(jets.jetId) 
-                )
-            # Not tight lepveto for FatJet
-            return (passJetIdTight * (1 << 1)) 
-        else:
-            raise ValueError(f"Jet type {jet_type} not recognized for JetID")
-
-
+## Jet veto maps (https://cms-jerc.web.cern.ch/Recommendations/#jet-veto-maps)
+## Same as pocket-coffea's get_JetVetoMap, but on the analysis jet collection (JetGood)
+## instead of all NanoAOD jets.
 def get_JetVetoMap(name="JetVetoMaps"):
-    return Cut(
-        name=name, params={}, function=get_JetVetoMap_Mask
-    )
-       
+    return Cut(name=name, params={}, function=get_JetVetoMap_Mask)
+
 def get_JetVetoMap_Mask(events, params, year, processor_params, sample, isMC, **kwargs):
-    # Import here to prevent circular import configurator -> cuts -> cut_functions -> jets -> utils -> configurator
-    # For nanoV15 no jetId key in Nano anymore. 
-    # For nanoV12 (i.e. 22/23), jet Id is also buggy, should therefore be rederived
-    # in the following, if nano_version not explicitly specified in params, v9 is assumed for Run2UL, v12 for 22/23 and v15 for 2024
+    # Imported here to avoid the circular import configurator -> cuts -> jets -> configurator
+    from pocket_coffea.lib.jets import compute_jetId
     jets = ak.with_field(events["JetGood"], compute_jetId(events, "JetGood", processor_params, year), "jetId_corrected")
     mask_for_VetoMap = (
-        (jets["jetId_corrected"]>=6) # Must fulfill tightLepVeto
-        & (abs(jets.eta) < 5.19) # Must be within HCal acceptance
-        & (jets.pt > 15.) # Minimum pT
-        & ((jets["neEmEF"]+jets["chEmEF"])<0.9) # Energy fraction not dominated by ECal
+        (jets["jetId_corrected"] >= 6)                      # tightLepVeto
+        & (abs(jets.eta) < 5.19)                             # HCAL acceptance
+        & (jets.pt > 15.)
+        & ((jets["neEmEF"] + jets["chEmEF"]) < 0.9)          # not dominated by ECAL energy
     )
     jets = jets[mask_for_VetoMap]
-    cset = correctionlib.CorrectionSet.from_file(
-        processor_params.jet_scale_factors.vetomaps[year]["file"]
-    )
-    corr = cset[processor_params.jet_scale_factors.vetomaps[year]["name"]]
+    vetomap = processor_params.jet_scale_factors.vetomaps[year]
+    corr = load_correction_set(vetomap["file"])[vetomap["name"]]
     etaFlat, phiFlat, etaCounts = ak.flatten(jets.eta), ak.flatten(jets.phi), ak.num(jets.eta)
-    phiFlat = np.clip(phiFlat, -3.14159, 3.14159) # Needed since no overflow included in phi binning
-    weight = ak.unflatten(
-        corr.evaluate("jetvetomap", etaFlat, phiFlat),
-        counts=etaCounts,
-    )
-    eventMask = ak.sum(weight, axis=-1)==0 # if at least one jet is vetoed, reject it event
+    phiFlat = np.clip(phiFlat, -3.14159, 3.14159)    # no overflow in the phi binning
+    weight = ak.unflatten(corr.evaluate("jetvetomap", etaFlat, phiFlat), counts=etaCounts)
+    eventMask = ak.sum(weight, axis=-1) == 0         # reject the event if any jet is vetoed
     return ak.where(ak.is_none(eventMask), False, eventMask)
 
 '''

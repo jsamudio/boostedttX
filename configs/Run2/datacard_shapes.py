@@ -11,12 +11,11 @@ import json
 import functools
 
 from analysis_years import YEARS, PICKLE_DIR
+from outvars import nominal_weight_factors
 
 # Per-event correction factors applied on top of norm_weight * sign(genWeight).
 # Columns missing for a process (e.g. topptWeight for non-ttbar samples) count as 1.
-WEIGHT_COLUMNS = ['topptWeight', 'ele_reco_sf', 'ele_id_sf', 'ele_trig_sf',
-                  'mu_id_sf', 'mu_iso_sf', 'mu_reco_sf', 'mu_trig_sf',
-                  'xbb_sf', 'btag_sf', 'puWeight']
+WEIGHT_COLUMNS = nominal_weight_factors
 
 
 def getZhbbWeight(df_, year=None):

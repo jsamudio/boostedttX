@@ -7,10 +7,14 @@ normalization uses that era's luminosity. Eras are mapped to analysis years via 
 (by default 2016_PreVFP + 2016_PostVFP -> '2016'); every event keeps its era in the 'era' column.
 
 Usage:
-    python coffea_to_pkl.py -i output_all.coffea [--btag-norm btag_norm.json]
+    python outputToPkl.py -i output_signal.coffea output_bkg.coffea output_minor.coffea \
+                          [--btag-norm btag_norm.json] [--variations nominal|all|<name> ...]
 
 With --btag-norm, the b-tag SF columns are multiplied by the BTV normalization factor
 r(era, sample, n_ak4jets) from btag_norm.py.
+
+Shape variations (e.g. a PC_JEC_VARIATION run) are exported as <process>_<variation>.pkl,
+e.g. ttZ_AK4PFchs_JES_TotalUp.pkl, which is the naming JEC_SOURCES in makeDatacard.py expects.
 """
 import json
 import argparse
@@ -23,19 +27,14 @@ from coffea.util import load
 
 import outvars
 from analysis_years import ERA_RE, find_era, ERA_TO_YEAR, LUMI_FB, PICKLE_DIR
+from samples import PICKLE_SIGNAL, PICKLE_BACKGROUND
+from spanet_models import ACTIVE_MODELS, score_columns
 
 ERA_SUFFIX = re.compile(rf'_{ERA_RE}$')
 
-SIG = ['ttHTobb__genMatch', 'ttHToNonbb__genMatch', 'TTZToBB__genMatch', 'TTZToQQ__genMatch',
-       'TTZToLLNuNu__genMatch',
-       'ttHTobb__non_genMatch', 'ttHToNonbb__non_genMatch', 'TTZToBB__non_genMatch',
-       'TTZToQQ__non_genMatch', 'TTZToLLNuNu__non_genMatch']
-
-BKG = ["TTbb_Hadronic__tt+B", "TTbb_SemiLeptonic__tt+B", "TTbb_2L2Nu__tt+B",
-       "TTToSemiLeptonic__tt+LF", "TTToSemiLeptonic__tt+C",
-       "TTTo2L2Nu__tt+LF", "TTTo2L2Nu__tt+C",
-       "TTToHadronic__tt+LF", "TTToHadronic__tt+C",
-       "WJetsToLNu", "DYJetsToLL", "ttX", "SingleTop", "QCD"]
+SIG = PICKLE_SIGNAL          # (sub)samples exported, see samples.py
+BKG = PICKLE_BACKGROUND
+CATEGORY = 'btag_mask'
 
 PROCESSES = ['ttZ', 'ttH', 'TTBar', 'tt_B', 'QCD', 'VJets', 'SingleTop', 'ttX']
 
@@ -63,10 +62,7 @@ XSEC_DICT = {
     "DYJetsToLL_HT-1200to2500": 0.1331, "DYJetsToLL_HT-2500toInf": 0.002987
 }
 
-MODELS = [
-    # "baseline", "overlap_NoXbb", "overlapRemoval_NoXbb", "overlapRemoval_FullXbb",
-    "noOverlap_MultiWP",
-]
+MODELS = ACTIVE_MODELS       # see spanet_models.py
 
 
 def get_norm(sample, dataset, genweight_df, era):
@@ -83,96 +79,129 @@ def get_norm(sample, dataset, genweight_df, era):
 
 
 class OutputToPkl:
-    def __init__(self, input_file, btag_norm=None):
-        self.filein = load(input_file)
+    def __init__(self, input_files, btag_norm=None):
+        if isinstance(input_files, str):
+            input_files = [input_files]
+        self.files = []
+        for path in input_files:
+            filein = load(path)
+            genweight_df = pd.DataFrame.from_dict(filein['sum_signOf_genweights'], orient='index')
+            self.files.append((path, filein, genweight_df))
         self.btag_norm = json.load(open(btag_norm)) if btag_norm else None
-        self.genweight_df = pd.DataFrame.from_dict(self.filein['sum_signOf_genweights'], orient='index')
 
-        spanet_vars = []
-        for m in MODELS:
-            spanet_vars.extend([f"sig_score_{m}", f"ttbb_score_{m}", f"ttlf_score_{m}"])
+        spanet_vars = [c for m in MODELS for c in score_columns(m)]
         self.sig_vars = outvars.common_vars + outvars.sig_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
         self.bkg_vars = outvars.common_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
 
-    def read_samples(self, samples, variables):
+    def variations(self):
+        """Shape variations present in the inputs (nominal first)."""
+        found = set()
+        for _, filein, _ in self.files:
+            for datasets in filein['columns'].values():
+                for cats in datasets.values():
+                    found.update(cats.get(CATEGORY, {}).keys())
+        return sorted(found, key=lambda v: (v != 'nominal', v))
+
+    def read_samples(self, samples, variables, variation='nominal'):
         """Read every dataset of the given samples, with per-dataset year and normalization."""
         frames = []
-        for sample in samples:
-            if sample not in self.filein['columns']:
-                continue
-            for dataset in self.filein['columns'][sample].keys():
-                era = find_era(dataset)
-                year = ERA_TO_YEAR[era]
-                norm = get_norm(sample, dataset, self.genweight_df, era)
-                cols = self.filein['columns'][sample][dataset]['btag_mask']['nominal']
-
-                tmp, missing = {}, []
-                for var in variables:
-                    if var == 'norm_weight':
+        for path, filein, genweight_df in self.files:
+            for sample in samples:
+                if sample not in filein['columns']:
+                    continue
+                for dataset in filein['columns'][sample].keys():
+                    by_var = filein['columns'][sample][dataset].get(CATEGORY, {})
+                    if variation not in by_var:
                         continue
-                    key = f'events_{var}'
-                    if key in cols:
-                        tmp[var] = cols[key].value
-                    else:
-                        missing.append(var)
-                if missing:
-                    print(f"  [WARNING] {sample}/{dataset}: missing {missing}")
-                if tmp:
-                    df = pd.DataFrame(tmp)
-                    if self.btag_norm is not None:
-                        from btag_norm import apply_btag_norm
-                        if 'n_ak4jets' in df:
-                            df = apply_btag_norm(df, era, sample, self.btag_norm)
+                    cols = by_var[variation]
+                    era = find_era(dataset)
+                    year = ERA_TO_YEAR[era]
+                    norm = get_norm(sample, dataset, genweight_df, era)
+
+                    tmp, missing = {}, []
+                    for var in variables:
+                        if var == 'norm_weight':
+                            continue
+                        key = f'events_{var}'
+                        if key in cols:
+                            tmp[var] = cols[key].value
                         else:
-                            print(f"  [WARNING] {sample}/{dataset}: no n_ak4jets, b-tag normalization skipped")
-                    df['norm_weight'] = norm
-                    df['era'] = era
-                    df['year'] = year
-                    frames.append(df)
-                    print(f"  {sample}/{dataset}: era={era} -> year={year}, {len(df)} events, norm={norm:.4g}")
+                            missing.append(var)
+                    if missing:
+                        print(f"  [WARNING] {sample}/{dataset}: missing {missing}")
+                    if tmp:
+                        df = pd.DataFrame(tmp)
+                        if self.btag_norm is not None:
+                            from btag_norm import apply_btag_norm
+                            if 'n_ak4jets' in df:
+                                df = apply_btag_norm(df, era, sample, self.btag_norm, variation)
+                            else:
+                                print(f"  [WARNING] {sample}/{dataset}: no n_ak4jets, b-tag normalization skipped")
+                        df['norm_weight'] = norm
+                        df['era'] = era
+                        df['year'] = year
+                        frames.append(df)
+                        print(f"  {sample}/{dataset} [{variation}]: era={era} -> year={year}, "
+                              f"{len(df)} events, norm={norm:.4g}")
         return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
-    def run(self):
-        print('-' * 60)
-        s_df = self.read_samples(SIG, self.sig_vars)
-        b_df = self.read_samples(BKG, self.bkg_vars)
+    def run(self, variations=('nominal',), skip_nominal=False):
+        if 'all' in variations:
+            variations = self.variations()
+        if skip_nominal:
+            variations = [v for v in variations if v != 'nominal']
+        for variation in variations:
+            print('-' * 60)
+            print(f"Variation: {variation}")
+            self.run_variation(variation)
+
+    def run_variation(self, variation):
+        s_df = self.read_samples(SIG, self.sig_vars, variation)
+        b_df = self.read_samples(BKG, self.bkg_vars, variation)
 
         if not b_df.empty:
             b_df['process'] = b_df['process'].replace(RELABEL)
             b_df = b_df[b_df['process'].isin(['TTBar', 'tt_B', 'QCD', 'VJets', 'ttX', 'SingleTop'])]
 
-        # Placeholder data (copy of the signal) until real data is added
-        data_df = s_df.copy() if not s_df.empty else pd.DataFrame()
+        # Placeholder data (copy of the signal) until real data is added; nominal only
+        data_df = s_df.copy() if (variation == 'nominal' and not s_df.empty) else pd.DataFrame()
         if not data_df.empty:
             data_df['process'] = 'data_obs'
             data_df['norm_weight'] = 1.0
 
         sb_df = pd.concat([s_df, b_df, data_df], ignore_index=True)
+        if sb_df.empty:
+            print(f"  nothing to export for {variation}")
+            return
 
         for m in MODELS:
             sig, ttbb, ttlf = sb_df[f"sig_score_{m}"], sb_df[f"ttbb_score_{m}"], sb_df[f"ttlf_score_{m}"]
             denom = sig + ttbb + ttlf
             sb_df[f"disc_{m}"] = np.where(denom > 0, sig / np.where(denom > 0, denom, 1.0), 0.0)
 
-        self.export(sb_df)
+        self.export(sb_df, suffix='' if variation == 'nominal' else f'_{variation}')
 
     @staticmethod
-    def export(sb_df):
+    def export(sb_df, suffix=''):
         for year, ydf in sb_df.groupby('year'):
             out_dir = PICKLE_DIR.format(year=year)
             os.makedirs(out_dir, exist_ok=True)
             for proc in PROCESSES + ['data_obs']:
                 export_df = ydf[ydf['process'] == proc]
                 if not export_df.empty:
-                    path = os.path.join(out_dir, f"{proc}.pkl")
+                    path = os.path.join(out_dir, f"{proc}{suffix}.pkl")
                     export_df.to_pickle(path)
                     print(f"Exported: {path} ({len(export_df)} events)")
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Change .coffea output to per-year .pkl files')
-    parser.add_argument('--input', '-i', type=str, required=True, help='Input .coffea file')
+    parser = argparse.ArgumentParser(description='Change .coffea output(s) to per-year .pkl files')
+    parser.add_argument('--input', '-i', type=str, nargs='+', required=True, help='Input .coffea file(s)')
     parser.add_argument('--btag-norm', type=str, default=None,
                         help='JSON from btag_norm.py; applies the b-tag shape SF normalization')
+    parser.add_argument('--variations', nargs='+', default=['nominal'],
+                        help="shape variations to export: 'nominal' (default), 'all', or explicit names")
+    parser.add_argument('--skip-nominal', action='store_true',
+                        help='do not (re)export the nominal pickles, e.g. for the output of a JEC-variation run')
     args = parser.parse_args()
-    OutputToPkl(args.input, btag_norm=args.btag_norm).run()
+    OutputToPkl(args.input, btag_norm=args.btag_norm).run(args.variations, skip_nominal=args.skip_nominal)

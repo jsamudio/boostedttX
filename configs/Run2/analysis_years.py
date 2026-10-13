@@ -1,5 +1,6 @@
 """
-Year-dependent configuration shared by coffea_to_pkl.py, make_datacard.py and datacard_shapes.py.
+Year-dependent configuration shared by the inference configs, outputToPkl.py, makeDatacard.py
+and datacard_shapes.py.
 
 Two levels:
   * eras  - data-taking periods as named in the datasets (2016_PreVFP, 2016_PostVFP, 2017, 2018).
@@ -57,7 +58,14 @@ XBB_WP_DICT = {
 XBB_WP = "LP"
 
 
-XBB_WP_OVERRIDE = 0.85      # e.g. 0.85 to test a looser cut (expected-sensitivity studies only)
+def xbb_wp_cuts(era):
+    """{'L', 'M', 'T'} XbbVsQCD thresholds of an era: used for the xbb_wp_* SPANet inputs and the
+    Xbb preselection in the processor (never affected by XBB_WP_OVERRIDE)."""
+    wps = XBB_WP_DICT[era]
+    return {"L": wps["LP"], "M": wps["MP"], "T": wps["HP"]}
+
+
+XBB_WP_OVERRIDE = None      # e.g. 0.85 to test a looser cut (expected-sensitivity studies only)
 
 def bbvl_wp(era):
     if XBB_WP_OVERRIDE is not None:

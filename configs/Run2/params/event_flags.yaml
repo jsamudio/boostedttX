@@ -1,10 +1,22 @@
+# MET filters for UL Run 2 (https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2).
+# Applied by the eventFlags skim cut; eeBadScFilter is added for data by pocket-coffea's event_flags_data.
 event_flags:
-  '2017':
-  - goodVertices
-  - globalSuperTightHalo2016Filter
-  - HBHENoiseFilter
-  - HBHENoiseIsoFilter
-  - EcalDeadCellTriggerPrimitiveFilter
-  - BadPFMuonFilter
-  - BadPFMuonDzFilter
-  - ecalBadCalibFilter
+  2016_PreVFP: &flags_2016
+    - goodVertices
+    - globalSuperTightHalo2016Filter
+    - HBHENoiseFilter
+    - HBHENoiseIsoFilter
+    - EcalDeadCellTriggerPrimitiveFilter
+    - BadPFMuonFilter
+    - BadPFMuonDzFilter
+  2016_PostVFP: *flags_2016
+  '2017': &flags_1718
+    - goodVertices
+    - globalSuperTightHalo2016Filter
+    - HBHENoiseFilter
+    - HBHENoiseIsoFilter
+    - EcalDeadCellTriggerPrimitiveFilter
+    - BadPFMuonFilter
+    - BadPFMuonDzFilter
+    - ecalBadCalibFilter
+  '2018': *flags_1718

@@ -1,7 +1,7 @@
 from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.cut_definition import Cut
 from pocket_coffea.lib.columns_manager import ColOut
-from pocket_coffea.lib.cut_functions import get_nObj_min, get_HLTsel
+from pocket_coffea.lib.cut_functions import get_nObj_min, get_HLTsel, eventFlags, goldenJson
 from pocket_coffea.parameters.histograms import *
 import zhbbworkflow_spanet
 from zhbbworkflow_spanet import ZHbbBaseProcessor
@@ -124,7 +124,7 @@ cfg = Configurator(
                             "pnet_mass_json": "/cms/data/jsamudio/boosted/boostedttX/configs/Run2/pnet_mass_jerc.json",},
                            #"dump_columns_as_arrays_per_chunk": "/cms/data/jsamudio/boosted/boostedttX/configs/SemiLeptonic/output_columns_parton_matching/" },
 
-        skim = [precut],
+        skim = [eventFlags, goldenJson, precut],
         preselections = [event_selection, hlt_cut],
         categories = {
             "btag_mask": [btag_mask, vetoE, vetoMu, network_cut],

@@ -27,7 +27,7 @@ def get_controlvars(events):
     lep = events.LeptonGood
     ele = events.ElectronGood
     muon = events.MuonGood
-    met = events.PuppiMET
+    met = events.MET          # type-1 corrected PF MET (Run 2), as in the selection and SPANet inputs
 
     # leading is 1 and subleading is 2
 

@@ -55,25 +55,10 @@ def match_gen_tt(events, sample):
         events['process'] = np.where(events['tt_B'] == True, 'old_tt_B', 'TTBar')
     elif (('TTbb' in sample) | ('ttbb' in sample)):
         events['process'] = np.where(events['tt_B'] == True, 'tt_B', 'non_tt_B')
-    print(events['process'])
-    print('Total',len(is_tt_B))
-    print('tt+B', sum(is_tt_B))
-    print('tt+b', sum(is_tt_b))
-    print('tt+2b', sum(is_tt_2b))
-    print('tt+bb', sum(is_tt_bb))
 
     # check if a Z is from the hard process
     events['has_Z'] = ak.sum((gen_mom <= 0) & (abs(gen_id) == 23), axis=1) > 0
     events['has_H'] = ak.sum((gen_mom <= 0) & (abs(gen_id) == 25), axis=1) > 0
-    print('has Z, <0 mom ',sum(events['has_Z']))
-    print('has H, <0 mom ',sum(events['has_H']))
-    print('has Z ',sum(ak.sum(abs(gen_id) == 23, axis=1) >0))
-    print('has H ',sum(ak.sum(abs(gen_id) == 25, axis=1) >0))
-    print('No Z Total', len(is_tt_B [events['has_Z'] == False]))
-    print('No Z tt+B',  sum(is_tt_B [events['has_Z'] == False]))
-    print('No Z tt+b',  sum(is_tt_b [events['has_Z'] == False]))
-    print('No Z tt+2b', sum(is_tt_2b[events['has_Z'] == False]))
-    print('No Z tt+bb', sum(is_tt_bb[events['has_Z'] == False]))
 
     # calculate toppt weight for powheg only
     tt_pt = gen_pt[(abs(gen_id) == 6)]
@@ -126,12 +111,6 @@ def match_gen_sig(events, sample):
     isZqq  = ((gen_id == 23) & (ak.sum(isqq_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)) & (gen_st == 62))
     isZllnunu = ((gen_id == 23) & (ak.sum(isllnunu_fromZ, axis=1) == 2) & ((ak.sum(isHbb, axis=1) == 0) & (ak.sum(isHnonbb, axis=1) == 0)) & (gen_st == 62))
     isZH = ((isHbb) | (isZbb) | (isZqq) | (isZllnunu) | (isHnonbb))
-    print("isHbb", sum(ak.sum(isHbb, axis=1)))
-    print("isHnonbb", sum(ak.sum(isHnonbb, axis=1)))
-    print("isZbb axis 1", sum(ak.sum(isZbb,axis=1)))
-    print("isZbb axis -1", sum(ak.sum(isZbb,axis=-1)))
-    print("isZqq", sum(ak.sum(isZqq, axis=1)))
-    print("isZllnunu", sum(ak.sum(isZllnunu, axis=1)))
     #print("recoZH",len(rZh_eta),len(rZh_phi))
 
     zh_match_dR = deltaR(ZHCand, events.GenPart[(isZH)])
@@ -168,10 +147,12 @@ def match_gen_sig(events, sample):
 
     if 'TTZToQQ' in sample:
         events['process'] = np.where(events['Zbb'] == True, 'old_ttZbb', 'ttZ')
-    elif 'TTZ' in sample:
+    elif ('TTZ' in sample) or ('ttZ' in sample):
         events['process'] = 'ttZ'
-    elif 'ttH' or 'TTH' in sample:
+    elif ('ttH' in sample) or ('TTH' in sample):
         events['process'] = 'ttH'
+    else:
+        raise ValueError(f"match_gen_sig: no signal process label for sample '{sample}'")
 
     events['topptWeight']      = 1
     events['topptWeight_Down'] = 1

@@ -1,3 +1,5 @@
+# Lepton selection cuts (read as params.skim_params[<flavour>] by object_cleaning_functions.py;
+# the name is historical, these are not skim cuts).
 skim_params:
     Jet:
         dr_lepton: 0.4

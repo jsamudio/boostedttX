@@ -8,27 +8,20 @@ from pocket_coffea.workflows.base import BaseProcessorABC
 from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.hist_manager import Axis
 #from pocket_coffea.lib.weights_manager import WeightsManager
-from pocket_coffea.lib.objects import (
-    #jet_correction,
-    lepton_selection,
-    jet_selection,
-    btagging,
-    get_dilepton,
-)
 from object_cleaning_functions import soft_lep_sel, lep_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_selection_custom, lep_selTrig_Mu
 from custom_cut_functions import sortbyscore
+from analysis_years import xbb_wp_cuts
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_tt_products, match_gen_bb_to_zh
 #import dnn_model
 #from applyDNN import applyDNN
 from weight_handler import calc_weight, add_weights_to_ttbb
-from coffea.analysis_tools import PackedSelection
 from pocket_coffea.lib.parton_provenance import *
 from pocket_coffea.lib.deltaR_matching import metric_eta, metric_phi
 from pocket_coffea.lib.deltaR_matching import object_matching
 from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_pileup_reweight, sf_L1prefiring
 from dask.distributed import get_worker
-from custom_scale_factors import sf_bbtag, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, get_xbb_sf_evaluator, sf_ele_trig
+from custom_scale_factors import sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig
 import cachetools
 from get_controlvars import get_controlvars
 
@@ -48,32 +41,6 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         if not "spanet_models" in self.workflow_options:
             raise ValueError("Key `spanet_models` not found in workflow options. Please specify a dictionary of ONNX models.")
 
-    def skim_events(self):
-        self._skim_masks = PackedSelection()
-        mask_flags = np.ones(self.nEvents_initial, dtype=bool)
-
-        flags = self.params.event_flags[self._year]
-        if not self._isMC:
-            flags += self.params.event_flags_data[self._year]
-        for flag in flags:
-            mask_flags &= getattr(self.events.Flag, flag).to_numpy()
-        self._skim_masks.add("event_flags", mask_flags)
-
-        for skim_func in self._skim:
-            # Apply the skim function and add it to the mask
-            mask = skim_func.get_mask(
-                self.events,
-                processor_params=self.params,
-                year=self._year,
-                sample=self._sample,
-                isMC=self._isMC,
-            )
-            self._skim_masks.add(skim_func.id, mask)
-        # Finally we skim the events and count them
-        self.events = self.events[self._skim_masks.all(*self._skim_masks.names)]
-        self.nEvents_after_skim = self.nevents
-        self.output['cutflow']['skim'][self._dataset] = self.nEvents_after_skim
-        self.has_events = self.nEvents_after_skim > 0
 
     def apply_object_preselection(self, variation):
         # 1. List all triggers that MIGHT be missing in early eras
@@ -347,9 +314,8 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
         xbbVsQCD = self.events.FatJetGood.particleNetMD_Xbb / (self.events.FatJetGood.particleNetMD_Xbb + self.events.FatJetGood.particleNetMD_QCD)
         self.events['FatJetGood'] = ak.with_field(self.events.FatJetGood, xbbVsQCD, 'xbbVsQCD')
         # --- NEW: Add boolean flags for the particleNetMD_XbbvsQCD Working Points ---
-        self.events['FatJetGood'] = ak.with_field(self.events.FatJetGood, ak.values_astype(xbbVsQCD > 0.9172, int), 'xbb_wp_L')
-        self.events['FatJetGood'] = ak.with_field(self.events.FatJetGood, ak.values_astype(xbbVsQCD > 0.9734, int), 'xbb_wp_M')
-        self.events['FatJetGood'] = ak.with_field(self.events.FatJetGood, ak.values_astype(xbbVsQCD > 0.9880, int), 'xbb_wp_T')
+        for wp, cut in xbb_wp_cuts(self._year).items():   # analysis_years.XBB_WP_DICT
+            self.events['FatJetGood'] = ak.with_field(self.events.FatJetGood, ak.values_astype(xbbVsQCD > cut, int), f'xbb_wp_{wp}')
         #self.events['ele_reco_sf'], self.events['ele_reco_sfup'], self.events['ele_reco_sfdown'] = sf_ele_reco(self.params, self.events, '2017')
         
     def calculate_xbb_sfs(self):

@@ -1,23 +1,16 @@
+# Overrides of pocket-coffea's jet_scale_factors defaults.
+# The defaults only provide jet veto maps for the NanoAODv15 Run 2 eras; these are the v9 (UL) ones.
 jet_scale_factors:
-
-  jet_collection:
-    bbtag: FatJetSorted
-    
-  bbtagSF:
-    '2017':
-      file: 'SemiLeptonic/mycorrections.json'
-      wp: 'L'
-      name: 'particleNetMD_XbbvsQCD_main'
   vetomaps:
     '2016_PreVFP':
-        file: ${cvmfs:Run2-2016preVFP-UL-NanoAODv9,JME,jetvetomaps.json.gz}
-        name: "Summer19UL16_V1"
+      file: ${cvmfs:Run2-2016preVFP-UL-NanoAODv9,JME,jetvetomaps.json.gz}
+      name: "Summer19UL16_V1"
     '2016_PostVFP':
-        file: ${cvmfs:Run2-2016postVFP-UL-NanoAODv9,JME,jetvetomaps.json.gz}
-        name: "Summer19UL16_V1"
+      file: ${cvmfs:Run2-2016postVFP-UL-NanoAODv9,JME,jetvetomaps.json.gz}
+      name: "Summer19UL16_V1"
     '2017':
-        file: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/2017_UL/jetvetomaps.json.gz"
-        name: "Summer19UL17_V1"
+      file: ${cvmfs:Run2-2017-UL-NanoAODv9,JME,jetvetomaps.json.gz}
+      name: "Summer19UL17_V1"
     '2018':
-        file: ${cvmfs:Run2-2018-UL-NanoAODv9,JME,jetvetomaps.json.gz}
-        name: "Summer19UL18_V1"
+      file: ${cvmfs:Run2-2018-UL-NanoAODv9,JME,jetvetomaps.json.gz}
+      name: "Summer19UL18_V1"

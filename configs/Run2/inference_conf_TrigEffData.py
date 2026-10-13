@@ -1,7 +1,7 @@
 from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.cut_definition import Cut
 from pocket_coffea.lib.columns_manager import ColOut
-from pocket_coffea.lib.cut_functions import get_nObj_min, get_HLTsel_custom, get_JetVetoMap
+from pocket_coffea.lib.cut_functions import get_nObj_min, get_HLTsel_custom, get_JetVetoMap, eventFlags, goldenJson
 from pocket_coffea.parameters.histograms import *
 import spanet_inference_trigEff
 from spanet_inference_trigEff import ZHbbSpanetProcessor
@@ -272,7 +272,7 @@ cfg = Configurator(
                             }
         },
         
-        skim = [precut], 
+        skim = [eventFlags, goldenJson, precut],
         preselections = [get_JetVetoMap(), trig_event_selection_run2, vetoE, vetoMu, HEM_veto],
         categories = {
             "btag_mask": [passthrough],

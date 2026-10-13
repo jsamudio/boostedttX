@@ -6,8 +6,8 @@
 ######################
 #
 # Usage:
-#   python make_datacard.py               # tt_B is a normal background
-#   python make_datacard.py --eft-ttbb    # tt_B declared as a signal so the EFT
+#   python makeDatacard.py               # tt_B is a normal background
+#   python makeDatacard.py --eft-ttbb    # tt_B declared as a signal so the EFT
 #                                         # interferenceModel can scale it
 # The --eft-ttbb cards get "eftTTB_" in their file names, so both versions can coexist.
 
@@ -24,6 +24,7 @@ from datacard_shapes import DataCardShapes, getZhbbWeight
 from TH1 import export1d
 from analysis_years import (YEARS, YEAR_RE, find_year, PICKLE_DIR, bbvl_wp,
                             LUMI_UNCERTAINTIES)
+from outvars import nominal_weight_factors
 
 pt_bins = [0,200,300,450]
 mass_bins = [50,80,105,145,200]
@@ -387,15 +388,15 @@ class MakeDataCard:
         # Nominal weights and the up/down columns used for the weight systematics.
         # Missing columns are dropped silently by DataFrame.filter; systematics whose
         # columns are missing for a process are skipped for that process.
-        weights = ['genWeight', 'norm_weight', 'topptWeight', 'ele_id_sf', 'ele_reco_sf', 'ele_trig_sf',
-                   'mu_id_sf', 'mu_iso_sf', 'mu_reco_sf', 'mu_trig_sf', 'xbb_sf', 'btag_sf', 'puWeight']
+        weights = ['genWeight', 'norm_weight'] + nominal_weight_factors
         weight_sys = ['topptWeight_Up', 'topptWeight_Down',
                       'ele_id_sfup', 'ele_id_sfdown', 'ele_reco_sfup', 'ele_reco_sfdown',
                       'ele_trig_sfup', 'ele_trig_sfdown',
                       'mu_id_sfup', 'mu_id_sfdown', 'mu_iso_sfup', 'mu_iso_sfdown',
                       'mu_reco_sfup', 'mu_reco_sfdown', 'mu_trig_sfup', 'mu_trig_sfdown',
                       'xbb_sfup', 'xbb_sfdown',
-                      'puWeight_up', 'puWeight_down', 'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
+                      'puWeight_up', 'puWeight_down', 'l1prefire_sfup', 'l1prefire_sfdown',
+                      'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
                       'mu_r_up', 'mu_r_down', 'mu_f_up', 'mu_f_down', 'mu_rf_up', 'mu_rf_down']
         weight_sys += [f'btag_sf{src}{suffix}'
                        for src in BTAG_SOURCES_CORRELATED + BTAG_SOURCES_UNCORRELATED
@@ -663,6 +664,7 @@ class MakeDataCard:
                 (f'mu_trig_sf_{y}',  'mu_trig_sfup',  'mu_trig_sfdown',  'mu_trig_sf'),
                 (f'xbb_sf_{y}',      'xbb_sfup',      'xbb_sfdown',      'xbb_sf'),
                 (f'pu_{y}',          'puWeight_up',   'puWeight_down',   'puWeight'),
+                (f'l1prefire_{y}',   'l1prefire_sfup', 'l1prefire_sfdown', 'l1prefire_sf'),
             ]:
                 weight_shape(name, 'up/down', all_mc, up, down, ('exp',), nominal=nominal)
 
@@ -776,15 +778,9 @@ if __name__ == '__main__':
                              '(cards get "eftTTB_" in their names)')
     args = parser.parse_args()
 
-    MODELS = [
-        # "baseline",
-        # "overlapRemoval_NoXbb",
-        # "overlapRemoval_FullXbb",
-        #"overlapRemoval_MultiWP",
-        "noOverlap_MultiWP"
-    ]
-    
-    for model in MODELS:
+    from spanet_models import ACTIVE_MODELS     # one datacard per active SPANet model
+
+    for model in ACTIVE_MODELS:
         nn_name = f"disc_{model}"
         print(f"\n{'='*50}")
         print(f" GENERATING DATACARDS FOR: {nn_name.upper()}"
