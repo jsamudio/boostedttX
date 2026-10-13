@@ -53,10 +53,15 @@ def calib_sums(njets, w0, sfs):
     sfs: {variation: per-event b-tag SF}. All sums are without the per-dataset normalization."""
     idx = njet_bin(njets)
     nb = len(NJET_EDGES) - 1
-    out = {'n_raw': np.bincount(idx, minlength=nb).astype(np.float64),
-           'before': np.bincount(idx, weights=w0, minlength=nb)}
+
+    def sums(weights=None):
+        # Always float64: np.bincount returns int64 for an empty input even with weights, which
+        # breaks the in-place accumulation across chunks (e.g. a subsample without events in a chunk)
+        return np.bincount(idx, weights=weights, minlength=nb).astype(np.float64)
+
+    out = {'n_raw': sums(), 'before': sums(w0)}
     for var, sf in sfs.items():
-        out[f'after__{var}'] = np.bincount(idx, weights=w0 * sf, minlength=nb)
+        out[f'after__{var}'] = sums(w0 * sf)
     return out
 
 
