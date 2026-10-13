@@ -38,6 +38,25 @@ python run_pipeline.py btagnorm pickle datacard --jec-variations JES_Total
 python run_pipeline.py all --dry-run            # show the commands only
 python run_pipeline.py inference -- --executor futures --test   # args after -- go to pocket-coffea
 ```
+(see below for running the inference as PBS jobs)
+
+## Running on the PBS Pro cluster
+
+Each group / jet variation becomes a PBS job array: pocket-coffea splits the files into jobs
+(`max-events-per-job` in `run_options_pbs.yaml`), every array subjob runs the futures executor on
+8 cores inside the pocketcoffea apptainer image, and a merge job (queued after the array)
+writes `output_all.coffea`. Settings (queue, cores, memory, image, binds) are in `run_options_pbs.yaml`.
+
+From the host (where `qsub` is available; pocket-coffea is run inside apptainer automatically):
+```bash
+python run_pipeline.py inference --backend pbs --groups signal bkg minor --eras 2018 --jec-variations JES_Total JER
+python run_pipeline.py status    --backend pbs --jec-variations JES_Total JER     # done/failed/running per group
+python run_pipeline.py resubmit  --backend pbs --jec-variations JES_Total JER     # failed jobs + new merge
+python run_pipeline.py btagnorm pickle datacard --jec-variations JES_Total JER    # once everything is merged
+```
+`resubmit --include-unfinished` also resubmits jobs that never finished (e.g. killed by the batch
+system); it refuses while PBS still lists the arrays. Per directory the same is available as
+`python pbs_tools.py submit|status|resubmit|merge <outputdir>`. Job logs: `<outputdir>/job/logs/job_<id>.log`.
 
 ## pocket-coffea version
 
