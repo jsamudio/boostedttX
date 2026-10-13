@@ -16,6 +16,9 @@ import os
 import shutil
 import sys
 
+import cloudpickle
+import yaml
+
 from pocket_coffea.executors.executors_base import IterativeExecutorFactory, FuturesExecutorFactory
 from pocket_coffea.executors.executors_lxplus import ExecutorFactoryCondorCERN, build_job_script, get_worker_env
 from pocket_coffea.executors.executors_manual_jobs import write_inner_run_options, INNER_RUN_OPTIONS_WHITELIST
@@ -24,9 +27,63 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pbs_tools  # noqa: E402
 
 
+def restrict_to_split(config, split):
+    """Drop the `bysample` entries (columns, weights, variations) of samples that are not in this
+    job. The per-job configurator only knows the samples of its own split, and
+    Configurator.load() rejects entries for other samples ("Wrong columns configuration").
+    Works on copies: the cloned configurators share these dicts with the full configuration."""
+    samples = {ds["metadata"]["sample"] for ds in split.values()}
+
+    def keep(key):
+        return key in samples or key.split("__")[0] in samples
+
+    def pruned(cfg):
+        if not cfg or "bysample" not in cfg:
+            return cfg
+        cfg = dict(cfg)
+        cfg["bysample"] = {k: v for k, v in cfg["bysample"].items() if keep(k)}
+        return cfg
+
+    config.columns_cfg = pruned(config.columns_cfg)
+    config.weights_cfg = pruned(config.weights_cfg)
+    if config.variations_cfg:
+        config.variations_cfg = {kind: pruned(cfg) for kind, cfg in config.variations_cfg.items()}
+
+
 class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
-    """Reuses the HTCondor executor's splitting (prepare_splitting) and per-job configurator
-    pickles (prepare_jobs); replaces the submission with a PBS Pro job array."""
+    """Reuses the HTCondor executor's splitting (prepare_splitting); replaces the submission with
+    a PBS Pro job array."""
+
+    def prepare_jobs(self, splits):
+        """Same as the HTCondor executor (one pickled configurator per job + jobs_config.yaml),
+        with each job's configurator restricted to the samples of its split."""
+        jobs_config = {
+            "job_name": self.job_name,
+            "job_dir": os.path.abspath(self.jobs_dir),
+            "output_dir": os.path.abspath(self.outputdir),
+            "split_by_category": self.run_options["split-by-category"],
+            "config_pkl_total": f"{os.path.abspath(self.outputdir)}/configurator.pkl",
+            "jobs_list": {},
+        }
+        # Postprocessing happens once, in the merge job
+        self.config.do_postprocessing = False
+        config_files = []
+        for i, split in enumerate(splits):
+            partial_config = self.config.clone()
+            restrict_to_split(partial_config, split)
+            partial_config.set_filesets_manually(split)
+            path = f"{self.jobs_dir}/config_job_{i}.pkl"
+            with open(path, "wb") as f:
+                cloudpickle.dump(partial_config, f)
+            config_files.append(path)
+            jobs_config["jobs_list"][f"job_{i}"] = {
+                "filesets": split,
+                "config_file": path,
+                "output_file": f"{os.path.abspath(self.outputdir)}/output_job_{i}.coffea",
+            }
+        with open(f"{self.jobs_dir}/jobs_config.yaml", "w") as f:
+            yaml.dump(jobs_config, f)
+        return config_files
 
     def option(self, key):
         value = self.run_options.get(key, None)
