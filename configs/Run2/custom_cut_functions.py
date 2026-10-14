@@ -94,34 +94,73 @@ def get_HLTsel_custom(hlt_paths_dict):
         return mask
     return f
 
-hlt_paths = {
-    "2016_PreVFP": [
-        'HLT_Ele27_WPTight_Gsf', 'HLT_Photon175', 'HLT_Ele115_CaloIdVT_GsfTrkIdT', 
-        'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165', 'HLT_IsoMu24', 'HLT_IsoTkMu24', 
-        'HLT_Mu50', 'HLT_TkMu50'
-    ],
-    "2016_PostVFP": [
-        'HLT_Ele27_WPTight_Gsf', 'HLT_Photon175', 'HLT_Ele115_CaloIdVT_GsfTrkIdT', 
-        'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165', 'HLT_IsoMu24', 'HLT_IsoTkMu24', 
-        'HLT_Mu50', 'HLT_TkMu50'
-    ],
-    "2017": [
-        'HLT_Ele35_WPTight_Gsf', 'HLT_Ele32_WPTight_Gsf_L1DoubleEG', 'HLT_Photon200', 
-        'HLT_Ele115_CaloIdVT_GsfTrkIdT', 'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165',
-        'HLT_IsoMu27', 'HLT_Mu50', 'HLT_OldMu100', 'HLT_TkMu100'
-    ],
-    "2018": [
-        'HLT_Ele32_WPTight_Gsf', 'HLT_Photon200', 'HLT_Ele115_CaloIdVT_GsfTrkIdT', 
-        'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165', 'HLT_IsoMu24', 'HLT_Mu50', 
-        'HLT_OldMu100', 'HLT_TkMu100'
-    ]
+# Single-lepton triggers per era, split by the primary dataset (PD) that records them
+HLT_PATHS = {
+    "2016_PreVFP": {
+        "egamma": ['HLT_Ele27_WPTight_Gsf', 'HLT_Photon175', 'HLT_Ele115_CaloIdVT_GsfTrkIdT',
+                   'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165'],
+        "muon":   ['HLT_IsoMu24', 'HLT_IsoTkMu24', 'HLT_Mu50', 'HLT_TkMu50'],
+    },
+    "2016_PostVFP": {
+        "egamma": ['HLT_Ele27_WPTight_Gsf', 'HLT_Photon175', 'HLT_Ele115_CaloIdVT_GsfTrkIdT',
+                   'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165'],
+        "muon":   ['HLT_IsoMu24', 'HLT_IsoTkMu24', 'HLT_Mu50', 'HLT_TkMu50'],
+    },
+    "2017": {
+        "egamma": ['HLT_Ele35_WPTight_Gsf', 'HLT_Ele32_WPTight_Gsf_L1DoubleEG', 'HLT_Photon200',
+                   'HLT_Ele115_CaloIdVT_GsfTrkIdT', 'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165'],
+        "muon":   ['HLT_IsoMu27', 'HLT_Mu50', 'HLT_OldMu100', 'HLT_TkMu100'],
+    },
+    "2018": {
+        "egamma": ['HLT_Ele32_WPTight_Gsf', 'HLT_Photon200', 'HLT_Ele115_CaloIdVT_GsfTrkIdT',
+                   'HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165'],
+        "muon":   ['HLT_IsoMu24', 'HLT_Mu50', 'HLT_OldMu100', 'HLT_TkMu100'],
+    },
 }
+# All paths per era (as before the per-PD split)
+hlt_paths = {era: p["egamma"] + p["muon"] for era, p in HLT_PATHS.items()}
+
+# Data samples -> trigger stream of their primary dataset
+# (SingleElectron in 2016/2017 and EGamma in 2018 -> "egamma", SingleMuon -> "muon")
+DATA_STREAMS = {"DATA_EGamma": "egamma", "DATA_Muon": "muon"}
+
+
+def _hlt_or(events, paths):
+    """OR of the given paths; paths missing in the NanoAOD (not in this run range) count as False."""
+    mask = np.zeros(len(events), dtype=bool)
+    for path in paths:
+        name = path.replace("HLT_", "")
+        if name in events.HLT.fields:
+            mask = mask | ak.to_numpy(events.HLT[name])
+    return mask
+
+
+def hlt_selection(events, params, year, sample=None, isMC=True, **kwargs):
+    """Single-lepton trigger with per-primary-dataset logic, so no data event is counted twice:
+      MC          : any e/gamma OR muon trigger
+      DATA_Muon   : any muon trigger
+      DATA_EGamma : any e/gamma trigger AND no muon trigger (those events are in SingleMuon)
+    """
+    if year not in HLT_PATHS:
+        raise ValueError(f"No trigger paths defined for era '{year}'")
+    egamma = _hlt_or(events, HLT_PATHS[year]["egamma"])
+    muon = _hlt_or(events, HLT_PATHS[year]["muon"])
+    if isMC:
+        return egamma | muon
+    stream = DATA_STREAMS.get(sample)
+    if stream == "muon":
+        return muon
+    if stream == "egamma":
+        return egamma & ~muon
+    raise ValueError(f"Data sample '{sample}' has no trigger stream in DATA_STREAMS "
+                     f"(known: {list(DATA_STREAMS)}); add it to avoid double counting")
+
 
 # Define the Cut object that config.py imports
 hlt_cut = Cut(
     name="hlt_cut",
     params={},
-    function=get_HLTsel_custom(hlt_paths)
+    function=hlt_selection,
 )
 
 '''

@@ -33,6 +33,7 @@ from analysis_years import xbb_wp_cuts, ERAS
 from custom_cut_functions import (precut, hlt_cut, get_JetVetoMap, event_selection, vetoE, vetoMu,
                                   HEM_veto, btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq)
 from spanet_inference import ZHbbSpanetProcessor
+from met_calibration import CALIBRATORS   # type-1 PF MET for Run 2 (see met_calibration.py)
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models):
     cloudpickle.register_pickle_by_value(_module)
@@ -192,6 +193,7 @@ def build_config(group, eras=None, sample_list=None):
             "subsamples": build_subsamples(),
         },
         workflow=ZHbbSpanetProcessor,
+        calibrators=CALIBRATORS,
         workflow_options=workflow_options,
         # MET filters (params/event_flags.yaml) and golden JSON (data) are standard pocket-coffea skim cuts
         skim=[eventFlags, goldenJson, precut, hlt_cut],

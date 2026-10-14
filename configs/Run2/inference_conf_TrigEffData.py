@@ -20,7 +20,7 @@ localdir = os.path.dirname(os.path.abspath(__file__))
 print(localdir)
 
 # Import default calibrators for dynamic injection
-from pocket_coffea.lib.calibrators.common.common import default_calibrators_sequence
+from met_calibration import CALIBRATORS   # default sequence with type-1 PF MET for Run 2
 
 spanet_model_path = "/cms/data/jsamudio/boosted/boostedttX/configs/spanetBalanced24.onnx"
 
@@ -41,7 +41,7 @@ parameters = defaults.merge_parameters_from_files(default_parameters,
 
 # --- DYNAMIC CALIBRATOR INJECTION ---
 # Default sequence includes: JetsCalibrator, METCalibrator, ElectronsScaleCalibrator, Muon Rochester
-calibrators = default_calibrators_sequence
+calibrators = CALIBRATORS
 
 # Grab environment variables (defaults to None if not set)
 target_shape_calibrator = os.environ.get("PC_SHAPE_CALIBRATOR", None)
@@ -235,6 +235,7 @@ cfg = Configurator(
             },
 
         workflow = ZHbbSpanetProcessor,
+        calibrators = CALIBRATORS,
         workflow_options = {"parton_jet_min_dR": 0.3,
                             "parton_jet_min_dR_postfsr": 1.0,
                             "jec_pt_variation" : "",

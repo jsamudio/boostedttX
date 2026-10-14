@@ -69,6 +69,15 @@ def sf_mu_trig(events, file, **kw):
     return sf_lep_trig(events, file, "MuonGood", "MuTrigSF", **kw)
     
 
+def set_fatjet_mass(fatjets, pnet_mass):
+    """Fatjet mass convention of the analysis: every fatjet mass is the ParticleNet regressed mass,
+    with JMS/JMR applied in MC (apply_jms_jmr) and as-is in data. Both `mass` (FatJetGood mass
+    window, fatjet mass columns, 4-vectors, Xbb SF binning) and `particleNet_mass` (ZH_M,
+    outZH_max_ak8pnetMass, mAK8 histogram) carry it, so all of them see the same value."""
+    fatjets = ak.with_field(fatjets, pnet_mass, "mass")
+    return ak.with_field(fatjets, pnet_mass, "particleNet_mass")
+
+
 def apply_jms_jmr(events, fatjets, jms_sf, jmr_sf, sig_mc, rng=None):
     """
     Applies JMS and JMR corrections to the ParticleNet regressed mass.

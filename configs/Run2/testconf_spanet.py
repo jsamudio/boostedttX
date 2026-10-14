@@ -22,9 +22,9 @@ from pocket_coffea.parameters import defaults
 default_parameters = defaults.get_default_parameters()
 defaults.register_configuration_dir("config_dir", localdir+"/params")
 
-from pocket_coffea.lib.calibrators.common.common import default_calibrators_sequence
+from met_calibration import CALIBRATORS   # default sequence with type-1 PF MET for Run 2
 
-calibrators = default_calibrators_sequence
+calibrators = CALIBRATORS
 
 parameters = defaults.merge_parameters_from_files(default_parameters,
                                                   f"{localdir}/params/object_preselection.yaml",
@@ -119,6 +119,7 @@ cfg = Configurator(
             },
 
         workflow = ZHbbBaseProcessor,
+        calibrators = CALIBRATORS,
         workflow_options = {"parton_jet_min_dR": 0.3,
                             "parton_jet_min_dR_postfsr": 1.0,
                             "pnet_mass_json": "/cms/data/jsamudio/boosted/boostedttX/configs/Run2/pnet_mass_jerc.json",},

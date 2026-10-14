@@ -13,7 +13,7 @@ from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
 from weight_handler import calc_weight
 from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_pileup_reweight, sf_L1prefiring
-from custom_scale_factors import sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig, sf_mu_trig, chunk_rng, btag_jes_systematic, sf_btag_jes
+from custom_scale_factors import set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig, sf_mu_trig, chunk_rng, btag_jes_systematic, sf_btag_jes
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
 
@@ -110,7 +110,10 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
             # smearing is seeded per chunk, so every shape variation sees the same random numbers.
             corrected_mass = apply_jms_jmr(self.events, self.events.FatJet, jms_sf, jmr_sf, sigma_mc,
                                            rng=chunk_rng(self.events))
-            self.events['FatJet'] = ak.with_field(self.events.FatJet, corrected_mass, "mass")
+        else:
+            # Data: the regressed ParticleNet mass without JMS/JMR (MC-only corrections)
+            corrected_mass = self.events.FatJet.particleNet_mass
+        self.events['FatJet'] = set_fatjet_mass(self.events.FatJet, corrected_mass)
 
         # Just needed for plotting
         electron_etaSC = self.events.Electron.eta + self.events.Electron.deltaEtaSC

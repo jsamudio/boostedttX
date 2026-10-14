@@ -17,7 +17,7 @@ from weight_handler import calc_weight, add_weights_to_ttbb
 from pocket_coffea.lib.parton_provenance import *
 from pocket_coffea.lib.deltaR_matching import metric_eta, metric_phi
 from pocket_coffea.lib.deltaR_matching import object_matching
-from custom_scale_factors import sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr
+from custom_scale_factors import set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr
 
 sig = ['ttHTobb', 'ttHToNonbb','TTZToBB', 'TTZToQQ', 'TTZToLLNuNu']
 
@@ -74,11 +74,7 @@ class ZHbbBaseProcessor (BaseProcessorABC):
                 sigma_mc
             )
             
-            self.events['FatJet'] = ak.with_field(
-                self.events.FatJet, 
-                corrected_mass, 
-                "mass"
-            )
+            self.events['FatJet'] = set_fatjet_mass(self.events.FatJet, corrected_mass)
             
         # Just needed for plotting
         electron_etaSC = self.events.Electron.eta + self.events.Electron.deltaEtaSC

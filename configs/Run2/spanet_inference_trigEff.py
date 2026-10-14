@@ -21,7 +21,7 @@ from pocket_coffea.lib.deltaR_matching import metric_eta, metric_phi
 from pocket_coffea.lib.deltaR_matching import object_matching
 from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_pileup_reweight, sf_L1prefiring
 from dask.distributed import get_worker
-from custom_scale_factors import sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig
+from custom_scale_factors import set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig
 import cachetools
 from get_controlvars import get_controlvars
 
@@ -99,13 +99,11 @@ class ZHbbSpanetProcessor (BaseProcessorABC):
                 sigma_mc
             )
             
-            self.events['FatJet'] = ak.with_field(
-                self.events.FatJet, 
-                corrected_mass, 
-                "mass"
-            )
-            
-            
+        else:
+            # Data: the regressed ParticleNet mass without JMS/JMR (MC-only corrections)
+            corrected_mass = self.events.FatJet.particleNet_mass
+        self.events['FatJet'] = set_fatjet_mass(self.events.FatJet, corrected_mass)
+
         # Just needed for plotting
         electron_etaSC = self.events.Electron.eta + self.events.Electron.deltaEtaSC
         self.events["Electron"] = ak.with_field(

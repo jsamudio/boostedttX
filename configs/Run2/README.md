@@ -91,7 +91,17 @@ calibrator sequence.
 * Nominal MC weight (`outvars.nominal_weight_factors`) includes `l1prefire_sf` (UL NanoAOD
   `L1PreFiringWeight`, ECAL + muon prefiring) for all years; `l1prefire_<year>` is a datacard shape systematic.
 * The 2018 HEM15/16 veto is in the preselection of every group (no effect on other eras).
-* All MET used (selection, SPANet inputs, `MET_pt`/`MET_phi` columns) is the type-1 corrected PF `MET`.
+* All MET used (selection, SPANet inputs, `MET_pt`/`MET_phi` columns) is the type-1 corrected PF `MET`:
+  NanoAOD's type-1 MET, with only the changes of the calibrators propagated (JEC/JER/JES on AK4 jets,
+  lepton scale) by `met_calibration.py`, which replaces pocket-coffea's `METCalibrator` (that one
+  returns raw MET in data and uses no L1 offset for CHS jets in MC).
+* Fatjet mass: every fatjet mass is the ParticleNet regressed mass, JMS/JMR-corrected in MC and as-is
+  in data (`custom_scale_factors.set_fatjet_mass`): `FatJet.mass` and `FatJet.particleNet_mass` both
+  carry it, so the FatJetGood mass window, `ZH_M`, the fatjet mass columns, the ZH candidate
+  4-vector and the Xbb SF binning all use the same value.
+* Triggers (`custom_cut_functions.hlt_selection`): MC uses the OR of the e/gamma and muon paths;
+  data uses the paths of its primary dataset, with SingleMuon events removed from the e/gamma
+  dataset, so no data event is counted twice.
 * Correction files, efficiency maps and ONNX sessions are cached per dask worker.
 * The JMR stochastic smearing is seeded per chunk, so it is reproducible and identical
   for all shape variations.
