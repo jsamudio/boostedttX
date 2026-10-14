@@ -1,0 +1,98 @@
+"""
+Single source of truth for the samples of the Run 3 analysis (2024 so far).
+
+Pure Python (no coffea / pocket-coffea imports): used by the pocket-coffea configs and by the
+post-processing scripts.
+
+  * DATASET_JSONS  - dataset definition files (datasets/<name>.json)
+  * GROUPS         - which samples are processed together by one inference_conf_<group>.py
+  * PROCESS_LABELS - the 'process' label of each non-ttbar sample (ttbar samples are labelled
+                     per event from genTtbarId, see genmatcher.match_gen_tt)
+  * TTBAR_SPLIT /
+    GENMATCH_SPLIT - subsample definitions (turned into Cut objects in inference_common.py)
+"""
+
+import spanet_training
+
+# ---------------------------------------------------------------- dataset definition files
+DATASET_JSONS = [
+    "ttHTobb", "ttHToNonbb",
+    "TTZToQQ", "TTLL", "TTNuNu",
+    "TTbb_Hadronic", "TTbb_2L2Nu", "TTbb_SemiLeptonic",
+    "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic",
+    "WJets", "DYJets", "SingleTop", "TTX", "VV", "QCD",
+    "DATA_EGamma", "DATA_Muon",
+    "ttHSMEFT", "ttbbSMEFT",
+]
+
+# ---------------------------------------------------------------- sample groups
+# ttZ: there is no dedicated Z->bb sample in Run 3, so Z->bb comes from TTZToQQ (kept as signal);
+# Z->ll / Z->nunu from TTLL (two m(ll) bins) and TTNuNu
+SIGNAL_SAMPLES = ["ttHTobb", "ttHToNonbb", "TTZToQQ", "TTLL", "TTNuNu"]
+TTBAR_SAMPLES = ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu",
+                 "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic"]
+MINOR_SAMPLES = ["WJets", "DYJets", "SingleTop", "TTX", "VV"]
+QCD_SAMPLES = ["QCD"]
+EFT_SAMPLES = ["ttHSMEFT", "ttbbSMEFT"]
+DATA_SAMPLES = ["DATA_EGamma", "DATA_Muon"]
+# Trigger efficiency (orthogonal method in ttbar e-mu): dileptonic + semileptonic ttbar and both
+# data streams (the notebook uses one primary dataset per measurement)
+TRIGEFF_SAMPLES = ["TTTo2L2Nu", "TTToSemiLeptonic", "TTbb_2L2Nu", "TTbb_SemiLeptonic"] + DATA_SAMPLES
+
+# One entry per inference_conf_<group>.py. Options:
+#   samples   - samples to process
+#   is_data   - no MC weights / gen information in the output columns
+#   selection - "analysis" (default), "trigeff" (e-mu ttbar, no trigger requirement) or "spanet"
+#               (SPANet training inputs, samples and options in spanet_training.py)
+#   dump_dir  - pocket-coffea 'dump_columns_as_arrays_per_chunk' directory (None = keep in .coffea)
+GROUPS = {
+    "signal":  {"samples": SIGNAL_SAMPLES},
+    "bkg":     {"samples": TTBAR_SAMPLES},
+    "minor":   {"samples": MINOR_SAMPLES},
+    "qcd":     {"samples": QCD_SAMPLES},
+    "EFT":     {"samples": EFT_SAMPLES},
+    "data":    {"samples": DATA_SAMPLES, "is_data": True},
+    "trigeff": {"samples": TRIGEFF_SAMPLES, "selection": "trigeff"},
+    "spanet":  {"samples": spanet_training.sample_names(), "selection": "spanet"},
+}
+
+# ---------------------------------------------------------------- process labels
+PROCESS_LABELS = {
+    "ttHTobb": "ttH", "ttHToNonbb": "ttH", "ttHSMEFT": "ttH",
+    "TTZToQQ": "ttZ", "TTLL": "ttZ", "TTNuNu": "ttZ",
+    "WJets": "VJets", "DYJets": "VJets",
+    "SingleTop": "SingleTop", "TTX": "ttX", "VV": "VV", "QCD": "QCD",
+    "DATA_EGamma": "data_obs", "DATA_Muon": "data_obs",
+}
+
+# ---------------------------------------------------------------- subsamples
+# genTtbarId % 100 categories (https://twiki.cern.ch/twiki/bin/view/CMSPublic/GenHFHadronMatcher)
+TTBAR_SPLIT = {
+    "tt+LF": [0],
+    "tt+C":  [41, 42, 43, 44, 45, 46],
+    "tt+B":  [51, 52, 53, 54, 55, 56],
+}
+# Signal split on matchedGen_ZHbb_bb (see genmatcher.match_gen_sig)
+GENMATCH_SPLIT = ["genMatch", "non_genMatch"]
+
+
+def subsample_names(sample):
+    """Output keys of a sample in the .coffea file, e.g. 'TTToHadronic__tt+LF'."""
+    if sample in TTBAR_SAMPLES:
+        return [f"{sample}__{s}" for s in TTBAR_SPLIT]
+    if sample in SIGNAL_SAMPLES:
+        return [f"{sample}__{s}" for s in GENMATCH_SPLIT]
+    return [sample]
+
+
+# ---------------------------------------------------------------- sample-specific output columns
+def extra_column_group(sample):
+    """Which outvars list a sample exports on top of the common columns: 'sig', 'bkg' or None."""
+    if sample in SIGNAL_SAMPLES or sample == "ttHSMEFT":
+        return "sig"
+    if sample in TTBAR_SAMPLES or sample == "ttbbSMEFT":
+        return "bkg"
+    return None
+
+
+EFT_COLUMNS = ["EFTfitCoefficients", "EFTfitCoefficientIndex1", "EFTfitCoefficientIndex2", "WCnames"]

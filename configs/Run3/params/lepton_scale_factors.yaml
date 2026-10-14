@@ -1,0 +1,11 @@
+# Overrides of pocket-coffea's lepton_scale_factors defaults (correction files come from the defaults).
+# Muon SFs for the MediumID + mini-isolation selection (object_cleaning_functions.lep_sel).
+# The trigger entry is the MUO reference SF, used only until our own trigger SFs are derived.
+lepton_scale_factors:
+  muon_sf:
+    collection: MuonGood
+    sf_name:
+      '2024':
+        id: NUM_MediumID_DEN_TrackerMuons
+        iso: NUM_MediumMiniIso_DEN_MediumID
+        trigger: NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdMedium_and_PFIsoMedium

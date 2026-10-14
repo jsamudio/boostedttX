@@ -1,0 +1,30 @@
+# Object selection of the Run 3 (2024) analysis.
+object_preselection:
+    FatJet:
+        dr_lepton: 0.8
+        pt: 200
+        eta: 2.4
+        jetId: 2
+        mass_min: 50          # window on the GloParT 2-prong regressed mass
+        mass_max: 200
+    Jet:
+        dr_lepton: 0.4
+        pt: 30
+        eta: 2.4
+        jetId: 2
+    btag:
+        tagger: btagUParTAK4B # working point from pocket-coffea's btagging parameters ("M")
+        wp: M
+    Electron:
+        pt: 35
+        eta: 2.5
+        iso: 0.1              # miniPFRelIso_all
+        sip3d: 4
+        id: mvaNoIso_WP90     # also selects the EGM ID scale factors
+    Muon:
+        pt: 30
+        eta: 2.4
+        iso: 0.2              # miniPFRelIso_all
+        id: 1                 # mediumId
+        softId: 1
+        sip3d: 4

@@ -1,0 +1,61 @@
+"""Workflow of the SPANet training inputs (Run 3): the analysis objects + gen matching, no SFs."""
+import awkward as ak
+import vector
+
+from pocket_coffea.utils.configurator import Configurator
+from object_cleaning_functions import bjet_sel, qjet_sel
+from custom_cut_functions import sortbyscore
+from cand_helper import zh_helper
+from genmatcher import match_gen_lep
+from parton_matching import do_parton_matching
+from spanet_inference import ZHbbRun3Processor
+
+
+class ZHbbRun3TrainingProcessor(ZHbbRun3Processor):
+    '''
+    Same objects as the analysis (ZHbbRun3Processor: UParT AK4, GloParT fatjets and regressed mass,
+    PUPPI MET); after the preselection:
+        optional AK4 cleaning (dR > 0.8 from the candidate), ZH candidate variables,
+        process labels / gen flags (subsamples), prefilter to the training category,
+        parton matching (MC, parton_matching.py)
+    The event weight is the pocket-coffea weight (spanet_training.WEIGHTS); no object SFs.
+
+    Workflow options (from spanet_training.py, on top of ZHbbRun3Processor's):
+      clean_jets      - AK4 jets with dR > 0.8 from the candidate only
+      matching        - {jet_dr, fatjet_dr, parton_copy}
+      extra_b_samples - samples whose extra hard-process b quarks get provenance 1 (4F ttbb)
+      prefilter_cut   - Cut of the training category, applied before the gen matching
+    '''
+
+    def __init__(self, cfg: Configurator):
+        super().__init__(cfg)
+        self.clean_jets = self.workflow_options.get("clean_jets", False)
+        self.matching = self.workflow_options["matching"]
+        self.extra_b_samples = self.workflow_options.get("extra_b_samples", [])
+        self.prefilter_cut = self.workflow_options.get("prefilter_cut")
+
+    def process_extra_after_presel(self, variation):
+        self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "btagBB")
+
+        if self.clean_jets:
+            dr = self.events.JetGood.delta_r(ak.firsts(self.events.FatJetSorted))
+            self.events['JetGood'] = self.events.JetGood[(dr > 0.8) | ak.is_none(dr)]
+            self.events['bJetGood'] = bjet_sel(self.events.JetGood, self.params, self._year)
+            self.events['qJetGood'] = qjet_sel(self.events.JetGood, self.params, self._year)
+            self.events['nJetGood'] = ak.num(self.events.JetGood)
+            self.events['nbJetGood'] = ak.num(self.events.bJetGood)
+
+        fj0 = self.events.FatJetSorted[:, 0]
+        self.events['ZH_rap'] = vector.zip({"pt": fj0.pt, "eta": fj0.eta, "phi": fj0.phi, "mass": fj0.mass}).rapidity
+        zh_helper(self.events)
+
+        if self._isMC:
+            match_gen_lep(self.events)
+        self.label_process()          # process label + gen flags used by the subsamples (Zbb, ...)
+
+        if self.prefilter_cut is not None:
+            self.apply_prefilter(self.prefilter_cut)
+
+        if self._isMC:
+            do_parton_matching(self.events, dict(self.matching,
+                                                 extra_b_as_boson=self._sample in self.extra_b_samples))

@@ -1,0 +1,8 @@
+# Jet calibration overrides. pocket-coffea's defaults already reapply the recommended 2024 JECs to
+# data and MC (Summer24Prompt24_V5, JER Summer24Prompt24_JRV2), for the PUPPI AK4 jets, the
+# CorrT1METJet (PUPPI type-1 MET) and the AK8 jets: nothing to override but the variations.
+#
+# The variations actually run are chosen per job with PC_JEC_VARIATION (inference_common.py),
+# from default_jets_calibration.variations.{total_variation, full_variations}.
+jets_calibration:
+  variations: "${default_jets_calibration.variations.total_variation}"

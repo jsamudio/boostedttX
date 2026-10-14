@@ -1,0 +1,23 @@
+# Run options of this analysis for the shared PBS Pro executor (configs/common), merged on top of
+# pocket-coffea's "general" run options:
+#   pocket-coffea run ... --executor pbs --executor-custom-setup ../common/executors_pbs.py -ro run_options_pbs.yaml
+
+# ---- splitting: one PBS job per <= max-events-per-job events, a single sample per job
+max-events-per-job:
+  default: 5000000          # ~5 NanoAOD files; tune so a job takes ~0.5-2 h on 8 cores
+chunksize: 100000           # events per futures task (memory: one chunk per core in flight)
+
+# ---- PBS resources (per job)
+queue: batch
+cores-per-worker: 8         # = futures workers per job
+mem-per-worker: 32gb        # memory of the whole job
+walltime: null              # no request; e.g. "12:00:00"
+merge-mem: 32gb             # merge job (1 core)
+
+# ---- execution environment
+scratch-dir: /tmp           # job working directory (bound into the image)
+apptainer-image: /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest
+apptainer-binds: [/cvmfs, /cms/data, /home/$USER, /tmp]
+ignore-grid-certificate: false  # jobs get the VOMS proxy (X509_USER_PROXY), copied to $HOME and
+                                # refreshed at every (re)submission: run voms-proxy-init beforehand
+split-by-category: false
