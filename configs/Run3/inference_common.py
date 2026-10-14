@@ -246,7 +246,8 @@ def build_config(group, eras=None, sample_list=None):
             "clean_jets": spanet_training.CLEAN_JETS,
             "matching": dict(spanet_training.MATCHING),
             "extra_b_samples": [s for s, o in spanet_training.SAMPLES.items() if o.get("extra_b_as_boson")],
-            "prefilter_cut": spanet_cut,
+            # plain dict (the workflow options are saved as JSON); the workflow builds the Cut
+            "spanet_selection": dict(spanet_training.SELECTION),
         })
     if opts.get("dump_dir"):
         workflow_options["dump_columns_as_arrays_per_chunk"] = opts["dump_dir"].format(era="_".join(eras))

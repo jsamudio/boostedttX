@@ -4,7 +4,7 @@ import vector
 
 from pocket_coffea.utils.configurator import Configurator
 from object_cleaning_functions import bjet_sel, qjet_sel
-from custom_cut_functions import sortbyscore
+from custom_cut_functions import sortbyscore, get_spanet_selection
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep
 from parton_matching import do_parton_matching
@@ -24,7 +24,8 @@ class ZHbbRun3TrainingProcessor(ZHbbRun3Processor):
       clean_jets      - AK4 jets with dR > 0.8 from the candidate only
       matching        - {jet_dr, fatjet_dr, parton_copy}
       extra_b_samples - samples whose extra hard-process b quarks get provenance 1 (4F ttbb)
-      prefilter_cut   - Cut of the training category, applied before the gen matching
+      spanet_selection - spanet_training.SELECTION: the training category, applied as a prefilter
+                         before the gen matching
     '''
 
     def __init__(self, cfg: Configurator):
@@ -32,7 +33,8 @@ class ZHbbRun3TrainingProcessor(ZHbbRun3Processor):
         self.clean_jets = self.workflow_options.get("clean_jets", False)
         self.matching = self.workflow_options["matching"]
         self.extra_b_samples = self.workflow_options.get("extra_b_samples", [])
-        self.prefilter_cut = self.workflow_options.get("prefilter_cut")
+        selection = self.workflow_options.get("spanet_selection")
+        self.prefilter_cut = get_spanet_selection(selection) if selection is not None else None
 
     def process_extra_after_presel(self, variation):
         self.events['FatJetSorted'] = sortbyscore(self.events.FatJetGood, "btagBB")
