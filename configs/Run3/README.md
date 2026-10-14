@@ -30,8 +30,11 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
    Until then `ele_trig_sf` = 1 and `mu_trig_sf` = MUO reference SF.
 2. **b-tag SFs**: no shape SFs for UParT yet, so fixed-WP (method 1a) with our efficiency maps;
    `btag_sf` = 1 until then.
-3. **Xbb working points**: no central GloParT WPs; derive them from mistag rates
-   (`analysis_years.XBB_WP_DICT`), then the multi-WP Xbb SFs as in Run 2.
+3. **Xbb working points**: no central GloParT WPs, so they come from the mistag rate of light-flavour
+   fatjets (no B/C hadrons) in tt+LF events: 10% / 5% / 1% for LP / MP / HP.
+   `run_pipeline.py inference --groups xbbwp`, then `python3 derive_xbb_wps.py --plots plots/xbbwp`
+   prints the `analysis_years.XBB_WP_DICT` entry (and the ttH/ttZ(bb) efficiency, pT dependence).
+   Then the multi-WP Xbb SFs as in Run 2.
 4. **SPANet**: retrain on these definitions (`spanet_models.py`; inference runs without SPANet
    while `ACTIVE_MODELS` is empty), then pickling / datacards.
 

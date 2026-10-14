@@ -36,15 +36,17 @@ import spanet_models
 import spanet_training
 import spanet_training_workflow
 import parton_matching
+import xbb_wp_workflow
 import outvars
 from analysis_years import ERAS
 from custom_cut_functions import (precut, hlt_cut, hlt_paths, event_selection, trig_event_selection, vetoE, vetoMu,
                                   btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq, get_spanet_selection, get_flag_cut)
 from spanet_inference import ZHbbRun3Processor
 from spanet_training_workflow import ZHbbRun3TrainingProcessor
+from xbb_wp_workflow import ZHbbRun3XbbWPProcessor
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models,
-                spanet_training, spanet_training_workflow, parton_matching):
+                spanet_training, spanet_training_workflow, parton_matching, xbb_wp_workflow):
     cloudpickle.register_pickle_by_value(_module)
 
 LOCALDIR = os.path.dirname(os.path.abspath(__file__))
@@ -151,6 +153,24 @@ def build_spanet_columns(category):
     return {"common": {"inclusive": [], "bycategory": {category: cols}}, "bysample": {}}
 
 
+# Xbb working points: all fatjets of the preselection (derive_xbb_wps.py)
+XBBWP_FATJET_COLUMNS = ["pt", "eta", "phi", "mass", "btagBB", "nBHadrons", "nCHadrons", "matched", "n_boson_b"]
+
+
+def build_xbbwp_subsamples():
+    """tt+LF only for the ttbar samples, Z -> bb only for TTZToQQ."""
+    subsamples = {s: {"tt+LF": [get_genTtbarId_100_eq(samples.TTBAR_SPLIT["tt+LF"])]}
+                  for s in samples.XBBWP_MISTAG_SAMPLES}
+    subsamples["TTZToQQ"] = {"Zbb": [get_flag_cut("Zbb")]}
+    return subsamples
+
+
+def build_xbbwp_columns(category):
+    cols = [ColOut("FatJetGood", XBBWP_FATJET_COLUMNS),
+            ColOut("events", ["nJetGood", "nbJetGood", "nLeptonGood"])]
+    return {"common": {"inclusive": [], "bycategory": {category: cols}}, "bysample": {}}
+
+
 def build_subsamples():
     subsamples = {}
     for sample in samples.TTBAR_SAMPLES:
@@ -228,6 +248,18 @@ def build_config(group, eras=None, sample_list=None):
         workflow = ZHbbRun3TrainingProcessor
         weights = list(spanet_training.WEIGHTS)
         subsamples = build_spanet_subsamples()
+    elif selection == "xbbwp":
+        # analysis preselection, no b-tag category and no Xbb cut (nbJetGood is exported)
+        data = [s for s in sample_list if s in samples.DATA_SAMPLES]
+        if data:
+            raise ValueError(f"The Xbb working points need gen information, not data: {data}")
+        skim = [eventFlags, goldenJson, precut, hlt_cut]
+        preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu]
+        category = "presel"
+        categories = {category: [passthrough]}
+        workflow = ZHbbRun3XbbWPProcessor
+        weights = ["genWeight", "lumi", "XS", "pileup"]
+        subsamples = build_xbbwp_subsamples()
     else:
         skim = [eventFlags, goldenJson, precut, hlt_cut]
         preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu]
@@ -273,5 +305,6 @@ def build_config(group, eras=None, sample_list=None):
         },
         variables=HISTOGRAMS,
         columns=(build_spanet_columns(category) if selection == "spanet"
+                 else build_xbbwp_columns(category) if selection == "xbbwp"
                  else build_columns(sample_list, category, selection)),
     )

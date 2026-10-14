@@ -39,11 +39,18 @@ DATA_SAMPLES = ["DATA_EGamma", "DATA_Muon"]
 # data streams (the notebook uses one primary dataset per measurement)
 TRIGEFF_SAMPLES = ["TTTo2L2Nu", "TTToSemiLeptonic", "TTbb_2L2Nu", "TTbb_SemiLeptonic"] + DATA_SAMPLES
 
+# Xbb working points (derive_xbb_wps.py): mistag rate on light-flavour fatjets of tt+LF events,
+# efficiency on H/Z -> bb fatjets of ttH(bb) / ttZ(bb)
+XBBWP_MISTAG_SAMPLES = ["TTToSemiLeptonic", "TTTo2L2Nu"]
+XBBWP_SIGNAL_SAMPLES = ["ttHTobb", "TTZToQQ"]
+XBBWP_SAMPLES = XBBWP_MISTAG_SAMPLES + XBBWP_SIGNAL_SAMPLES
+
 # One entry per inference_conf_<group>.py. Options:
 #   samples   - samples to process
 #   is_data   - no MC weights / gen information in the output columns
 #   selection - "analysis" (default), "trigeff" (e-mu ttbar, no trigger requirement) or "spanet"
-#               (SPANet training inputs, samples and options in spanet_training.py)
+#               (SPANet training inputs, samples and options in spanet_training.py) or "xbbwp"
+#               (all fatjets of the preselection, for the Xbb working points)
 #   dump_dir  - pocket-coffea 'dump_columns_as_arrays_per_chunk' directory (None = keep in .coffea)
 GROUPS = {
     "signal":  {"samples": SIGNAL_SAMPLES},
@@ -54,6 +61,7 @@ GROUPS = {
     "data":    {"samples": DATA_SAMPLES, "is_data": True},
     "trigeff": {"samples": TRIGEFF_SAMPLES, "selection": "trigeff"},
     "spanet":  {"samples": spanet_training.sample_names(), "selection": "spanet"},
+    "xbbwp":   {"samples": XBBWP_SAMPLES, "selection": "xbbwp"},
 }
 
 # ---------------------------------------------------------------- process labels
