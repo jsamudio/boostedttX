@@ -41,10 +41,20 @@ delete `<outputdir>` and prepare again.
 
 ## Type-1 MET (`met_calibration.py`)
 
-pocket-coffea's default `METCalibrator` rebuilds MET from `RawMET`: in data (`apply_data: false`)
-that is the raw MET, and in MC it uses no L1 offset, which is wrong for Run 2 CHS jets. To keep
-NanoAOD's type-1 MET and only propagate the changes of the calibrators (AK4 JEC/JER/JES, lepton
-scale), pass the sequence from this module to the Configurator:
+JME recipe: undo the JECs stored in NanoAOD and reapply the recommended ones in data and MC, and
+recompute the type-1 MET (and its JEC variations) from the same corrected AK4 jets; the type-1 MET
+stored in NanoAOD must not be combined with jets corrected with a different payload, and only the
+AK4 jets entering the type-1 MET are propagated (not AK8).
+
+`METType1Calibrator` recomputes, for data and MC, nominal and every jet variation,
+`MET = RawMET - sum[pT(L1L2L3[Res]) - pT(L1)] * (1 - muonSubtrFactor)` over `Jet` and `CorrT1METJet`
+as corrected by the JetsCalibrator (corrected pT > 15 GeV, EM fraction < 0.9), with the L1 factor
+from the same payload (MC tag, or the data tag of the run era), plus the lepton scale corrections.
+pocket-coffea's default `METCalibrator` instead uses an L1 factor of 1 (only right for PUPPI jets)
+and returns the raw MET in data when `apply_data` is false.
+
+Use it together with data JEC re-application (`jets_calibration.apply_jec_Data: True` for the
+Run 2 eras, see `Run2/params/jets_calibration.yaml`), and pass the sequence to the Configurator:
 ```python
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))

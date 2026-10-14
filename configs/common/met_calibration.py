@@ -1,32 +1,47 @@
 """
-Type-1 PF MET for Run 2 UL, consistent between data and MC.
+Type-1 PF MET for Run 2 UL, recomputed from the recommended JECs (JME recipe).
 
-NanoAOD's MET is already type-1 corrected with the final UL JECs, in data and MC. pocket-coffea's
-METCalibrator instead rebuilds MET from RawMET: in data (apply_data: false) it returns the RAW
-MET, and in MC it sets the L1 (pileup offset) factor to 1, which is only right for PUPPI jets
-(Run 3), not for the Run 2 CHS jets.
+JME: the type-1 MET stored in NanoAOD was computed with the JEC payload used at production and
+must not be combined with AK4 jets corrected with a different payload. When the recommended JECs
+are reapplied, the central type-1 MET and its JEC variations are recomputed from the same
+corrected AK4 jets; only the AK4 jets entering the type-1 MET are propagated (not AK8).
 
-METType1PropagationCalibrator keeps NanoAOD's type-1 MET and only propagates the changes made by
-the calibrators before it in the chain, i.e. the difference between the calibrated and the
-original NanoAOD objects:
-  * AK4 jets (JEC re-application, JER smearing, JES/JER variations), type-1 jet selection
-    (corrected pT without muons > 15 GeV, EM fraction < 0.9); the L1 terms cancel in the difference
-  * electron / muon scale corrections
-In data the jets are not recalibrated (apply_jec_Data: false), so MET stays NanoAOD's type-1 MET
-apart from the lepton scale corrections.
+METType1Calibrator therefore recomputes, for data and MC, nominal and every jet variation:
 
-CALIBRATORS is the calibrator sequence to pass to the Configurator (default sequence with this
-calibrator in place of METCalibrator).
+    MET = RawMET - sum_jets [ pT(L1L2L3[Res]) - pT(L1) ] * (1 - muonSubtrFactor)
+
+over the AK4 type-1 jets, `Jet` and the low-pT `CorrT1METJet`, as corrected (and in MC smeared /
+varied) by pocket-coffea's JetsCalibrator, with corrected pT (muon subtracted) > 15 GeV and, for
+`Jet`, EM fraction < 0.9. The L1 factor comes from the same JEC payload (tag of the chunk: MC tag,
+or the data tag of the run era). The lepton scale corrections of the calibrators before it are
+propagated as well.
+
+It replaces pocket-coffea's METCalibrator, which also starts from RawMET but uses an L1 factor of 1
+(correct only for PUPPI jets) and returns the raw MET in data when apply_data is false.
+
+Requires the recommended JECs to be reapplied to data as well (jets_calibration.apply_jec_Data),
+so that `Jet` and `CorrT1METJet` carry the recommended payload in data and MC.
+
+CALIBRATORS is the calibrator sequence to pass to the Configurator.
 """
 import awkward as ak
 import numpy as np
 
 from pocket_coffea.lib.calibrators.calibrator import Calibrator
 from pocket_coffea.lib.calibrators.common.common import JetsCalibrator, ElectronsScaleCalibrator, MuonsCalibrator
-from pocket_coffea.lib.jets import jets_in_original_order
+from pocket_coffea.lib.correction_cache import load_correction_set
+from pocket_coffea.lib.jets import get_rho
+from pocket_coffea.utils.utils import get_nano_version
 
 T1_JET_PT_MIN = 15.0
 T1_JET_EM_MAX = 0.9
+T1_JET_TYPE = "AK4PFchs"                         # JEC payload of the type-1 jets (Run 2)
+T1_COLLECTIONS = ("Jet", "CorrT1METJet")         # AK4 jets entering the type-1 MET
+
+
+def _evaluate(corr, jets_flat, pt_raw_flat, rho_flat):
+    inputs = {"JetA": jets_flat.area, "JetEta": jets_flat.eta, "JetPt": pt_raw_flat, "Rho": rho_flat}
+    return corr.evaluate(*[np.asarray(inputs[i.name], dtype=np.float64) for i in corr.inputs])
 
 
 def _sum_xy(pt, phi, mask):
@@ -35,48 +50,61 @@ def _sum_xy(pt, phi, mask):
     return px, py
 
 
-def jet_t1_shift(jets_new, jets_old):
-    """Change of the type-1 jet sum between two versions of the same AK4 jets (same order)."""
-    nomu = 1.0 - jets_old.muonSubtrFactor
-    em_ok = (jets_old.chEmEF + jets_old.neEmEF) < T1_JET_EM_MAX
-    pt_new, pt_old = jets_new.pt * nomu, jets_old.pt * nomu
-    nx, ny = _sum_xy(pt_new, jets_old.phi, em_ok & (pt_new > T1_JET_PT_MIN))
-    ox, oy = _sum_xy(pt_old, jets_old.phi, em_ok & (pt_old > T1_JET_PT_MIN))
-    return nx - ox, ny - oy
-
-
-def lepton_shift(events, orig_colls, coll):
-    key = f"{coll}.pt"
-    if key not in orig_colls:
-        return 0.0, 0.0
-    lep = events[coll]
-    dpt = lep.pt - orig_colls[key]
-    return _sum_xy(dpt, lep.phi, ak.ones_like(dpt, dtype=bool))
-
-
-class METType1PropagationCalibrator(Calibrator):
-    name = "met_t1_propagation"
+class METType1Calibrator(Calibrator):
+    name = "met_type1_run2"
     has_variations = False
     isMC_only = False
+    # Only existing fields: the CalibratorsManager cannot store originals of new fields
     calibrated_collections = ["MET.pt", "MET.phi"]
 
     def initialize(self, events):
-        pass
+        calib = self.params.jets_calibration.jet_types[T1_JET_TYPE][self.year]
+        if self.isMC:
+            tag = calib.jec_mc
+        else:
+            tag = calib.jec_data if isinstance(calib.jec_data, str) else calib.jec_data[self.metadata["era"]]
+        cset = load_correction_set(calib.json_path)
+        self.l1 = cset[f"{tag}_L1FastJet_{T1_JET_TYPE}"]
+        full = f"{tag}_{calib.level}_{T1_JET_TYPE}"          # only for jets the JetsCalibrator did not touch
+        self.l123 = cset.compound[full] if full in cset.compound.keys() else cset[full]
+        self.rho = get_rho(events, get_nano_version(events, self.params, self.year))
+
+    def type1_sum(self, jets):
+        """sum over type-1 jets of (pT_L1L2L3 - pT_L1) * (1 - muonSubtrFactor), as (px, py)."""
+        counts = ak.num(jets)
+        flat = ak.flatten(jets)
+        rho = ak.flatten(ak.broadcast_arrays(self.rho, jets.eta)[0])
+        if "pt" in jets.fields and "rawFactor" in jets.fields:   # corrected by the JetsCalibrator
+            pt_corr = jets.pt
+            pt_raw = jets.pt * (1.0 - jets.rawFactor)
+        else:                                                     # e.g. CorrT1METJet left uncalibrated
+            pt_raw = jets.rawPt
+            pt_corr = pt_raw * ak.unflatten(_evaluate(self.l123, flat, ak.flatten(pt_raw), rho), counts)
+        l1 = ak.unflatten(_evaluate(self.l1, flat, ak.flatten(pt_raw), rho), counts)
+        nomu = 1.0 - jets.muonSubtrFactor
+        pt_corr_nomu = pt_corr * nomu
+        delta = pt_corr_nomu - pt_raw * l1 * nomu
+        mask = pt_corr_nomu > T1_JET_PT_MIN
+        if "chEmEF" in jets.fields and "neEmEF" in jets.fields:
+            mask = mask & ((jets.chEmEF + jets.neEmEF) < T1_JET_EM_MAX)
+        return _sum_xy(delta, jets.phi, mask)
 
     def calibrate(self, events, orig_colls, variation, already_applied_calibrators=None):
-        met = events["MET"]                      # NanoAOD type-1 MET (not touched before)
-        mx = met.pt * np.cos(met.phi)
-        my = met.pt * np.sin(met.phi)
-
-        if "Jet" in orig_colls:                  # AK4 jets recalibrated / varied by JetsCalibrator
-            dx, dy = jet_t1_shift(jets_in_original_order(events["Jet"]), orig_colls["Jet"])
-            mx, my = mx - dx, my - dy
-        for coll in ("Electron", "Muon"):        # lepton scale corrections
-            dx, dy = lepton_shift(events, orig_colls, coll)
-            mx, my = mx - dx, my - dy
-
+        raw = events["RawMET"]
+        mx = raw.pt * np.cos(raw.phi)
+        my = raw.pt * np.sin(raw.phi)
+        for coll in T1_COLLECTIONS:
+            if coll in events.fields:
+                dx, dy = self.type1_sum(events[coll])
+                mx, my = mx - dx, my - dy
+        for coll in ("Electron", "Muon"):                        # lepton scale corrections
+            key = f"{coll}.pt"
+            if key in orig_colls:
+                lep = events[coll]
+                dx, dy = _sum_xy(lep.pt - orig_colls[key], lep.phi, ak.ones_like(lep.pt, dtype=bool))
+                mx, my = mx - dx, my - dy
         return {"MET.pt": np.hypot(mx, my), "MET.phi": np.arctan2(my, mx)}
 
 
-# Default pocket-coffea sequence with the type-1 propagation in place of METCalibrator
-CALIBRATORS = [JetsCalibrator, ElectronsScaleCalibrator, MuonsCalibrator, METType1PropagationCalibrator]
+# Default pocket-coffea sequence with the Run 2 type-1 MET recomputation in place of METCalibrator
+CALIBRATORS = [JetsCalibrator, ElectronsScaleCalibrator, MuonsCalibrator, METType1Calibrator]

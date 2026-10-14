@@ -93,10 +93,12 @@ calibrator sequence.
 * Nominal MC weight (`outvars.nominal_weight_factors`) includes `l1prefire_sf` (UL NanoAOD
   `L1PreFiringWeight`, ECAL + muon prefiring) for all years; `l1prefire_<year>` is a datacard shape systematic.
 * The 2018 HEM15/16 veto is in the preselection of every group (no effect on other eras).
-* All MET used (selection, SPANet inputs, `MET_pt`/`MET_phi` columns) is the type-1 corrected PF `MET`:
-  NanoAOD's type-1 MET, with only the changes of the calibrators propagated (JEC/JER/JES on AK4 jets,
-  lepton scale) by `../common/met_calibration.py`, which replaces pocket-coffea's `METCalibrator` (that one
-  returns raw MET in data and uses no L1 offset for CHS jets in MC).
+* JECs: the recommended JECs are reapplied to data and MC jets (`params/jets_calibration.yaml`,
+  `apply_jec_Data`), as JME requires.
+* All MET used (selection, SPANet inputs, `MET_pt`/`MET_phi` columns) is the type-1 PF `MET`,
+  recomputed from `RawMET` with the same corrected AK4 jets (`Jet`, `CorrT1METJet`) and the L1 of the
+  same payload, for every jet variation, by `../common/met_calibration.py` (replaces pocket-coffea's
+  `METCalibrator`, which uses no L1 for CHS jets and returns raw MET in data).
 * Fatjet mass: every fatjet mass is the ParticleNet regressed mass, JMS/JMR-corrected in MC and as-is
   in data (`custom_scale_factors.set_fatjet_mass`): `FatJet.mass` and `FatJet.particleNet_mass` both
   carry it, so the FatJetGood mass window, `ZH_M`, the fatjet mass columns, the ZH candidate
