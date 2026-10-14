@@ -2,14 +2,15 @@
 pocket-coffea executor for PBS Pro: one batch job per chunk of files, each running the futures
 executor on all cores of its node inside apptainer, plus a merge job.
 
-    pocket-coffea run --cfg inference_conf_signal.py -o outputs/nominal/signal \
-        --executor pbs --executor-custom-setup executors_pbs.py -ro run_options_pbs.yaml
+    cd <analysis config dir>
+    pocket-coffea run --cfg <config>.py -o <outputdir> \
+        --executor pbs --executor-custom-setup ../common/executors_pbs.py -ro run_options_pbs.yaml
 
 Splitting, the per-job configurator pickles, jobs_config.yaml and the job.sh wrapper are
 pocket-coffea's manual-jobs machinery (same as the HTCondor executor); only the submission is
 PBS-specific (pbs_tools.py). Inside the apptainer image qsub is not available: the jobs are then
-only prepared, and submitted from the host with `python pbs_tools.py submit <outputdir>`
-(run_pipeline.py --backend pbs does both steps).
+only prepared, and submitted from the host with `python ../common/pbs_tools.py submit <outputdir>`.
+Analysis-independent: see configs/common/README.md.
 """
 import json
 import os
@@ -23,7 +24,8 @@ from pocket_coffea.executors.executors_base import IterativeExecutorFactory, Fut
 from pocket_coffea.executors.executors_lxplus import ExecutorFactoryCondorCERN, build_job_script, get_worker_env
 from pocket_coffea.executors.executors_manual_jobs import write_inner_run_options, INNER_RUN_OPTIONS_WHITELIST
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+COMMON_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, COMMON_DIR)
 import pbs_tools  # noqa: E402
 
 
@@ -95,9 +97,10 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
         analysis_dir = os.path.abspath(self.run_options.get("analysis-dir") or os.getcwd())
         os.makedirs(os.path.join(jobs_dir, "logs"), exist_ok=True)
 
-        # Worker environment: the analysis modules (cand_helper, genmatcher, ...) must be importable
+        # Worker environment: the analysis modules (directory the jobs are prepared from) and the
+        # shared modules of configs/common (e.g. met_calibration) must be importable
         env = get_worker_env(self.run_options, getattr(self, "x509_path", None), "condor")
-        env.append(f"export PYTHONPATH={analysis_dir}:$PYTHONPATH")
+        env.append(f"export PYTHONPATH={analysis_dir}:{COMMON_DIR}:$PYTHONPATH")
 
         # The per-job `pocket-coffea run` must also know whether a grid proxy is required
         inner_yaml = write_inner_run_options(self.jobs_dir, self.run_options,
@@ -126,6 +129,7 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
         settings.update({
             "name": "".join(c if c.isalnum() or c == "_" else "_" for c in name)[:15],
             "analysis-dir": analysis_dir,
+            "common-dir": COMMON_DIR,
             "output-dir": output_dir,
             "inner-yaml": os.path.basename(inner_yaml),
             # proxy used by the jobs (refreshed by pbs_tools at every submission); None = no proxy

@@ -65,7 +65,9 @@ python run_pipeline.py btagnorm pickle datacard --jec-variations JES_Total JER  
 ```
 `resubmit --include-unfinished` also resubmits jobs that never finished (e.g. killed by the batch
 system); it refuses while PBS still lists the arrays. Per directory the same is available as
-`python pbs_tools.py submit|status|resubmit|merge <outputdir>`. Job logs: `<outputdir>/job/logs/job_<id>.log`.
+`python ../common/pbs_tools.py submit|status|resubmit|merge <outputdir>`. Job logs: `<outputdir>/job/logs/job_<id>.log`.
+The PBS executor and tools are shared with other analyses in `../common` (see `../common/README.md`);
+`run_options_pbs.yaml` here holds this analysis' settings.
 
 ## pocket-coffea version
 
@@ -93,7 +95,7 @@ calibrator sequence.
 * The 2018 HEM15/16 veto is in the preselection of every group (no effect on other eras).
 * All MET used (selection, SPANet inputs, `MET_pt`/`MET_phi` columns) is the type-1 corrected PF `MET`:
   NanoAOD's type-1 MET, with only the changes of the calibrators propagated (JEC/JER/JES on AK4 jets,
-  lepton scale) by `met_calibration.py`, which replaces pocket-coffea's `METCalibrator` (that one
+  lepton scale) by `../common/met_calibration.py`, which replaces pocket-coffea's `METCalibrator` (that one
   returns raw MET in data and uses no L1 offset for CHS jets in MC).
 * Fatjet mass: every fatjet mass is the ParticleNet regressed mass, JMS/JMR-corrected in MC and as-is
   in data (`custom_scale_factors.set_fatjet_mass`): `FatJet.mass` and `FatJet.particleNet_mass` both

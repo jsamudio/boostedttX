@@ -7,7 +7,7 @@ as inside the apptainer image.
 
 A jobs directory <outputdir>/job is prepared by
     pocket-coffea run --cfg <config> -o <outputdir> --executor pbs \
-        --executor-custom-setup executors_pbs.py -ro run_options_pbs.yaml
+        --executor-custom-setup ../common/executors_pbs.py -ro run_options_pbs.yaml
 and contains one pickled configurator per job, job.sh, jobs_config.yaml and pbs_settings.json.
 This module turns it into a PBS job array (one subjob per pocket-coffea job, each running
 the futures executor on all cores of its node inside apptainer) plus a merge job that runs
@@ -160,7 +160,7 @@ def write_merge_script(jobs_dir, settings, tag):
 # Merge (and postprocess) all job outputs; jobs with missing outputs are marked .failed
 cd {settings['analysis-dir']}
 {apptainer_prefix(settings)} bash -c '
-    export PYTHONPATH={settings['analysis-dir']}:$PYTHONPATH
+    export PYTHONPATH={settings['analysis-dir']}:{settings.get('common-dir', settings['analysis-dir'])}:$PYTHONPATH
     merge-outputs -jc {jobs_dir}/jobs_config.yaml -o {settings['output-dir']}/output_all.coffea \\
         --mark-failed -f -m {max(1.0, mem_gb / 2):.0f}
 ' > {jobs_dir}/logs/merge_{tag}.log 2>&1

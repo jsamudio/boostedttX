@@ -22,6 +22,8 @@ from pocket_coffea.parameters import defaults
 default_parameters = defaults.get_default_parameters()
 defaults.register_configuration_dir("config_dir", localdir+"/params")
 
+import os, sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))  # configs/common
 from met_calibration import CALIBRATORS   # default sequence with type-1 PF MET for Run 2
 
 calibrators = CALIBRATORS

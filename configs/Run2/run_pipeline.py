@@ -15,7 +15,7 @@ Outputs are organised as
 
 Backends for the inference step:
     local  pocket-coffea runs here (executor from the config / arguments after '--')
-    pbs    one PBS Pro job array per group and variation (executors_pbs.py, run_options_pbs.yaml):
+    pbs    one PBS Pro job array per group and variation (../common/executors_pbs.py, run_options_pbs.yaml):
            jobs are prepared in the apptainer image, submitted from the host, and merged by a
            PBS job into output_all.coffea. Follow with `status` / `resubmit`; run btagnorm,
            pickle and datacard once everything is merged.
@@ -40,10 +40,13 @@ import shutil
 import subprocess
 import sys
 
-import pbs_tools
-from samples import GROUPS
-
 HERE = os.path.dirname(os.path.abspath(__file__))
+COMMON = os.path.join(os.path.dirname(HERE), "common")       # shared PBS tools (configs/common)
+sys.path.insert(0, COMMON)
+
+import pbs_tools  # noqa: E402
+from samples import GROUPS  # noqa: E402
+
 MC_GROUPS = ['signal', 'bkg', 'minor']
 STEPS = ['inference', 'status', 'resubmit', 'btagnorm', 'pickle', 'datacard']
 PBS_RUN_OPTIONS = "run_options_pbs.yaml"
@@ -118,7 +121,8 @@ def step_inference(args):
         env = {"PC_ERAS": ",".join(args.eras), "PC_JEC_VARIATION": tag}
         cmd = ["pocket-coffea", "run", "--cfg", f"inference_conf_{group}.py", "-o", outdir]
         if args.backend == "pbs":
-            cmd += ["--executor", "pbs", "--executor-custom-setup", "executors_pbs.py", "-ro", PBS_RUN_OPTIONS]
+            cmd += ["--executor", "pbs", "--executor-custom-setup", os.path.join(COMMON, "executors_pbs.py"),
+                    "-ro", PBS_RUN_OPTIONS]
             env[pbs_tools.NO_SUBMIT_ENV] = "1"       # the jobs are submitted below, from the host
         run(cmd + args.pc_args, args, env)
 

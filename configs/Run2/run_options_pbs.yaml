@@ -1,6 +1,6 @@
-# Run options for the PBS Pro executor (executors_pbs.py / pbs_tools.py), merged on top of
+# Run options of this analysis for the shared PBS Pro executor (configs/common), merged on top of
 # pocket-coffea's "general" run options:
-#   pocket-coffea run ... --executor pbs --executor-custom-setup executors_pbs.py -ro run_options_pbs.yaml
+#   pocket-coffea run ... --executor pbs --executor-custom-setup ../common/executors_pbs.py -ro run_options_pbs.yaml
 
 # ---- splitting: one PBS job per <= max-events-per-job events, a single sample per job
 max-events-per-job:
