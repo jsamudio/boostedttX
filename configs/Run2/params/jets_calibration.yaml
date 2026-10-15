@@ -10,17 +10,27 @@
 #   default_jets_calibration.variations.total_variation  -> JES_Total, JER
 #   default_jets_calibration.variations.full_variations  -> JES_Regrouped_<source>[_<year>], JER
 
-default_jets_calibration:
-  factory_config_clib:
-    AK4PFchs:
-      2016_PreVFP:
-        jec_data:
-          # the 2016 PreVFP run B datasets are labelled B_ver1 / B_ver2 (AK8 uses the same table)
-          B_ver1: "${default_jets_calibration.factory_config_clib.AK4PFchs.2016_PreVFP.jec_data.B}"
-          B_ver2: "${default_jets_calibration.factory_config_clib.AK4PFchs.2016_PreVFP.jec_data.B}"
+# Data JECs: the JME correction files on cvmfs (2026-06-10) have ONE data correction per year, with
+# the run number as input (e.g. Summer19UL18_V5_DATA_L1L2L3Res_AK4PFchs), not the per-era tags
+# (Summer19UL18_RunA_V5_DATA, ...) of pocket-coffea's defaults. Set on the resolved jet_types (the
+# defaults are interpolated before this file is merged), for AK4, AK8 and the type-1 MET jets.
+_data_jec: &data_jec
+  2016_PreVFP:
+    jec_data: Summer19UL16APV_V7_DATA
+  2016_PostVFP:
+    jec_data: Summer19UL16_V7_DATA
+  "2017":
+    jec_data: Summer19UL17_V5_DATA
+  "2018":
+    jec_data: Summer19UL18_V5_DATA
 
 jets_calibration:
   variations: "${default_jets_calibration.variations.total_variation}"
+
+  jet_types:
+    AK4PFchs: *data_jec
+    AK4CorrT1METJetchs: *data_jec
+    AK8PFPuppi: *data_jec
 
   # Reapply the recommended JECs to data too (pocket-coffea's Run 2 default keeps NanoAOD's)
   apply_jec_Data:

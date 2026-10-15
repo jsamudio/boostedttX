@@ -39,8 +39,10 @@ T1_JET_TYPE = "AK4PFchs"                         # JEC payload of the type-1 jet
 T1_COLLECTIONS = ("Jet", "CorrT1METJet")         # AK4 jets entering the type-1 MET
 
 
-def _evaluate(corr, jets_flat, pt_raw_flat, rho_flat):
-    inputs = {"JetA": jets_flat.area, "JetEta": jets_flat.eta, "JetPt": pt_raw_flat, "Rho": rho_flat}
+def _evaluate(corr, jets_flat, pt_raw_flat, rho_flat, run_flat):
+    # "run": the Run 2 data JECs are one correction per year, binned in run number
+    inputs = {"JetA": jets_flat.area, "JetEta": jets_flat.eta, "JetPt": pt_raw_flat, "Rho": rho_flat,
+              "run": run_flat}
     return corr.evaluate(*[np.asarray(inputs[i.name], dtype=np.float64) for i in corr.inputs])
 
 
@@ -68,19 +70,21 @@ class METType1Calibrator(Calibrator):
         full = f"{tag}_{calib.level}_{T1_JET_TYPE}"          # only for jets the JetsCalibrator did not touch
         self.l123 = cset.compound[full] if full in cset.compound.keys() else cset[full]
         self.rho = get_rho(events, get_nano_version(events, self.params, self.year))
+        self.run = events.run
 
     def type1_sum(self, jets):
         """sum over type-1 jets of (pT_L1L2L3 - pT_L1) * (1 - muonSubtrFactor), as (px, py)."""
         counts = ak.num(jets)
         flat = ak.flatten(jets)
         rho = ak.flatten(ak.broadcast_arrays(self.rho, jets.eta)[0])
+        run = ak.flatten(ak.broadcast_arrays(self.run, jets.eta)[0])
         if "pt" in jets.fields and "rawFactor" in jets.fields:   # corrected by the JetsCalibrator
             pt_corr = jets.pt
             pt_raw = jets.pt * (1.0 - jets.rawFactor)
         else:                                                     # e.g. CorrT1METJet left uncalibrated
             pt_raw = jets.rawPt
-            pt_corr = pt_raw * ak.unflatten(_evaluate(self.l123, flat, ak.flatten(pt_raw), rho), counts)
-        l1 = ak.unflatten(_evaluate(self.l1, flat, ak.flatten(pt_raw), rho), counts)
+            pt_corr = pt_raw * ak.unflatten(_evaluate(self.l123, flat, ak.flatten(pt_raw), rho, run), counts)
+        l1 = ak.unflatten(_evaluate(self.l1, flat, ak.flatten(pt_raw), rho, run), counts)
         nomu = 1.0 - jets.muonSubtrFactor
         pt_corr_nomu = pt_corr * nomu
         delta = pt_corr_nomu - pt_raw * l1 * nomu
