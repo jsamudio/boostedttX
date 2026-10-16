@@ -16,6 +16,7 @@ r(era, sample, n_ak4jets) from btag_norm.py.
 Shape variations (e.g. a PC_JEC_VARIATION run) are exported as <process>_<variation>.pkl,
 e.g. ttZ_AK4PFchs_JES_TotalUp.pkl, which is the naming JEC_SOURCES in makeDatacard.py expects.
 """
+import gc
 import json
 import argparse
 import os
@@ -79,86 +80,98 @@ def get_norm(sample, dataset, genweight_df, era):
 
 
 class OutputToPkl:
+    """The input files are read one at a time: only the exported columns of each file are kept
+    (as DataFrames, per variation) and the file is freed before the next one is opened, so the
+    peak memory is the largest single .coffea file plus the exported columns."""
+
     def __init__(self, input_files, btag_norm=None):
         if isinstance(input_files, str):
             input_files = [input_files]
-        self.files = []
-        for path in input_files:
-            filein = load(path)
-            genweight_df = pd.DataFrame.from_dict(filein['sum_signOf_genweights'], orient='index')
-            self.files.append((path, filein, genweight_df))
+        self.input_files = list(input_files)
         self.btag_norm = json.load(open(btag_norm)) if btag_norm else None
 
         spanet_vars = [c for m in MODELS for c in score_columns(m)]
         self.sig_vars = outvars.common_vars + outvars.sig_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
         self.bkg_vars = outvars.common_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
 
-    def variations(self):
-        """Shape variations present in the inputs (nominal first)."""
+    @staticmethod
+    def variations_in(filein):
+        """Shape variations present in one input (nominal first)."""
         found = set()
-        for _, filein, _ in self.files:
-            for datasets in filein['columns'].values():
-                for cats in datasets.values():
-                    found.update(cats.get(CATEGORY, {}).keys())
+        for datasets in filein['columns'].values():
+            for cats in datasets.values():
+                found.update(cats.get(CATEGORY, {}).keys())
         return sorted(found, key=lambda v: (v != 'nominal', v))
 
-    def read_samples(self, samples, variables, variation='nominal'):
-        """Read every dataset of the given samples, with per-dataset year and normalization."""
+    def read_samples(self, filein, genweight_df, samples, variables, variation='nominal'):
+        """Read every dataset of the given samples in one input, with per-dataset year and normalization."""
         frames = []
-        for path, filein, genweight_df in self.files:
-            for sample in samples:
-                if sample not in filein['columns']:
+        for sample in samples:
+            if sample not in filein['columns']:
+                continue
+            for dataset in filein['columns'][sample].keys():
+                by_var = filein['columns'][sample][dataset].get(CATEGORY, {})
+                if variation not in by_var:
                     continue
-                for dataset in filein['columns'][sample].keys():
-                    by_var = filein['columns'][sample][dataset].get(CATEGORY, {})
-                    if variation not in by_var:
-                        continue
-                    cols = by_var[variation]
-                    era = find_era(dataset)
-                    year = ERA_TO_YEAR[era]
-                    norm = get_norm(sample, dataset, genweight_df, era)
+                cols = by_var[variation]
+                era = find_era(dataset)
+                year = ERA_TO_YEAR[era]
+                norm = get_norm(sample, dataset, genweight_df, era)
 
-                    tmp, missing = {}, []
-                    for var in variables:
-                        if var == 'norm_weight':
-                            continue
-                        key = f'events_{var}'
-                        if key in cols:
-                            tmp[var] = cols[key].value
+                tmp, missing = {}, []
+                for var in variables:
+                    if var == 'norm_weight':
+                        continue
+                    key = f'events_{var}'
+                    if key in cols:
+                        tmp[var] = cols[key].value
+                    else:
+                        missing.append(var)
+                if missing:
+                    print(f"  [WARNING] {sample}/{dataset}: missing {missing}")
+                if tmp:
+                    df = pd.DataFrame(tmp)
+                    if self.btag_norm is not None:
+                        from btag_norm import apply_btag_norm
+                        if 'n_ak4jets' in df:
+                            df = apply_btag_norm(df, era, sample, self.btag_norm, variation)
                         else:
-                            missing.append(var)
-                    if missing:
-                        print(f"  [WARNING] {sample}/{dataset}: missing {missing}")
-                    if tmp:
-                        df = pd.DataFrame(tmp)
-                        if self.btag_norm is not None:
-                            from btag_norm import apply_btag_norm
-                            if 'n_ak4jets' in df:
-                                df = apply_btag_norm(df, era, sample, self.btag_norm, variation)
-                            else:
-                                print(f"  [WARNING] {sample}/{dataset}: no n_ak4jets, b-tag normalization skipped")
-                        df['norm_weight'] = norm
-                        df['era'] = era
-                        df['year'] = year
-                        frames.append(df)
-                        print(f"  {sample}/{dataset} [{variation}]: era={era} -> year={year}, "
-                              f"{len(df)} events, norm={norm:.4g}")
-        return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+                            print(f"  [WARNING] {sample}/{dataset}: no n_ak4jets, b-tag normalization skipped")
+                    df['norm_weight'] = norm
+                    df['era'] = era
+                    df['year'] = year
+                    frames.append(df)
+                    print(f"  {sample}/{dataset} [{variation}]: era={era} -> year={year}, "
+                          f"{len(df)} events, norm={norm:.4g}")
+        return frames
 
     def run(self, variations=('nominal',), skip_nominal=False):
-        if 'all' in variations:
-            variations = self.variations()
-        if skip_nominal:
-            variations = [v for v in variations if v != 'nominal']
-        for variation in variations:
+        want_all = 'all' in variations
+        frames = {}              # variation -> {'sig': [DataFrame], 'bkg': [DataFrame]}
+        for path in self.input_files:
+            print(f"Reading {path}")
+            filein = load(path)
+            genweight_df = pd.DataFrame.from_dict(filein['sum_signOf_genweights'], orient='index')
+            todo = self.variations_in(filein) if want_all else list(variations)
+            if skip_nominal:
+                todo = [v for v in todo if v != 'nominal']
+            for variation in todo:
+                f = frames.setdefault(variation, {'sig': [], 'bkg': []})
+                f['sig'] += self.read_samples(filein, genweight_df, SIG, self.sig_vars, variation)
+                f['bkg'] += self.read_samples(filein, genweight_df, BKG, self.bkg_vars, variation)
+            del filein, genweight_df
+            gc.collect()
+
+        for variation in sorted(frames, key=lambda v: (v != 'nominal', v)):
             print('-' * 60)
             print(f"Variation: {variation}")
-            self.run_variation(variation)
+            f = frames.pop(variation)
+            s_df = pd.concat(f['sig'], ignore_index=True) if f['sig'] else pd.DataFrame()
+            b_df = pd.concat(f['bkg'], ignore_index=True) if f['bkg'] else pd.DataFrame()
+            del f
+            self.run_variation(variation, s_df, b_df)
 
-    def run_variation(self, variation):
-        s_df = self.read_samples(SIG, self.sig_vars, variation)
-        b_df = self.read_samples(BKG, self.bkg_vars, variation)
-
+    def run_variation(self, variation, s_df, b_df):
         if not b_df.empty:
             b_df['process'] = b_df['process'].replace(RELABEL)
             b_df = b_df[b_df['process'].isin(['TTBar', 'tt_B', 'QCD', 'VJets', 'ttX', 'SingleTop'])]
