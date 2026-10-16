@@ -23,7 +23,7 @@ object_preselection:
     Electron:
         pt: 35
         eta: 2.5
-        iso: 0.4
+        iso: 0.1              # miniPFRelIso_all, tight (as in Run 3)
         sip3d: 4
         id: mvaFall17V2noIso_WP90
     Muon:
