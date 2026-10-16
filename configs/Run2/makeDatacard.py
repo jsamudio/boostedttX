@@ -789,6 +789,8 @@ if __name__ == '__main__':
         
         hist2d = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS)
         hist2d.save_edges(f'nn_edges_{nn_name}.json')     # for NN_BINS in the EFT scaling
+        from plot_nn_edges import plot_edges
+        plot_edges(json.load(open(f'nn_edges_{nn_name}.json')), f'plots/nn_edges_{nn_name}.pdf')
         dc_maker = MakeDataCard(nn_name=nn_name, hist2d=hist2d, isblind=isblind, years=YEARS,
                                 eft_ttbb=args.eft_ttbb)
         dc_maker.makeDC()
