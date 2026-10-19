@@ -31,7 +31,9 @@ import spanet_models
 import outvars
 from analysis_years import xbb_wp_cuts, ERAS
 from custom_cut_functions import (precut, hlt_cut, get_JetVetoMap, event_selection, vetoE, vetoMu,
-                                  HEM_veto, btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq)
+                                  HEM_veto, btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq,
+                                  trig_event_selection_run2, HLT_PATHS)
+from pocket_coffea.parameters.cuts import passthrough
 from spanet_inference import ZHbbSpanetProcessor
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))  # configs/common
@@ -153,6 +155,22 @@ def build_columns(sample_list, is_data):
     }
 
 
+# HLT paths of all Run 2 eras (without "HLT_"), exported by the trigger-efficiency groups;
+# paths that do not exist in an era are filled with False by the processor
+TRIGEFF_HLT_COLUMNS = sorted({p.replace("HLT_", "") for era in HLT_PATHS.values()
+                              for paths in era.values() for p in paths})
+
+
+def build_trigeff_columns(sample_list):
+    """Columns read by TrigEff.ipynb: lepton kinematics, jet counts and HLT bits for all samples,
+    plus the MC weights for the MC samples. The category keeps the name 'btag_mask' for the notebook."""
+    common = [ColOut("events", outvars.val_vars_trig + ["n_ak4jets", "n_b_outZH"]),
+              ColOut("HLT", TRIGEFF_HLT_COLUMNS)]
+    mc_only = [ColOut("events", outvars.weight_vars + outvars.bkg_vars)]
+    bysample = {s: {"inclusive": mc_only} for s in sample_list if s not in samples.DATA_SAMPLES}
+    return {"common": {"inclusive": [], "bycategory": {"btag_mask": common}}, "bysample": bysample}
+
+
 def build_config(group, eras=None, sample_list=None):
     """Configurator for one sample group of samples.GROUPS."""
     opts = samples.GROUPS[group]
@@ -162,23 +180,38 @@ def build_config(group, eras=None, sample_list=None):
     if unknown:
         raise ValueError(f"Unknown era(s) {unknown}; choose from {ERAS}")
     is_data = opts.get("is_data", False)
-    print(f"--> Inference group '{group}': samples {sample_list}, eras {eras}, "
-          f"SPANet models {spanet_models.ACTIVE_MODELS}")
+    selection = opts.get("selection", "analysis")
+    print(f"--> Inference group '{group}' ({selection}): samples {sample_list}, eras {eras}, "
+          f"SPANet models {spanet_models.ACTIVE_MODELS if selection == 'analysis' else 'none'}")
 
     parameters, shape_calibrators = load_parameters(eras)
 
     # HEM_veto only acts on 2018 (MC: the HEM-affected lumi fraction, data: run >= 319077)
-    preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu, HEM_veto]
+    if selection == "trigeff":
+        # ttbar e-mu, no trigger requirement (TrigEff.ipynb applies the reference / target triggers)
+        skim = [eventFlags, goldenJson, precut]
+        preselections = [get_JetVetoMap(), trig_event_selection_run2, vetoE, vetoMu, HEM_veto]
+        categories = {"btag_mask": [passthrough]}
+        columns = build_trigeff_columns(sample_list)
+    else:
+        skim = [eventFlags, goldenJson, precut, hlt_cut]
+        preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu, HEM_veto]
+        # The b-tag requirement is a category (not a preselection) so that the processor can
+        # accumulate the b-tag SF normalization sums on the events before it.
+        categories = {"btag_mask": [btag_mask]}
+        columns = build_columns(sample_list, is_data)
 
     workflow_options = {
         "parton_jet_min_dR": 0.3,
         "parton_jet_min_dR_postfsr": 1.0,
         "pnet_mass_json": f"{LOCALDIR}/pnet_mass_jerc.json",
         "sf_dir": LOCALDIR,
-        "spanet_models": spanet_models.active_models(),
+        "spanet_models": spanet_models.active_models() if selection == "analysis" else {},
         "xbb_wp_cuts": {era: xbb_wp_cuts(era) for era in ERAS},
-        "btag_calib": not is_data,
-        "prefilter_btag_mask": True,
+        "btag_calib": not is_data and selection == "analysis",
+        "prefilter_btag_mask": selection == "analysis",
+        "trigger_reference_muon": opts.get("reference_muon", False),
+        "hlt_columns": TRIGEFF_HLT_COLUMNS if selection == "trigeff" else [],
     }
     if opts.get("dump_dir"):
         workflow_options["dump_columns_as_arrays_per_chunk"] = opts["dump_dir"].format(era="_".join(eras))
@@ -198,11 +231,9 @@ def build_config(group, eras=None, sample_list=None):
         calibrators=CALIBRATORS,
         workflow_options=workflow_options,
         # MET filters (params/event_flags.yaml) and golden JSON (data) are standard pocket-coffea skim cuts
-        skim=[eventFlags, goldenJson, precut, hlt_cut],
+        skim=skim,
         preselections=preselections,
-        # The b-tag requirement is a category (not a preselection) so that the processor can
-        # accumulate the b-tag SF normalization sums on the events before it.
-        categories={"btag_mask": [btag_mask]},
+        categories=categories,
         weights_classes=common_weights,
         weights={"common": {"inclusive": ["genWeight"]}},
         variations={
@@ -210,5 +241,5 @@ def build_config(group, eras=None, sample_list=None):
             "shape": {"common": {"inclusive": shape_calibrators}},
         },
         variables=HISTOGRAMS,
-        columns=build_columns(sample_list, is_data),
+        columns=columns,
     )

@@ -7,7 +7,7 @@ import vector
 from pocket_coffea.workflows.base import BaseProcessorABC
 from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.correction_cache import load_correction_set
-from object_cleaning_functions import soft_lep_sel, lep_sel, bjet_sel, qjet_sel, lep_softlep_combo, jet_selection_custom
+from object_cleaning_functions import soft_lep_sel, lep_sel, lep_selTrig_Mu, bjet_sel, qjet_sel, lep_softlep_combo, jet_selection_custom
 from custom_cut_functions import sortbyscore, btag_mask
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
@@ -92,6 +92,13 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         self.xbb_wp = self.workflow_options["xbb_wp_cuts"]
         self.btag_calib = self.workflow_options.get("btag_calib", True)
         self.prefilter_btag_mask = self.workflow_options.get("prefilter_btag_mask", True)
+        # Trigger efficiencies (selection "trigeff" in inference_common.py):
+        #   trigger_reference_muon - muons = MUO trigger-SF denominator selection (lep_selTrig_Mu:
+        #                            tight ID + PFIsoTight, cuts in params/skim_params.yaml) instead of
+        #                            the analysis muon (lep_sel); used when the muon trigger is the reference
+        #   hlt_columns            - HLT paths exported as columns; paths absent in an era are added as False
+        self.trigger_reference_muon = self.workflow_options.get("trigger_reference_muon", False)
+        self.hlt_columns = self.workflow_options.get("hlt_columns", [])
         if "spanet_models" not in self.workflow_options:
             raise ValueError("Key `spanet_models` not found in workflow options. Please specify a dictionary of ONNX models.")
 
@@ -126,8 +133,17 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         electron_etaSC = self.events.Electron.eta + self.events.Electron.deltaEtaSC
         self.events["Electron"] = ak.with_field(self.events.Electron, electron_etaSC, "etaSC")
 
-        self.events['MuonGood'] = lep_sel(self.events, "Muon", self.params)
+        if self.trigger_reference_muon:
+            self.events['MuonGood'] = lep_selTrig_Mu(self.events, "Muon", self.params)
+        else:
+            self.events['MuonGood'] = lep_sel(self.events, "Muon", self.params)
         self.events['SoftMuonGood'] = soft_lep_sel(self.events, "Muon", self.params)
+
+        # HLT paths of other eras (exported for the trigger efficiencies) are added as False
+        for path in self.hlt_columns:
+            if path not in self.events.HLT.fields:
+                self.events = ak.with_field(self.events, ak.zeros_like(self.events.run, dtype=bool),
+                                            where=["HLT", path])
         self.events['ElectronGood'] = lep_sel(self.events, "Electron", self.params)
         self.events['SoftElectronGood'] = soft_lep_sel(self.events, "Electron", self.params)
 
@@ -212,7 +228,12 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         ev['mu_id_sf'], ev['mu_id_sfup'], ev['mu_id_sfdown'], ev['mu_id_sfstat'] = sf_mu(self.params, ev, self._year, 'id')
         ev['mu_iso_sf'], ev['mu_iso_sfup'], ev['mu_iso_sfdown'], ev['mu_iso_sfstat'] = sf_mu(self.params, ev, self._year, 'iso')
         ev['mu_reco_sf'], ev['mu_reco_sfup'], ev['mu_reco_sfdown'], ev['mu_reco_sfstat'] = sf_mu(self.params, ev, self._year, 'reco')
-        ev['mu_trig_sf'], ev['mu_trig_sfup'], ev['mu_trig_sfdown'] = sf_mu_trig(ev, f"{self.sf_dir}/muon_trig_sf_{self._year}.json.gz")
+        if self.trigger_reference_muon:
+            # Reference muon (trigger efficiencies, pass 1): central MUO trigger SF, defined for
+            # tight ID + PFIsoTight muons (key 'trigger' in params/lepton_scale_factors.yaml)
+            ev['mu_trig_sf'], ev['mu_trig_sfup'], ev['mu_trig_sfdown'], _ = sf_mu(self.params, ev, self._year, 'trigger')
+        else:
+            ev['mu_trig_sf'], ev['mu_trig_sfup'], ev['mu_trig_sfdown'] = sf_mu_trig(ev, f"{self.sf_dir}/muon_trig_sf_{self._year}.json.gz")
 
         # b-tag shape SFs: btag_sf, btag_sf<src>, btag_sf<src>_up, btag_sf<src>_down
         btag_variations = self.params.systematic_variations.weight_variations.sf_btag[self._year]
@@ -356,6 +377,8 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
     # ------------------------------------------------------------------ SPANet
     def onnx_inference(self):
         models = self.workflow_options["spanet_models"]
+        if not models:          # e.g. the trigger-efficiency groups
+            return
         ev = self.events
         n = len(ev)
         fj0 = ev.FatJetSorted[:, 0]

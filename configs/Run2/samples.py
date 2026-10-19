@@ -30,11 +30,16 @@ TTBAR_SAMPLES = ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu",
 MINOR_SAMPLES = ["WJetsToLNu", "DYJetsToLL", "SingleTop", "ttX"]       # add "QCD" here if needed
 EFT_SAMPLES = ["ttHSMEFT", "ttZSMEFT", "ttbbSMEFT"]
 DATA_SAMPLES = ["DATA_EGamma", "DATA_Muon"]
+# Trigger efficiencies (orthogonal method, ttbar e-mu): MC ttbar + one data primary dataset per pass
+TRIGEFF_MC_SAMPLES = ["TTToSemiLeptonic", "TTTo2L2Nu", "TTbb_SemiLeptonic", "TTbb_2L2Nu"]
 
 # One entry per inference_conf_<group>.py. Options:
 #   samples   - samples to process
 #   is_data   - no MC weights / gen information in the output columns
 #   dump_dir  - pocket-coffea 'dump_columns_as_arrays_per_chunk' directory (None = keep in .coffea)
+#   selection - "analysis" (default) or "trigeff" (trigger efficiencies, see inference_common.py)
+#   reference_muon - trigeff only: True = muons pass the MUO trigger-SF denominator selection
+#                    (tight ID + PFIsoTight, lep_selTrig_Mu) instead of the analysis muon selection
 GROUPS = {
     "signal": {"samples": SIGNAL_SAMPLES},
     "bkg":    {"samples": TTBAR_SAMPLES},
@@ -42,6 +47,13 @@ GROUPS = {
     "EFT":    {"samples": EFT_SAMPLES,
                "dump_dir": "/cms/data/store/user/jsamudio/eftchunks/{era}/"},
     "data":   {"samples": DATA_SAMPLES, "is_data": True},
+    # Pass 1, electron trigger efficiency: muon trigger = reference -> SingleMuon data, reference muon
+    "trigeff_ele": {"samples": TRIGEFF_MC_SAMPLES + ["DATA_Muon"], "selection": "trigeff",
+                    "reference_muon": True},
+    # Pass 2, muon trigger efficiency: electron trigger = reference -> EGamma/SingleElectron data,
+    # analysis muon (the muon whose trigger SF is measured)
+    "trigeff_mu":  {"samples": TRIGEFF_MC_SAMPLES + ["DATA_EGamma"], "selection": "trigeff",
+                    "reference_muon": False},
 }
 
 # ---------------------------------------------------------------- subsamples
