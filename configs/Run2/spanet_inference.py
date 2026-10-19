@@ -16,6 +16,7 @@ from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_
 from custom_scale_factors import set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig, sf_mu_trig, chunk_rng, btag_jes_systematic, sf_btag_jes
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
+from theory_norms import fill_theory_sums
 
 sig = ['ttHTobb', 'ttHToNonbb', 'TTZToBB', 'TTZToQQ', 'TTZToLLNuNu', 'ttHSMEFT', 'ttZSMEFT']
 
@@ -93,6 +94,12 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         self.prefilter_btag_mask = self.workflow_options.get("prefilter_btag_mask", True)
         if "spanet_models" not in self.workflow_options:
             raise ValueError("Key `spanet_models` not found in workflow options. Please specify a dictionary of ONNX models.")
+
+    def process_extra_before_skim(self):
+        # Theory-weight sums over ALL generated events, for the process norms (theory_norms.py,
+        # make_process_norms.py). Runs before the skim, so no event selection is applied.
+        if self._isMC:
+            fill_theory_sums(self.events, self.output, self._sample, self._dataset)
 
     # ------------------------------------------------------------------ objects
     # (MET filters and the golden JSON are standard skim cuts in the config: eventFlags, goldenJson)

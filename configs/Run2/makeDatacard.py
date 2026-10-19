@@ -128,12 +128,23 @@ class Systematic:
         cls.datacard = datacard
         cls.allowed_processes = processes
         cls.all_years = list(datacard.keys())
+        # Process norms of the theory variations (written by make_process_norms.py)
         cls.p_norms = {}
         for y in cls.all_years:
-            try:
-                cls.p_norms.update(json.load(open(f'./process_norms/process_norms_{y}.json','r')))
-            except FileNotFoundError:
-                pass
+            path = f'./process_norms/process_norms_{y}.json'
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"{path} not found: run make_process_norms.py "
+                                        f"(or run_pipeline.py norms) first")
+            cls.p_norms.update(json.load(open(path, 'r')))
+
+    def norm_factor(self, year, process, variation):
+        """Factor of a theory variation from process_norms_<year>.json (tt_B is stored as 'ttbb')."""
+        key = 'ttbb' if process == 'tt_B' else process
+        try:
+            return self.p_norms[year][key][variation]
+        except KeyError:
+            raise KeyError(f"No process norm for year={year}, process={key}, variation={variation} "
+                           f"in process_norms_{year}.json: rerun make_process_norms.py") from None
 
     def get_DC_line(self):
         _line = self.line
@@ -225,6 +236,8 @@ class ShapeSystematic(Systematic):
                 pdfas_up, pdfas_down = self.calc_pdfas_unc(pdfas, pdfas_type)
                 p_norms_key = re.sub(r'tt_B','ttbb', process) if 'tt_B' in process else process
                 
+                # NOTE: make_process_norms.py does not produce PDF/alpha_s norms yet (USE_PDF = False);
+                # without them the PDF templates are left unnormalized
                 try:
                     pdfas_up   = pdfas_up   * self.p_norms[y][p_norms_key][self.up] 
                     pdfas_down = pdfas_down * self.p_norms[y][p_norms_key][self.down] 
@@ -269,12 +282,10 @@ class ShapeSystematic(Systematic):
                 denom  = 1.0 if standalone else df[w_nom].replace(0, np.nan)
                 for ud_str, ud in zip(['Up','Down'],[self.up,self.down]):
                     w_var = np.nan_to_num(weight * df[ud] / denom)
-                    if 'norm' in self.subtype or ('tt_' in process and self.subtype == 'ps'): 
-                        p_norms_key = re.sub(r'tt_B','ttbb', process) if 'tt_B' in process else process
-                        try:
-                            w_var = w_var * self.p_norms[y][p_norms_key][ud]
-                        except KeyError:
-                            pass
+                    # 'normup/down' variations, and the PS variations of tt_B, are scaled by the
+                    # process norm (make_process_norms.py). TTBar ISR/FSR ('ps') are not scaled.
+                    if 'norm' in self.subtype or ('tt_' in process and self.subtype == 'ps'):
+                        w_var = w_var * self.norm_factor(y, process, ud)
                     sumw, sumw2 = self.get_sumw_sumw2(df,w_var,y)
                     self.histos[f'{process}_{y}_{self.name}{ud_str}'] = {'sumw':sumw, 'sumw2':sumw2}
                 

@@ -7,6 +7,7 @@ Driver for the analysis chain after the SPANet training:
     resubmit     PBS backend: resubmit failed jobs (+ a new merge)
     btagnorm     btag_norm.py on the nominal + variation outputs     -> btag_norm.json
     pickle       outputToPkl.py (nominal + jet-variation outputs)     -> pickled/Nominal<year>/
+    norms        make_process_norms.py (nominal outputs)              -> process_norms/process_norms_<year>.json
     datacard     makeDatacard.py
 
 Outputs are organised as
@@ -48,7 +49,7 @@ import pbs_tools  # noqa: E402
 from samples import GROUPS  # noqa: E402
 
 MC_GROUPS = ['signal', 'bkg', 'minor']
-STEPS = ['inference', 'status', 'resubmit', 'btagnorm', 'pickle', 'datacard']
+STEPS = ['inference', 'status', 'resubmit', 'btagnorm', 'pickle', 'norms', 'datacard']
 PBS_RUN_OPTIONS = "run_options_pbs.yaml"
 
 
@@ -180,6 +181,14 @@ def step_pickle(args):
         varied = existing([coffea_file(args.outdir, tag, g) for g in mc_groups], args.dry_run)
         if varied:
             run(python("outputToPkl.py", "-i", *varied, *btag, "--variations", "all", "--skip-nominal"), args)
+
+
+def step_norms(args):
+    # factors of the theory variations, from the full-sample sums in the nominal outputs
+    mc_groups = [g for g in args.groups if not GROUPS[g].get('is_data')]
+    nominal = existing([coffea_file(args.outdir, 'nominal', g) for g in mc_groups], args.dry_run)
+    if nominal:
+        run(python("make_process_norms.py", "-i", *nominal), args)
 
 
 def step_datacard(args):
