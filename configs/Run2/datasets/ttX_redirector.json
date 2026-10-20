@@ -5,7 +5,7 @@
             "sample": "ttX",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "0.0197",
+            "xsec": "0.2163",
             "nevents": "3322643",
             "size": "8881058521"
         },
@@ -30,7 +30,7 @@
             "sample": "ttX",
             "year": "2017",
             "isMC": "True",
-            "xsec": "0.0197",
+            "xsec": "0.2163",
             "nevents": "7140411",
             "size": "19705534404"
         },
@@ -52,7 +52,7 @@
             "sample": "ttX",
             "year": "2018",
             "isMC": "True",
-            "xsec": "0.0197",
+            "xsec": "0.2163",
             "nevents": "10450000",
             "size": "28338410058"
         },
@@ -78,7 +78,7 @@
             "sample": "ttX",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "0.0197",
+            "xsec": "0.2163",
             "nevents": "2850164",
             "size": "7688805157"
         },
@@ -117,7 +117,7 @@
             "sample": "ttX",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "0.0019",
+            "xsec": "0.4432",
             "nevents": "308983",
             "size": "855112149"
         },
@@ -138,7 +138,7 @@
             "sample": "ttX",
             "year": "2017",
             "isMC": "True",
-            "xsec": "0.0019",
+            "xsec": "0.4432",
             "nevents": "655018",
             "size": "1851156990"
         },
@@ -161,7 +161,7 @@
             "sample": "ttX",
             "year": "2018",
             "isMC": "True",
-            "xsec": "0.0019",
+            "xsec": "0.4432",
             "nevents": "970179",
             "size": "2658308128"
         },
@@ -177,7 +177,7 @@
             "sample": "ttX",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "0.0019",
+            "xsec": "0.4432",
             "nevents": "271496",
             "size": "753726467"
         },
@@ -197,7 +197,7 @@
             "sample": "ttX",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "0.0394",
+            "xsec": "0.008091",
             "nevents": "4544000",
             "size": "16913610121"
         },
@@ -233,7 +233,7 @@
             "sample": "ttX",
             "year": "2017",
             "isMC": "True",
-            "xsec": "0.0394",
+            "xsec": "0.008091",
             "nevents": "10351000",
             "size": "39387997043"
         },
@@ -276,7 +276,7 @@
             "sample": "ttX",
             "year": "2018",
             "isMC": "True",
-            "xsec": "0.0394",
+            "xsec": "0.008091",
             "nevents": "13058000",
             "size": "49253256071"
         },
@@ -338,7 +338,7 @@
             "sample": "ttX",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "0.0394",
+            "xsec": "0.008091",
             "nevents": "4207000",
             "size": "15669797288"
         },
@@ -369,7 +369,7 @@
             "sample": "ttX",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "0.0092",
+            "xsec": "3.774",
             "nevents": "1416230",
             "size": "3559088278"
         },
@@ -389,7 +389,7 @@
             "sample": "ttX",
             "year": "2017",
             "isMC": "True",
-            "xsec": "0.0092",
+            "xsec": "3.774",
             "nevents": "3534208",
             "size": "9150089029"
         },
@@ -408,7 +408,7 @@
             "sample": "ttX",
             "year": "2018",
             "isMC": "True",
-            "xsec": "0.0092",
+            "xsec": "3.774",
             "nevents": "4437068",
             "size": "11282996971"
         },
@@ -430,7 +430,7 @@
             "sample": "ttX",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "0.0092",
+            "xsec": "3.774",
             "nevents": "1511805",
             "size": "3816895415"
         },

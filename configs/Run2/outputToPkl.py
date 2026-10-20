@@ -47,8 +47,8 @@ XSEC_DICT = {
     "TTZToLLNuNu": 0.2529, "ttHTobb": 0.2934, "ttHToNonbb": 0.215,
     "TTZToQQ": 0.5297, "TTZToBB": 0.1157, "TTToHadronic": 380.095,
     "TTToSemiLeptonic": 364.018, "TTTo2L2Nu": 88.29, "TTbb_Hadronic": 9.286,
-    "TTbb_SemiLeptonic": 8.168, "TTbb_2L2Nu": 1.807, "TTWJetsToLNu": 0.0197,
-    "TTWJetsToQQ": 0.0019, "TTTT": 0.0394, "TTGJets": 0.0092,
+    "TTbb_SemiLeptonic": 8.168, "TTbb_2L2Nu": 1.807, "TTWJetsToLNu": 0.2163,
+    "TTWJetsToQQ": 0.4432, "TTTT": 0.008091, "TTGJets": 3.774,
     "ST_tW_top": 11.4, "ST_tW_antitop": 11.5, "ST_s_channel": 22.6,
     "ST_t_channel_top": 224.8, "ST_t_channel_antitop": 120.9,
     "QCD_HT500to700": 29980.0, "QCD_HT700to1000": 6334.0, "QCD_HT1000to1500": 1088.0,
@@ -91,8 +91,10 @@ class OutputToPkl:
         self.btag_norm = json.load(open(btag_norm)) if btag_norm else None
 
         spanet_vars = [c for m in MODELS for c in score_columns(m)]
-        self.sig_vars = outvars.common_vars + outvars.sig_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
-        self.bkg_vars = outvars.common_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
+        # PDF members exist only for signal and tt+jets (outvars.pdf_vars): read when present
+        self.sig_vars = (outvars.common_vars + outvars.sig_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
+                         + outvars.pdf_vars)
+        self.bkg_vars = outvars.common_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"] + outvars.pdf_vars
 
     @staticmethod
     def variations_in(filein):
@@ -125,7 +127,7 @@ class OutputToPkl:
                     key = f'events_{var}'
                     if key in cols:
                         tmp[var] = cols[key].value
-                    else:
+                    elif var not in outvars.pdf_vars:
                         missing.append(var)
                 if missing:
                     print(f"  [WARNING] {sample}/{dataset}: missing {missing}")

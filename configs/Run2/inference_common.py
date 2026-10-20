@@ -139,7 +139,8 @@ def build_columns(sample_list, is_data):
 
     bysample = {}
     for sample in sample_list:
-        extra = {"sig": outvars.sig_vars, "bkg": outvars.bkg_vars}.get(samples.extra_column_group(sample), [])
+        extra = {"sig": outvars.sig_vars + outvars.pdf_vars,
+                 "bkg": outvars.bkg_vars + outvars.pdf_vars}.get(samples.extra_column_group(sample), [])
         cols = [ColOut("events", extra)] if extra else []
         if sample in samples.EFT_SAMPLES:
             cols.append(ColOut("events", samples.EFT_COLUMNS))

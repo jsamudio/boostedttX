@@ -14,14 +14,25 @@ Input: the theory-weight sums over ALL generated events, accumulated by the proc
 For a variation v (e.g. mu_r_up) and N_x = sum of sign(genWeight) * ratio_x over the events:
 
   ttH0..ttH3, ttZ0..ttZ3  N_nom / N_v  in the generator-level Z/H pT bin (|y| < 2.5)
-                          (mu_r, mu_f, mu_rf, isr, fsr)
-  TTBar                   N_nom / N_v  over the full 5FS sample (mu_r, mu_f, mu_rf only;
+                          (mu_r, mu_f, mu_rf, isr, fsr, pdf, alphas)
+  TTBar                   N_nom / N_v  over the full 5FS sample (mu_r, mu_f, mu_rf, pdf, alphas;
                           ISR/FSR of TTBar are not normalized, see makeDatacard.py)
   ttbb (= tt_B)           paired 4FS (TTbb_X) and 5FS (TTToX) samples:
       mu_r, mu_f, mu_rf : (4FS ttB_nom / 4FS ttB_v) * (5FS ttB_v / 5FS all_v) / (5FS ttB_nom / 5FS all_nom)
                           = remove the 4FS change, apply the change of the tt+B FRACTION in the 5FS
       isr, fsr          : (5FS ttB_v / 5FS ttB_nom) / (4FS ttB_v / 4FS ttB_nom)
                           = remove the 4FS change, apply the change of the tt+B YIELD in the 5FS
+      pdf               : N_nom / N_v of the 4FS tt+B only (4FS PDF set, no alpha_s members)
+
+  pdf / alphas up and down are computed from the sums of the LHEPdfWeight members with the same
+  functions as the templates (pdf_uncertainty.py), so the factors remove exactly their rate part.
+
+ttX (no theory reference cross section for the mix of samples): instead of factors, the
+uncertainty of the total ttX cross section from the samples' own weights, used by makeDatacard.py
+as lnN values (previous analysis: "envelope of renorm./fact. scales", "norm. uncertainty due to PDF"):
+  ttX_xsec_unc  scale_up / scale_down  max / min over mu_r, mu_f, mu_rf up/down of N_v / N_nom
+                pdf_alphas             1 + (relative PDF (+) alpha_s uncertainty, in quadrature)
+  (per variation, the xsec x lumi weighted average over the ttX datasets = the change of the total)
 
 A process made of several datasets (e.g. ttZ = TTZToBB + TTZToQQ + TTZToLLNuNu, or the 2016 eras)
 gets the average of the dataset factors, weighted by cross section x luminosity (as before).
@@ -30,14 +41,19 @@ import argparse
 import json
 import os
 
+import numpy as np
+
 from coffea.util import load
 
 from analysis_years import find_era, ERA_TO_YEAR, LUMI_FB
 from outputToPkl import XSEC_DICT, ERA_SUFFIX
 from theory_norms import GEN_PT_BINS
+from pdf_uncertainty import pdf_up_down, alphas_up_down, has_alphas
 
 SCALE_VARIATIONS = ["mu_r_up", "mu_r_down", "mu_f_up", "mu_f_down", "mu_rf_up", "mu_rf_down"]
 PS_VARIATIONS = ["isr_up", "isr_down", "fsr_up", "fsr_down"]
+
+TTX_SAMPLE = "ttX"
 
 SIGNAL_PROCESSES = {
     "ttH": ["ttHTobb", "ttHToNonbb"],
@@ -80,8 +96,33 @@ def ratio(sums, region, variation):
 
 def weighted_average(entries):
     """entries: list of (weight, {variation: factor}) -> {variation: weighted average}."""
+    keys = set(entries[0][1])
+    if any(set(f) != keys for _, f in entries[1:]):
+        raise KeyError("Datasets of one process have different variations "
+                       "(e.g. PDF weights in some datasets only): " + str([sorted(f) for _, f in entries]))
     total = sum(w for w, _ in entries)
     return {v: sum(w * f[v] for w, f in entries) / total for v in entries[0][1]}
+
+
+def pdf_members(sums, region):
+    """Sums of the LHEPdfWeight members in a region, in member order (empty without PDF weights)."""
+    n = sum(1 for v in sums[region] if v.startswith("pdf_"))
+    return np.array([sums[region][f"pdf_{i}"] for i in range(n)])
+
+
+def pdf_factors(sums, region):
+    """N_nom / N_v for v = pdf_up, pdf_down (+ alphas_up, alphas_down for the Hessian set).
+    Empty if the dataset has no PDF weights (outputs made before they were added)."""
+    members = pdf_members(sums, region)
+    if len(members) == 0:
+        return {}
+    nominal = sums[region]["nominal"]
+    up, down = pdf_up_down(members)
+    factors = {"pdf_up": nominal / up, "pdf_down": nominal / down}
+    if has_alphas(len(members)):
+        up, down = alphas_up_down(members)
+        factors.update({"alphas_up": nominal / up, "alphas_down": nominal / down})
+    return factors
 
 
 # ---------------------------------------------------------------- per process type
@@ -93,6 +134,7 @@ def signal_factors(theory_sums, samples, year, gen_bin):
                 continue
             region = f"genbin{gen_bin}"
             factors = {v: ratio(sums, region, v) for v in SCALE_VARIATIONS + PS_VARIATIONS}
+            factors.update(pdf_factors(sums, region))
             entries.append((dataset_weight(sample, dataset), factors))
     return weighted_average(entries) if entries else None
 
@@ -104,6 +146,7 @@ def ttbar_factors(theory_sums, year):
             if year_of(dataset) != year:
                 continue
             factors = {v: ratio(sums, "all", v) for v in SCALE_VARIATIONS}
+            factors.update(pdf_factors(sums, "all"))
             entries.append((dataset_weight(sample, dataset), factors))
     return weighted_average(entries) if entries else None
 
@@ -128,8 +171,33 @@ def ttbb_factors(theory_sums, year):
                 change_5fs = s5["ttB"][v] / s5["ttB"]["nominal"]
                 change_4fs = s4["ttB"][v] / s4["ttB"]["nominal"]
                 factors[v] = change_5fs / change_4fs
+            factors.update(pdf_factors(s4, "ttB"))
             entries.append((dataset_weight(sample_4fs, dataset_4fs), factors))
     return weighted_average(entries) if entries else None
+
+
+def ttx_xsec_uncertainty(theory_sums, year):
+    """lnN values of the total ttX cross section (see the module docstring)."""
+    entries = []
+    for dataset, sums in theory_sums.get(TTX_SAMPLE, {}).items():
+        if year_of(dataset) != year:
+            continue
+        changes = {v: 1 / ratio(sums, "all", v) for v in SCALE_VARIATIONS}      # N_v / N_nom
+        members = pdf_members(sums, "all")
+        if len(members):
+            changes["pdf"] = pdf_up_down(members)[0] / members[0] - 1
+            changes["alphas"] = alphas_up_down(members)[0] / members[0] - 1 if has_alphas(len(members)) else 0.0
+        entries.append((dataset_weight(TTX_SAMPLE, dataset), changes))
+    if not entries:
+        return None
+    average = weighted_average(entries)
+    unc = {"scale_up": max(average[v] for v in SCALE_VARIATIONS),
+           "scale_down": min(average[v] for v in SCALE_VARIATIONS)}
+    if "pdf" in average:
+        unc["pdf_alphas"] = 1 + float(np.hypot(average["pdf"], average["alphas"]))
+    else:
+        print(f"  [WARNING] {year}: no PDF weights in the ttX sums, ttX PDF uncertainty not derived")
+    return unc
 
 
 # ---------------------------------------------------------------- main
@@ -163,7 +231,8 @@ def main():
                 if factors:
                     norms[f"{process}{gen_bin}"] = factors
         for name, factors in [("TTBar", ttbar_factors(theory_sums, year)),
-                              ("ttbb", ttbb_factors(theory_sums, year))]:
+                              ("ttbb", ttbb_factors(theory_sums, year)),
+                              ("ttX_xsec_unc", ttx_xsec_uncertainty(theory_sums, year))]:
             if factors:
                 norms[name] = factors
 
@@ -172,7 +241,7 @@ def main():
             json.dump({year: norms}, f, indent=2)
         print(f"\nWrote {path}")
         for process, factors in norms.items():
-            print(f"  {process:7} " + "  ".join(f"{v}={x:.3f}" for v, x in factors.items()))
+            print(f"  {process:12} " + "  ".join(f"{v}={x:.3f}" for v, x in factors.items()))
 
 
 if __name__ == "__main__":

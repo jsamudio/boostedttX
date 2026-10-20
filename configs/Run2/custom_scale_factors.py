@@ -161,6 +161,29 @@ def sf_scaleweights(events):
 
     return mu_r_up, mu_r_down, mu_f_up, mu_f_down, mu_rf_up, mu_rf_down
 
+# Number of pdfweight_<i> columns written for every MC event (the largest PDF set used, see
+# pdf_uncertainty.py); members a sample does not have are NaN
+N_PDF_COLUMNS = 103
+
+def sf_pdfweights(events):
+    """The LHEPdfWeight members (w_member / w_nominal) as a list of numpy arrays, one per member
+    (empty list if the sample has no PDF weights). The number of members identifies the PDF set."""
+    if "LHEPdfWeight" not in events.fields or len(events) == 0:
+        return []
+    counts = ak.to_numpy(ak.num(events.LHEPdfWeight))
+    if counts.min() != counts.max():
+        raise ValueError(f"LHEPdfWeight has a varying number of members ({counts.min()}-{counts.max()})")
+    pdf = ak.to_numpy(events.LHEPdfWeight)
+    return [pdf[:, i] for i in range(counts[0])]
+
+def pdfweight_columns(events, n_columns=N_PDF_COLUMNS):
+    """{'pdfweight_<i>': array} for i < n_columns, NaN where the sample has fewer members."""
+    members = sf_pdfweights(events)
+    if len(members) > n_columns:
+        raise ValueError(f"{len(members)} LHEPdfWeight members, only {n_columns} columns")
+    missing = np.full(len(events), np.nan)
+    return {f"pdfweight_{i}": members[i] if i < len(members) else missing for i in range(n_columns)}
+
 def sf_partonshower_isr(events):
     '''Up and down variations for the ISR parton shower weights.
     In order to properly store the weights, a dummy weight of 1 is stored

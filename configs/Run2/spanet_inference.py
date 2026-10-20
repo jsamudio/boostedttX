@@ -13,7 +13,7 @@ from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
 from weight_handler import calc_weight
 from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_pileup_reweight, sf_L1prefiring
-from custom_scale_factors import sf_jet_puId_era, set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig, sf_mu_trig, chunk_rng, btag_jes_systematic, sf_btag_jes
+from custom_scale_factors import sf_jet_puId_era, set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, pdfweight_columns, apply_jms_jmr, sf_ele_trig, sf_mu_trig, chunk_rng, btag_jes_systematic, sf_btag_jes
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
 from theory_norms import fill_theory_sums
@@ -255,6 +255,9 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         ev['isr'], ev['isr_up'], ev['isr_down'] = sf_partonshower_isr(ev)
         ev['fsr'], ev['fsr_up'], ev['fsr_down'] = sf_partonshower_fsr(ev)
         ev['mu_r_up'], ev['mu_r_down'], ev['mu_f_up'], ev['mu_f_down'], ev['mu_rf_up'], ev['mu_rf_down'] = sf_scaleweights(ev)
+        # PDF / alpha_s members pdfweight_0..102 (exported for signal and tt+jets, outvars.pdf_vars)
+        for name, values in pdfweight_columns(ev).items():
+            ev[name] = values
         ev['l1prefire_sf'], ev['l1prefire_sfup'], ev['l1prefire_sfdown'] = sf_L1prefiring(ev)
 
     def label_process(self):

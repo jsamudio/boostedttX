@@ -24,7 +24,8 @@ from datacard_shapes import DataCardShapes, getZhbbWeight
 from TH1 import export1d
 from analysis_years import (YEARS, YEAR_RE, find_year, PICKLE_DIR, bbvl_wp,
                             LUMI_UNCERTAINTIES)
-from outvars import nominal_weight_factors
+from outvars import nominal_weight_factors, pdf_vars
+from pdf_uncertainty import pdf_up_down, alphas_up_down, has_alphas
 
 pt_bins = [0,200,300,450]
 mass_bins = [50,80,105,145,200]
@@ -42,7 +43,13 @@ BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets']
 
 # Normalization uncertainties of the minor backgrounds (lnN).
 # PLACEHOLDERS -- set these to the values used in the previous analysis.
-BKG_XSEC_UNC = {'SingleTop': 1.10, 'ttX': 1.20, 'VJets': 1.20, 'QCD': 1.50}
+# (ttX and VJets have their own nuisances in add_Systematics: ttx_qsc, v_qsc, qqpdf)
+BKG_XSEC_UNC = {'SingleTop': 1.10, 'QCD': 1.50}
+
+# V+jets inclusive cross-section uncertainty: inclusive W -> l nu at NNLO (FEWZ 3.1),
+# 20508.9 pb +165.7 -88.2 (scales) +-770.9 (PDF+alpha_s), CMS SM cross-section twiki (as before)
+VJETS_SCALE_UNC = (1.008, 0.996)
+VJETS_PDF_UNC   = 1.038
 
 # Years, pickle paths, Xbb working points and luminosity uncertainties: see analysis_years.py
 
@@ -52,8 +59,11 @@ BKG_XSEC_UNC = {'SingleTop': 1.10, 'ttX': 1.20, 'VJets': 1.20, 'QCD': 1.50}
 #       "AK8PFPuppi_JER", "AK8PFPuppi_JMS", "AK8PFPuppi_JMR"]
 JEC_SOURCES = []
 
-# PDF / alpha_s shape uncertainties (requires pdfweight_0..102 columns in the pickles)
-USE_PDF = False
+# PDF / alpha_s shape uncertainties (requires the pdfweight_<i> columns in the pickles and the
+# pdf/alphas factors in process_norms_<year>.json). The PDF set of a process follows from its number
+# of members (pdf_uncertainty.py): 'pdf' for the 5FS Hessian set (signal, TTBar), 'pdf_ttbb' for the
+# 4FS replica set (tt_B), uncorrelated as before; 'alphas' only for the Hessian set.
+USE_PDF = True
 
 # b-tag shape scale-factor sources. Columns: btag_sf<src>, btag_sf<src>_up, btag_sf<src>_down.
 # Correlated sources get one nuisance in every year's card; the statistical ones one per year.
@@ -221,49 +231,30 @@ class ShapeSystematic(Systematic):
                 sumw, sumw2 = self.get_sumw_sumw2(df,weight,y)
                 self.histos[f'{process}_{y}_{self.name}'] = {'sumw':sumw, 'sumw2': sumw2}
 
+    @staticmethod
+    def pdf_members(df):
+        """Names of the pdfweight_<i> columns this process has (NaN columns = members it lacks)."""
+        cols = [c for c in pdf_vars if c in df.columns and df[c].notna().any()]
+        if any(df[c].isna().any() for c in cols):
+            raise ValueError("Events of one process have different numbers of PDF members")
+        return cols
+
     def makeUpDownPdfasHist(self):
+        """PDF ('pdf_up'/'pdf_down') or alpha_s ('alphas_up'/'alphas_down') templates from the
+        per-member templates (pdf_uncertainty.py), scaled by the process norms to remove the rate
+        part (make_process_norms.py)."""
+        kind = self.up.rsplit('_', 1)[0]                      # 'pdf' or 'alphas'
         for process in self.ids:
-            for y in self.years: 
+            for y in self.years:
                 if f'{process}_{y}' not in self.data_dict: continue
                 df = self.data_dict[f'{process}_{y}']
                 nom_weight = getZhbbWeight(df,y)
-                pdfas = np.array([self.get_sumw_sumw2(df,nom_weight*df[f'pdfweight_{i}'],y)[0] 
-                                 for i in range(103 if process != 'tt_B' else 101)])
-                if 'pdf' in self.name:
-                    pdfas_type = 'hess' if process != 'tt_B' else 'replica'
-                else:
-                    pdfas_type = 'alphas'
-                pdfas_up, pdfas_down = self.calc_pdfas_unc(pdfas, pdfas_type)
-                p_norms_key = re.sub(r'tt_B','ttbb', process) if 'tt_B' in process else process
-                
-                # NOTE: make_process_norms.py does not produce PDF/alpha_s norms yet (USE_PDF = False);
-                # without them the PDF templates are left unnormalized
-                try:
-                    pdfas_up   = pdfas_up   * self.p_norms[y][p_norms_key][self.up] 
-                    pdfas_down = pdfas_down * self.p_norms[y][p_norms_key][self.down] 
-                except KeyError:
-                    pass
-                 
-                self.histos[f'{process}_{y}_{self.name}Up'] = {'sumw' :pdfas_up, 'sumw2':pdfas_up}
-                self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw' :pdfas_down, 'sumw2':pdfas_down}
-
-    @staticmethod
-    def calc_pdfas_unc(_pdf, _type='hess'):
-        var_pdf = {
-            'hess'   : (lambda _x: np.sqrt(np.sum(np.power(_x[1:-2]-_x[0],2), axis=0))),
-            'replica': (lambda _x: (np.quantile(_x[1:],.84, axis=0) - np.quantile(_x[1:],.16, axis=0)) / 2),
-            'alphas' : (lambda _x: (_x[-2] - _x[-1])/2),
-        }
-        nom_pdf = {
-            'hess'   :(lambda _x: _x[0]),
-            'replica':(lambda _x: (np.quantile(_x[1:],.84,axis=0) + np.quantile(_x[1:],.16,axis=0)) / 2),
-            'alphas' :(lambda _x: _x[0]),
-        }
-        err = var_pdf[_type](_pdf)
-        nom = nom_pdf[_type](_pdf)
-        unc = np.nan_to_num(err/nom, nan=1)
-        _out = [_pdf[0]*(1.+unc), _pdf[0]*(1.-unc)]
-        return _out 
+                members = np.array([self.get_sumw_sumw2(df, nom_weight*df[c], y)[0] for c in self.pdf_members(df)])
+                up, down = pdf_up_down(members) if kind == 'pdf' else alphas_up_down(members)
+                up   = up   * self.norm_factor(y, process, self.up)
+                down = down * self.norm_factor(y, process, self.down)
+                self.histos[f'{process}_{y}_{self.name}Up']   = {'sumw': up,   'sumw2': up}
+                self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw': down, 'sumw2': down}
 
     # Variations stored as standalone factors (no nominal column to divide out)
     STANDALONE_WEIGHTS = ('pdfWeight', 'mu_r', 'mu_f', 'mu_rf', 'isr', 'fsr')
@@ -412,7 +403,7 @@ class MakeDataCard:
         weight_sys += [f'btag_sf{src}{suffix}'
                        for src in BTAG_SOURCES_CORRELATED + BTAG_SOURCES_UNCORRELATED
                        for suffix in ('', '_up', '_down')]
-        pdf_cols = [f'pdfweight_{i}' for i in range(103)] if USE_PDF else []
+        pdf_cols = list(pdf_vars) if USE_PDF else []
                       
         self.bkg_v = weights + weight_sys + pdf_cols + [self.nn_name, 'ZH_M', 'ZH_pt', 'process', 'sample',
                                                         'n_ak4jets', 'ZH_bbvLscore', 'n_b_outZH', 'MET_pt',
@@ -594,6 +585,30 @@ class MakeDataCard:
                 ok.append(p)
         return ok
 
+    def ttx_xsec_unc(self, year):
+        try:
+            unc = Systematic.p_norms[year]['ttX_xsec_unc']
+        except KeyError:
+            raise KeyError(f"No 'ttX_xsec_unc' in process_norms_{year}.json: rerun make_process_norms.py") from None
+        if 'pdf_alphas' not in unc:
+            raise KeyError(f"No ttX PDF uncertainty in process_norms_{year}.json: the outputs have no "
+                           f"PDF weights (rerun the production, then make_process_norms.py)")
+        return unc
+
+    def pdf_member_counts(self, procs):
+        """{process: number of PDF members} for the processes with PDF columns in every year."""
+        counts = {}
+        for p in procs:
+            per_year = {len(ShapeSystematic.pdf_members(self.data_dict[f'{p}_{y}']))
+                        for y in self.years if f'{p}_{y}' in self.data_dict}
+            if per_year == {0} or not per_year:
+                print(f'  [pdf] no PDF columns for {p} -> no PDF uncertainty')
+                continue
+            if len(per_year) > 1:
+                raise ValueError(f'{p}: different numbers of PDF members across years: {per_year}')
+            counts[p] = per_year.pop()
+        return counts
+
     def add_Systematics(self):
         all_mc   = self.accepted_sig + self.accepted_bkg
         tth_sig  = [s for s in self.accepted_sig if 'ttH' in s]
@@ -647,6 +662,19 @@ class MakeDataCard:
         for p in minor_bkg:
             if p in BKG_XSEC_UNC:
                 lnN(f'{p.lower()}_xsec', [p], BKG_XSEC_UNC[p], grps=('theo',))
+        # ttX: from the samples' own scale / PDF weights (make_process_norms.py, 'ttX_xsec_unc');
+        # VJets: inclusive W cross section. The PDF parts are qq-initiated, correlated (qqpdf).
+        if 'ttX' in all_mc:
+            ttx_unc = {y: self.ttx_xsec_unc(y) for y in self.years}
+            lnN('ttx_qsc', ['ttX'], {y: {'ttX': [round(u['scale_up'], 3), round(u['scale_down'], 3)]}
+                                     for y, u in ttx_unc.items()}, grps=('theo',))
+        else:
+            ttx_unc = {}
+        lnN('v_qsc', ['VJets'], *VJETS_SCALE_UNC, grps=('theo',))
+        qq_procs = [p for p in ['ttX', 'VJets'] if p in all_mc]
+        lnN('qqpdf', qq_procs, {y: {**({'ttX': round(ttx_unc[y]['pdf_alphas'], 3)} if 'ttX' in qq_procs else {}),
+                                    **({'VJets': VJETS_PDF_UNC} if 'VJets' in qq_procs else {})}
+                                for y in self.years}, grps=('theo',))
         lnN('UE',         ['TTBar'], 1.01,  0.99,  grps=('theo',))
         lnN('hdamp',      ['TTBar'], 1.049, 0.954, grps=('theo',))
         lnN('hdamp_ttbb', ['tt_B'],  1.027, 0.974, grps=('theo',))
@@ -712,11 +740,14 @@ class MakeDataCard:
         weight_shape('mu_f_ttbb', 'normup/down', ['tt_B'],  'mu_f_up', 'mu_f_down', ('theo',), extraQC=True)
 
         if USE_PDF:
-            pdf_procs = self.procs_with_columns(self.accepted_sig + ttbar_mc,
-                                                [f'pdfweight_{i}' for i in range(101)])
-            for name in ['pdf', 'alphas']:
-                if pdf_procs:
-                    self.histos = ShapeSystematic(name, 'shape', 'pdfas', pdf_procs, 1).get_shape()
+            n_members = self.pdf_member_counts(self.accepted_sig + ttbar_mc)
+            hessian  = [p for p, n in n_members.items() if has_alphas(n)]
+            replicas = [p for p, n in n_members.items() if not has_alphas(n)]
+            for name, procs, up, down in [('pdf',      hessian,  'pdf_up',    'pdf_down'),
+                                          ('pdf_ttbb', replicas, 'pdf_up',    'pdf_down'),
+                                          ('alphas',   hessian,  'alphas_up', 'alphas_down')]:
+                if procs:
+                    self.histos = ShapeSystematic(name, 'shape', 'pdfas', procs, 1, up, down).get_shape()
                     groups['theo'].append(name)
 
         # ------------------------------------------------------------------

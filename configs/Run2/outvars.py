@@ -50,6 +50,10 @@ sig_vars = ['process', 'Zbb', 'Hbb', 'Hnonbb', 'Zqq',
 
 bkg_vars = ['tt_B']
 
+# PDF / alpha_s members (custom_scale_factors.pdfweight_columns), exported for the samples that
+# get PDF shape uncertainties: signal and tt+jets (the 'sig' and 'bkg' column groups)
+pdf_vars = [f'pdfweight_{i}' for i in range(103)]
+
 # common_vars that only exist for MC (dropped from the data columns)
 mc_only_vars = ['xbb_genmatch', 'n_genb_matchZH']
 

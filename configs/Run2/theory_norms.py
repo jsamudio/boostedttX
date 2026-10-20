@@ -8,7 +8,9 @@ Called once per chunk from the processor (spanet_inference.py, process_extra_bef
     output["theory_sums"][sample][dataset][region][variation] = sum of sign(genWeight) * ratio
 
   variation : "nominal" (ratio = 1) and the theory weight columns used by makeDatacard.py:
-              mu_r_up/down, mu_f_up/down, mu_rf_up/down, isr_up/down, fsr_up/down
+              mu_r_up/down, mu_f_up/down, mu_rf_up/down, isr_up/down, fsr_up/down,
+              pdf_0 .. pdf_<n-1> (one per LHEPdfWeight member; n identifies the PDF set, see
+              pdf_uncertainty.py)
   region    : "all"      every event of the dataset
               "ttB"      ttbar samples (5FS TTTo, 4FS TTbb): events with genTtbarId % 100 >= 51 (tt+B)
               "genbinN"  signal samples: generator-level Z/H pT bin N (bins of GEN_PT_BINS) with
@@ -16,12 +18,12 @@ Called once per chunk from the processor (spanet_inference.py, process_extra_bef
                          (they are not part of the ttZ process, see genmatcher.py: 'old_ttZbb')
 
 The ratios are taken with the SAME functions as the event weights in the processor
-(sf_scaleweights, sf_partonshower_isr/fsr), so the sums match the templates exactly.
+(sf_scaleweights, sf_partonshower_isr/fsr, sf_pdfweights), so the sums match the templates exactly.
 """
 import awkward as ak
 import numpy as np
 
-from custom_scale_factors import sf_scaleweights, sf_partonshower_isr, sf_partonshower_fsr
+from custom_scale_factors import sf_scaleweights, sf_partonshower_isr, sf_partonshower_fsr, sf_pdfweights
 
 # Generator-level Z/H pT bins of the signal processes (ttH0..ttH3, ttZ0..ttZ3), in GeV
 GEN_PT_BINS = [0, 200, 300, 450, np.inf]
@@ -44,6 +46,8 @@ def theory_ratios(events):
     if "PSWeight" in events.fields and ak.min(ak.num(events.PSWeight)) >= 4:
         _, ratios["isr_up"], ratios["isr_down"] = (ak.to_numpy(x) for x in sf_partonshower_isr(events))
         _, ratios["fsr_up"], ratios["fsr_down"] = (ak.to_numpy(x) for x in sf_partonshower_fsr(events))
+    for i, values in enumerate(sf_pdfweights(events)):
+        ratios[f"pdf_{i}"] = values
     return ratios
 
 
