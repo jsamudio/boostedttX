@@ -226,9 +226,11 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         ev['ele_reco_sf'], ev['ele_reco_sfup'], ev['ele_reco_sfdown'] = sf_ele_reco(self.params, ev, self._year)
         ev['ele_id_sf'], ev['ele_id_sfup'], ev['ele_id_sfdown'] = sf_ele_id(self.params, ev, self._year)
         ev['ele_trig_sf'], ev['ele_trig_sfup'], ev['ele_trig_sfdown'] = sf_ele_trig(ev, f"{self.sf_dir}/ele_trig_sf_{self._year}.json.gz")
-        ev['mu_id_sf'], ev['mu_id_sfup'], ev['mu_id_sfdown'], ev['mu_id_sfstat'] = sf_mu(self.params, ev, self._year, 'id')
-        ev['mu_iso_sf'], ev['mu_iso_sfup'], ev['mu_iso_sfdown'], ev['mu_iso_sfstat'] = sf_mu(self.params, ev, self._year, 'iso')
-        ev['mu_reco_sf'], ev['mu_reco_sfup'], ev['mu_reco_sfdown'], ev['mu_reco_sfstat'] = sf_mu(self.params, ev, self._year, 'reco')
+        # muon reco / ID / iso SFs: total up/down, and the stat and syst parts (mu_<key>_sf<part>)
+        for key in ['id', 'iso', 'reco']:
+            ev[f'mu_{key}_sf'], ev[f'mu_{key}_sfup'], ev[f'mu_{key}_sfdown'], parts = sf_mu(self.params, ev, self._year, key)
+            for part, values in parts.items():
+                ev[f'mu_{key}_sf{part}'] = values
         if self.trigger_reference_muon:
             # Reference muon (trigger efficiencies, pass 1): central MUO trigger SF, defined for
             # tight ID + PFIsoTight muons (key 'trigger' in params/lepton_scale_factors.yaml)

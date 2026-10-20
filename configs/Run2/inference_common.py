@@ -15,7 +15,9 @@ Environment overrides (no need to edit any file for these):
                                                  + type-1 MET jets shifted together -> AK4AK8_JES_<source>Up/Down
                                                  e.g. JES_Regrouped_FlavorQCD, JES_Regrouped_HF_year (per-year
                                                  group, the year of each era), JES_AbsoluteStat (full set)
-                                   JER           AK4 and AK8 separately -> AK4PFchs_JERUp/Down, AK8PFPuppi_JERUp/Down
+                                                 JES_FlavorPure<F>: AK4 jets of that flavour only; JES_FlavorQCD_AK8: AK8 only
+                                   JER           AK4 in 6 (|eta|, pT) regions -> AK4PFchs_JER_<region>Up/Down,
+                                                 AK8 -> AK8PFPuppi_JERUp/Down
                                    JMSJMR        AK8 mass scale/resolution -> JMSUp/Down, JMRUp/Down
 """
 import os
@@ -34,8 +36,9 @@ import samples
 import spanet_inference
 import spanet_models
 import outvars
-from analysis_years import xbb_wp_cuts, ERAS, jes_run_tags, jes_source
+from analysis_years import xbb_wp_cuts, ERAS, jes_run_tags, jes_source, jes_jet_types
 from fatjet_mass_variations import FatJetMassVariations
+from jet_variation_splits import JetsCalibratorSplit
 from custom_cut_functions import (precut, hlt_cut, get_JetVetoMap, event_selection, vetoE, vetoMu,
                                   HEM_veto, btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq,
                                   trig_event_selection_run2, HLT_PATHS)
@@ -46,8 +49,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from met_calibration import CALIBRATORS as MET_CALIBRATORS   # type-1 PF MET for Run 2 (configs/common/met_calibration.py)
 from pocket_coffea.lib.correction_cache import load_correction_set
 
-# Default pocket-coffea sequence with the type-1 MET, plus the JMS/JMR variations (no correction)
-CALIBRATORS = MET_CALIBRATORS + [FatJetMassVariations]
+# Default pocket-coffea sequence with the type-1 MET; the jet calibrator extended with the split
+# JER and pure-flavour JES variations (jet_variation_splits.py); plus the JMS/JMR variations
+CALIBRATORS = [JetsCalibratorSplit if c.name == "jet_calibration" else c for c in MET_CALIBRATORS] + [FatJetMassVariations]
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models):
     cloudpickle.register_pickle_by_value(_module)
@@ -102,9 +106,9 @@ def _env_list(name):
     return [v.strip() for v in value.split(",") if v.strip()] if value else None
 
 
-def check_jes_source(parameters, era, source):
-    """Raise if the JES source is missing in the JME file of AK4PFchs or AK8PFPuppi for this era."""
-    for jet_type in VARIED_JET_TYPES:
+def check_jes_source(parameters, era, source, jet_types=VARIED_JET_TYPES):
+    """Raise if the JES source is missing in the JME file of one of the jet types for this era."""
+    for jet_type in jet_types:
         calib = parameters.jets_calibration.jet_types[jet_type][era]
         key = f"{calib.jec_mc}_{source}_{jet_type}"
         if key not in load_correction_set(calib.json_path).keys():
@@ -119,15 +123,19 @@ def shape_variation_settings(parameters, eras, variation):
     if variation == "JMSJMR":
         return "fatjet_mass", no_jet_variations
     if variation == "JER":
-        # default merging (AK4PFchs with the type-1 MET jets): AK4 and AK8 are varied separately
+        # default merging (AK4PFchs with the type-1 MET jets): AK4 and AK8 are varied separately;
+        # the AK4 JER is split into the JME (|eta|, pT) regions (jet_variation_splits.py)
         return "jet_calibration", {jet_type: {era: ["JER"] for era in ERAS} for jet_type in VARIED_JET_TYPES}
     if variation in jes_run_tags("regrouped") + jes_run_tags("full"):
+        jet_types = jes_jet_types(variation)
         for era in eras:
-            check_jes_source(parameters, era, jes_source(variation, era))
-        parameters.jets_calibration.merge_collections_for_variations = {
-            era: {JES_MERGED_NAME: JES_MERGED_JET_TYPES} for era in ERAS}
+            check_jes_source(parameters, era, jes_source(variation, era), jet_types)
+        if len(jet_types) > 1:          # AK4 and AK8 shifted together
+            parameters.jets_calibration.merge_collections_for_variations = {
+                era: {JES_MERGED_NAME: JES_MERGED_JET_TYPES} for era in ERAS}
         jes = {era: [f"JES_{jes_source(variation, era)}"] for era in ERAS}
-        return "jet_calibration", {jet_type: jes for jet_type in VARIED_JET_TYPES}
+        return "jet_calibration", {jet_type: (jes if jet_type in jet_types else no_jet_variations[jet_type])
+                                   for jet_type in VARIED_JET_TYPES}
     raise ValueError(f"PC_JEC_VARIATION={variation} not known: use nominal, JER, JMSJMR or a JES tag "
                      f"of analysis_years.jes_run_tags(): {jes_run_tags()}")
 

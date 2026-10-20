@@ -23,7 +23,7 @@ import sys
 from datacard_shapes import DataCardShapes, getZhbbWeight
 from TH1 import export1d
 from analysis_years import (YEARS, YEAR_RE, find_year, PICKLE_DIR, bbvl_wp,
-                            LUMI_UNCERTAINTIES, jes_nuisances)
+                            LUMI_UNCERTAINTIES, jes_nuisances, JER_REGIONS)
 from outvars import nominal_weight_factors, pdf_vars
 from pdf_uncertainty import pdf_up_down, alphas_up_down, has_alphas
 
@@ -56,6 +56,12 @@ TT_CATEGORY_XSEC_UNC = {'tt2bxsec': ('tt_2b', 'tt_B', 1.5, 0.5),
 THEORY_CLIP_PERCENTILES = (0.15, 99.85)
 THEORY_CLIP_COLUMNS = [f'{s}_{ud}' for s in ['mu_r', 'mu_f', 'mu_rf', 'isr', 'fsr'] for ud in ['up', 'down']]
 
+# Muon SFs split into a stat (per year) and a syst (correlated) nuisance each
+MUON_SF_KEYS = ['id', 'iso', 'reco']
+# Lepton SF extrapolation from the Z to the ttbar phase space (TOP): 0.5% upper limit, correlated
+# across years, separate from the ID/iso SF nuisances
+LEPTON_PHASESPACE_UNC = 1.005
+
 # V+jets inclusive cross-section uncertainty: inclusive W -> l nu at NNLO (FEWZ 3.1),
 # 20508.9 pb +165.7 -88.2 (scales) +-770.9 (PDF+alpha_s), CMS SM cross-section twiki (as before)
 VJETS_SCALE_UNC = (1.008, 0.996)
@@ -75,8 +81,8 @@ def jet_systematics(years):
     is uncorrelated across years (written to that year's card only)."""
     out = jes_nuisances(years)                    # AK4 + AK8 shifted together (analysis_years.JES_SCHEME)
     for y in years:                               # resolution and mass: uncorrelated across years
-        out += [('AK4PFchs_JER', f'jer_ak4_{y}'), ('AK8PFPuppi_JER', f'jer_ak8_{y}'),
-                ('JMS', f'jms_{y}'), ('JMR', f'jmr_{y}')]
+        out += [(f'AK4PFchs_JER_{r}', f'jer_ak4_{r}_{y}') for r in JER_REGIONS]
+        out += [('AK8PFPuppi_JER', f'jer_ak8_{y}'), ('JMS', f'jms_{y}'), ('JMR', f'jmr_{y}')]
     return out
 
 
@@ -416,13 +422,14 @@ class MakeDataCard:
         weight_sys = ['topptWeight_Up', 'topptWeight_Down',
                       'ele_id_sfup', 'ele_id_sfdown', 'ele_reco_sfup', 'ele_reco_sfdown',
                       'ele_trig_sfup', 'ele_trig_sfdown',
-                      'mu_id_sfup', 'mu_id_sfdown', 'mu_iso_sfup', 'mu_iso_sfdown',
-                      'mu_reco_sfup', 'mu_reco_sfdown', 'mu_trig_sfup', 'mu_trig_sfdown',
+                      'mu_trig_sfup', 'mu_trig_sfdown',
                       'xbb_sfup', 'xbb_sfdown',
                       'puWeight_up', 'puWeight_down', 'l1prefire_sfup', 'l1prefire_sfdown',
                       'jet_puId_sfup', 'jet_puId_sfdown',
                       'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
                       'mu_r_up', 'mu_r_down', 'mu_f_up', 'mu_f_down', 'mu_rf_up', 'mu_rf_down']
+        weight_sys += [f'mu_{key}_sf{part}' for key in MUON_SF_KEYS
+                       for part in ('statup', 'statdown', 'systup', 'systdown')]
         weight_sys += [f'btag_sf{src}{suffix}'
                        for src in BTAG_SOURCES_CORRELATED + BTAG_SOURCES_UNCORRELATED
                        for suffix in ('', '_up', '_down')]
@@ -684,6 +691,7 @@ class MakeDataCard:
             per_year = {y: v for y, v in per_year.items() if y in self.years}
             if per_year:
                 lnN(lumi_name, all_mc, per_year, grps=('exp',))
+        lnN('lep_phasespace', all_mc, LEPTON_PHASESPACE_UNC, grps=('exp',))
         lnN('tth_ggpdf', tth_sig, 1.036,        grps=('theo', 'sig_rtheo'))
         lnN('ttz_ggpdf', ttz_sig, 1.035,        grps=('theo', 'sig_rtheo'))
         lnN('tth_qsc',   tth_sig, 1.058, 0.908, grps=('theo', 'sig_rtheo'))
@@ -739,9 +747,8 @@ class MakeDataCard:
                 (f'ele_id_sf_{y}',   'ele_id_sfup',   'ele_id_sfdown',   'ele_id_sf'),
                 (f'ele_reco_sf_{y}', 'ele_reco_sfup', 'ele_reco_sfdown', 'ele_reco_sf'),
                 (f'ele_trig_sf_{y}', 'ele_trig_sfup', 'ele_trig_sfdown', 'ele_trig_sf'),
-                (f'mu_id_sf_{y}',    'mu_id_sfup',    'mu_id_sfdown',    'mu_id_sf'),
-                (f'mu_iso_sf_{y}',   'mu_iso_sfup',   'mu_iso_sfdown',   'mu_iso_sf'),
-                (f'mu_reco_sf_{y}',  'mu_reco_sfup',  'mu_reco_sfdown',  'mu_reco_sf'),
+                *[(f'mu_{key}_sf_stat_{y}', f'mu_{key}_sfstatup', f'mu_{key}_sfstatdown', f'mu_{key}_sf')
+                  for key in MUON_SF_KEYS],
                 (f'mu_trig_sf_{y}',  'mu_trig_sfup',  'mu_trig_sfdown',  'mu_trig_sf'),
                 (f'xbb_sf_{y}',      'xbb_sfup',      'xbb_sfdown',      'xbb_sf'),
                 (f'pu_{y}',          'puWeight_up',   'puWeight_down',   'puWeight'),
@@ -749,6 +756,12 @@ class MakeDataCard:
                 (f'l1prefire_{y}',   'l1prefire_sfup', 'l1prefire_sfdown', 'l1prefire_sf'),
             ]:
                 weight_shape(name, 'up/down', all_mc, up, down, ('exp',), nominal=nominal)
+
+        # Muon reco / ID / iso SFs: systematic part correlated across years (MUO / TOP), the
+        # statistical part per year (above)
+        for key in MUON_SF_KEYS:
+            weight_shape(f'mu_{key}_sf_syst', 'up/down', all_mc, f'mu_{key}_sfsystup', f'mu_{key}_sfsystdown',
+                         ('exp',), nominal=f'mu_{key}_sf')
 
         # b-tag shape scale factors, per source
         btag_nom = (lambda src: 'btag_sf') if BTAG_DENOMINATOR == 'total' else (lambda src: f'btag_sf{src}')

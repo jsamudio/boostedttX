@@ -32,9 +32,10 @@ Examples:
     python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMSJMR
 
 Shape variations (--jec-variations, one inference run each, see inference_common.py):
-    JES_...        one JES source, AK4 + AK8 jets shifted together (analysis_years.jes_run_tags)
-    JES_ALL        all JES sources of analysis_years.JES_SCHEME (regrouped: 11 runs)
-    JER            AK4 and AK8 jet energy resolution, varied separately (one run)
+    JES_...        one JES source (analysis_years.jes_run_tags): AK4 + AK8 jets shifted together,
+                   except the pure-flavour sources (AK4 only) and FlavorQCD_AK8 (AK8 only)
+    JES_ALL        all JES sources of analysis_years.JES_SCHEME (full + flavour split: 31 runs)
+    JER            AK4 JER in 6 (|eta|, pT) regions and AK8 JER, all in one run
     JMSJMR         AK8 jet mass scale and resolution (one run)
     python run_pipeline.py inference --dry-run      # print every command without running it
 

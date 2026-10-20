@@ -110,9 +110,14 @@ LUMI_UNCERTAINTIES = _lumi_per_year()      # per analysis year, used by make_dat
 # One shape variation per JES source (AK4 + AK8 jets shifted together), one production each
 # (run_pipeline.py --jec-variations JES_ALL). The sources are checked against the JME files when
 # the config is built (inference_common.py).
+#   "full"     : the 27 individual sources (required by TOP)
 #   "regrouped": the JME reduced set of 11 groups (6 correlated across years + 5 per year)
-#   "full"     : the 27 individual sources
-JES_SCHEME = "regrouped"
+JES_SCHEME = "full"
+# Flavour response (TOP default): FlavorQCD replaced by the pure-flavour sources, each applied to
+# AK4 jets of that parton flavour only (jet_variation_splits.py). AK8 jets have no parton flavour
+# in NanoAOD: they keep FlavorQCD as a separate nuisance (jes_FlavorQCD_AK8).
+JES_FLAVOUR_SPLIT = True
+JES_PURE_FLAVOURS = ["Gluon", "Quark", "Charm", "Bottom"]
 
 JES_GROUPS = ["Absolute", "BBEC1", "EC2", "FlavorQCD", "HF", "RelativeBal"]       # correlated
 JES_GROUPS_PER_YEAR = ["Absolute", "BBEC1", "EC2", "HF", "RelativeSample"]         # <group>_<year>
@@ -140,22 +145,59 @@ def jes_run_tags(scheme=JES_SCHEME):
     """Run tags (PC_JEC_VARIATION / --jec-variations) of every JES variation of a scheme.
     '_year' stands for the year of each era (e.g. JES_Regrouped_HF_year -> Regrouped_HF_2016)."""
     if scheme == "full":
-        return [f"JES_{s}" for s in JES_SOURCES]
-    return ([f"JES_Regrouped_{g}" for g in JES_GROUPS] +
-            [f"JES_Regrouped_{g}_year" for g in JES_GROUPS_PER_YEAR])
+        tags = [f"JES_{s}" for s in JES_SOURCES]
+    else:
+        tags = ([f"JES_Regrouped_{g}" for g in JES_GROUPS] +
+                [f"JES_Regrouped_{g}_year" for g in JES_GROUPS_PER_YEAR])
+    if JES_FLAVOUR_SPLIT:
+        tags = [t for t in tags if not t.endswith("FlavorQCD")]
+        tags += [f"JES_FlavorPure{f}" for f in JES_PURE_FLAVOURS] + ["JES_FlavorQCD_AK8"]
+    return tags
 
 
 def jes_source(tag, era):
     """JME source name of a run tag for one era, e.g. ('JES_Regrouped_HF_year', '2016_PreVFP') -> 'Regrouped_HF_2016'."""
     source = tag[len("JES_"):]
+    if source == "FlavorQCD_AK8":
+        return "FlavorQCD"
     return source[:-len("_year")] + "_" + era[:4] if source.endswith("_year") else source
+
+
+def jes_jet_types(tag):
+    """Jet types a JES run tag shifts: pure flavours only AK4 (+ type-1 MET jets), FlavorQCD_AK8
+    only AK8, every other source AK4 and AK8 together (variation AK4AK8_JES_<source>)."""
+    if tag.startswith("JES_FlavorPure"):
+        return ["AK4PFchs"]
+    if tag == "JES_FlavorQCD_AK8":
+        return ["AK8PFPuppi"]
+    return ["AK4PFchs", "AK8PFPuppi"]
 
 
 def jes_nuisances(years, scheme=JES_SCHEME):
     """(variation tag in the pickles, nuisance name) of every JES nuisance. A name ending in the
     year is uncorrelated across years."""
+    out = []
     if scheme == "full":
-        return [(f"AK4AK8_JES_{s}", f"jes_{s}_{y}") for s in JES_SOURCES_UNCORRELATED for y in years] + \
-               [(f"AK4AK8_JES_{s}", f"jes_{s}") for s in JES_SOURCES if s not in JES_SOURCES_UNCORRELATED]
-    return [(f"AK4AK8_JES_Regrouped_{g}", f"jes_{g}") for g in JES_GROUPS] + \
-           [(f"AK4AK8_JES_Regrouped_{g}_{y}", f"jes_{g}_{y}") for g in JES_GROUPS_PER_YEAR for y in years]
+        out += [(f"AK4AK8_JES_{s}", f"jes_{s}_{y}") for s in JES_SOURCES_UNCORRELATED for y in years]
+        out += [(f"AK4AK8_JES_{s}", f"jes_{s}") for s in JES_SOURCES if s not in JES_SOURCES_UNCORRELATED]
+    else:
+        out += [(f"AK4AK8_JES_Regrouped_{g}", f"jes_{g}") for g in JES_GROUPS]
+        out += [(f"AK4AK8_JES_Regrouped_{g}_{y}", f"jes_{g}_{y}") for g in JES_GROUPS_PER_YEAR for y in years]
+    if JES_FLAVOUR_SPLIT:
+        out = [(t, n) for t, n in out if not t.endswith("FlavorQCD")]
+        out += [(f"AK4PFchs_JES_FlavorPure{f}", f"jes_FlavorPure{f}") for f in JES_PURE_FLAVOURS]
+        out += [("AK8PFPuppi_JES_FlavorQCD", "jes_FlavorQCD_AK8")]
+    return out
+
+
+# ---------------------------------------------------------------- jet energy resolution split
+# AK4 JER: one variation per (|eta|, pT) region (JME Run 2 split; jet_variation_splits.py), one
+# nuisance per region and year. name: (|eta| min, |eta| max, pT min, pT max)
+JER_REGIONS = {
+    "eta0to1p93":         (0.0, 1.93, 0.0, float("inf")),
+    "eta1p93to2p5":       (1.93, 2.5, 0.0, float("inf")),
+    "eta2p5to3pt0to50":   (2.5, 3.0, 0.0, 50.0),
+    "eta2p5to3pt50toInf": (2.5, 3.0, 50.0, float("inf")),
+    "eta3to5pt0to50":     (3.0, 5.0, 0.0, 50.0),
+    "eta3to5pt50toInf":   (3.0, 5.0, 50.0, float("inf")),
+}

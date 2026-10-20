@@ -75,8 +75,10 @@ The configs target the latest pocket-coffea (0.9.x, calibrator-based). `params/*
 overrides of the pocket-coffea defaults (correction files come from cvmfs via `${cvmfs:...}`):
 muon SF names for the MediumID selection, the UL jet veto maps and the MET filters.
 Shape variations are selected per job with `PC_JEC_VARIATION` (`inference_common.py`):
-`JES_<source>` (each individual JES source of `analysis_years.JES_SOURCES`, AK4 + AK8 jets shifted
-together, checked against the JME files), `JER` (AK4 and AK8 varied separately) and `JMSJMR`
+`JES_<source>` (`analysis_years.jes_run_tags`: the 27 individual sources, AK4 + AK8 jets shifted
+together, with FlavorQCD replaced by the pure-flavour sources on AK4 jets and FlavorQCD on AK8 jets;
+checked against the JME files), `JER` (AK4 in 6 JME (|eta|, pT) regions, AK8 separately,
+`jet_variation_splits.py`) and `JMSJMR`
 (AK8 mass scale/resolution, declared by `fatjet_mass_variations.py`, applied in the processor). MET filters and the golden JSON are applied with the
 standard `eventFlags` / `goldenJson` skim cuts; JEC/JER and type-1 MET come from the default
 calibrator sequence.

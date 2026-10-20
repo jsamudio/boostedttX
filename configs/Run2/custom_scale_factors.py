@@ -39,9 +39,10 @@ def btag_jes_systematic(variation):
          'AK4PFchs_JES_Regrouped_Absolute_2018Down' -> 'down_jesAbsolute_2018'
          'AK4PFchs_JES_FlavorQCDUp'                 -> 'up_jesFlavorQCD'
          'AK4AK8_JES_AbsoluteStatUp'                -> 'up_jesAbsoluteStat'  (AK4+AK8 shifted together)
-    None for every other variation (nominal, JER, AK8 jets only, ...), which use the central SF."""
+    None for every other variation (nominal, JER, AK8 jets only, pure-flavour JES, ...), which use
+    the central SF."""
     m = re.match(r"^AK4[A-Za-z0-9]*_JES_(.+?)(Up|Down)$", variation)
-    if m is None:
+    if m is None or m.group(1).startswith("FlavorPure"):    # BTV has no pure-flavour JES variations
         return None
     source, direction = m.groups()
     source = source.replace("Regrouped_", "")
@@ -238,8 +239,12 @@ def get_mu_sf(params, year, pt, eta, counts, key=''):
     sfdown = muon_correctionset[sfName].evaluate(
         np.abs(eta.to_numpy()), pt_.to_numpy(), "systdown"
     )
+    # absolute statistical and systematic parts of the uncertainty (systup/systdown above = total)
     stat = muon_correctionset[sfName].evaluate(
-        np.abs(eta.to_numpy()), pt_.to_numpy(), "systdown"
+        np.abs(eta.to_numpy()), pt_.to_numpy(), "stat"
+    )
+    syst = muon_correctionset[sfName].evaluate(
+        np.abs(eta.to_numpy()), pt_.to_numpy(), "syst"
     )
     
     # The unflattened arrays are returned in order to have one row per event.
@@ -247,13 +252,16 @@ def get_mu_sf(params, year, pt, eta, counts, key=''):
         ak.unflatten(sf, counts),
         ak.unflatten(sfup, counts),
         ak.unflatten(sfdown, counts),
-        ak.unflatten(stat, counts)
+        ak.unflatten(stat, counts),
+        ak.unflatten(syst, counts),
     )
 
 def sf_mu(params, events, year, key=''):
     '''
     This function computes the per-muon id SF and returns the corresponding per-event SF, obtained by multiplying the per-muon SF in each event.
-    Additionally, also the up and down variations of the SF are returned.
+    Additionally, also the up and down variations of the SF are returned (total uncertainty), and
+    a dict with the variations by the statistical and the systematic part alone:
+    {'statup', 'statdown', 'systup', 'systdown'} (MUO: syst correlated across years, stat not).
     '''
     coll = params.lepton_scale_factors.muon_sf.collection
     mu_pt = events[coll].pt
@@ -265,10 +273,12 @@ def sf_mu(params, events, year, key=''):
         ak.flatten(mu_eta),
         ak.num(mu_pt),
     )
-    sf, sfup, sfdown, stat = get_mu_sf(params, year, mu_pt_flat, mu_eta_flat, mu_counts, key)
+    sf, sfup, sfdown, stat, syst = get_mu_sf(params, year, mu_pt_flat, mu_eta_flat, mu_counts, key)
 
     # The SF arrays corresponding to all the muons are multiplied along the
     # muon axis in order to obtain a per-event scale factor.
-    return ak.prod(sf, axis=1), ak.prod(sfup, axis=1), ak.prod(sfdown, axis=1), ak.prod(stat, axis=1)
+    parts = {"statup": sf + stat, "statdown": sf - stat, "systup": sf + syst, "systdown": sf - syst}
+    return (ak.prod(sf, axis=1), ak.prod(sfup, axis=1), ak.prod(sfdown, axis=1),
+            {name: ak.prod(values, axis=1) for name, values in parts.items()})
 
 
