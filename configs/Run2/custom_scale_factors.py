@@ -4,10 +4,27 @@ import numpy as np
 import awkward as ak
 from pocket_coffea.lib.correction_cache import load_correction_set
 from pocket_coffea.lib.deltaR_matching import object_matching
+from pocket_coffea.lib.scale_factors import sf_jet_puId
+from omegaconf import OmegaConf
 
 
 def _load_correction(file, name):
     return load_correction_set(file)[name]
+
+
+def sf_jet_puId_era(params, jets, year, njets):
+    """Pileup jet ID SF with the PU ID bit value of this era's working point.
+
+    pocket-coffea's sf_jet_puId compares the jet puId with the single number
+    object_preselection.Jet.puId.value, but the UL bit values differ per era
+    (2016: L/M/T = 1/3/7, 2017/2018: 4/6/7). The selection (jet_selection_custom) takes the value
+    from jet_scale_factors.jet_puId[year].working_point, so the same value is passed here."""
+    puid = OmegaConf.to_container(params.object_preselection["Jet"]["puId"], resolve=True)
+    era_cfg = OmegaConf.to_container(params.jet_scale_factors.jet_puId[year], resolve=True)
+    puid["value"] = era_cfg["working_point"][puid["wp"]]
+    era_params = OmegaConf.create({"object_preselection": {"Jet": {"puId": puid}},
+                                   "jet_scale_factors": {"jet_puId": {year: era_cfg}}})
+    return sf_jet_puId(era_params, jets, year, njets)
 
 def chunk_rng(events):
     """Random generator seeded by the chunk (file + entry range): reproducible between runs
