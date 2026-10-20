@@ -26,10 +26,16 @@ pocket-coffea and the python steps are wrapped in `apptainer exec` when not alre
 
 Examples:
     python run_pipeline.py inference --groups signal bkg minor --eras 2018 --backend pbs
-    python run_pipeline.py inference --backend pbs --jec-variations JES_Total JER
-    python run_pipeline.py status --backend pbs --jec-variations JES_Total JER
+    python run_pipeline.py inference --backend pbs --jec-variations JES_ALL JER JMSJMR
+    python run_pipeline.py status --backend pbs --jec-variations JES_ALL JER JMSJMR
     python run_pipeline.py resubmit --backend pbs
-    python run_pipeline.py btagnorm pickle datacard --jec-variations JES_Total JER
+    python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMSJMR
+
+Shape variations (--jec-variations, one inference run each, see inference_common.py):
+    JES_...        one JES source, AK4 + AK8 jets shifted together (analysis_years.jes_run_tags)
+    JES_ALL        all JES sources of analysis_years.JES_SCHEME (regrouped: 11 runs)
+    JER            AK4 and AK8 jet energy resolution, varied separately (one run)
+    JMSJMR         AK8 jet mass scale and resolution (one run)
     python run_pipeline.py inference --dry-run      # print every command without running it
 
 Anything after '--' is passed on to 'pocket-coffea run', e.g.  -- --executor futures --test
@@ -47,6 +53,7 @@ sys.path.insert(0, COMMON)
 
 import pbs_tools  # noqa: E402
 from samples import GROUPS  # noqa: E402
+from analysis_years import jes_run_tags  # noqa: E402
 
 MC_GROUPS = ['signal', 'bkg', 'minor']
 STEPS = ['inference', 'status', 'resubmit', 'btagnorm', 'pickle', 'norms', 'datacard']
@@ -208,7 +215,7 @@ if __name__ == '__main__':
                     help=f'sample groups (default: {" ".join(MC_GROUPS)})')
     ap.add_argument('--eras', nargs='+', default=['2018'])
     ap.add_argument('--jec-variations', nargs='*', default=[],
-                    help='jet variations to run in addition to nominal (PC_JEC_VARIATION values)')
+                    help='shape variations to run in addition to nominal: JES_<source>, JES_ALL, JER, JMSJMR')
     ap.add_argument('--outdir', default='outputs')
     ap.add_argument('--backend', choices=['local', 'pbs'], default='local')
     ap.add_argument('--container', choices=['auto', 'always', 'never'], default='auto',
@@ -220,6 +227,8 @@ if __name__ == '__main__':
     ap.add_argument('--dry-run', action='store_true', help='print the commands only')
     args = ap.parse_args(argv)
     args.pc_args = pc_args
+    args.jec_variations = [v for tag in args.jec_variations
+                           for v in (jes_run_tags() if tag == "JES_ALL" else [tag])]
 
     if 'all' in args.steps:
         steps = ['inference', 'btagnorm', 'pickle', 'datacard']

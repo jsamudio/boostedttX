@@ -23,7 +23,7 @@ variations btag_sf is the JES-varied SF, so it needs its own normalization. The 
 the nominal table at the top level and the others under 'shape_variations'.
 
 Usage:
-    python3 btag_norm.py -i outputs/nominal/*/output_all.coffea outputs/JES_Total/*/output_all.coffea -o btag_norm.json
+    python3 btag_norm.py -i outputs/nominal/*/output_all.coffea outputs/JER/*/output_all.coffea -o btag_norm.json
 """
 import argparse
 import json

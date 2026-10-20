@@ -23,7 +23,7 @@ import sys
 from datacard_shapes import DataCardShapes, getZhbbWeight
 from TH1 import export1d
 from analysis_years import (YEARS, YEAR_RE, find_year, PICKLE_DIR, bbvl_wp,
-                            LUMI_UNCERTAINTIES)
+                            LUMI_UNCERTAINTIES, jes_nuisances)
 from outvars import nominal_weight_factors, pdf_vars
 from pdf_uncertainty import pdf_up_down, alphas_up_down, has_alphas
 
@@ -53,11 +53,22 @@ VJETS_PDF_UNC   = 1.038
 
 # Years, pickle paths, Xbb working points and luminosity uncertainties: see analysis_years.py
 
-# Jet energy/mass variations from separately processed samples.
-# Requires pickles named pickled/Nominal<year>/<process>_<SOURCE>Up.pkl / ...Down.pkl
-# e.g. ["AK4PFPuppi_JES_Total", "AK8PFPuppi_JES_Total", "AK4PFPuppi_JER",
-#       "AK8PFPuppi_JER", "AK8PFPuppi_JMS", "AK8PFPuppi_JMR"]
-JEC_SOURCES = []
+# Jet energy / mass shape uncertainties, from separately processed samples
+# (run_pipeline.py --jec-variations JES_ALL JER JMSJMR -> pickles <process>_<tag>Up/Down.pkl).
+USE_JET_VARIATIONS = True
+# Processes the jet variations are applied to (as before); the others keep the nominal template
+JET_SYST_PROCESSES = ['ttH', 'ttZ', 'TTBar', 'tt_B', 'SingleTop']
+
+
+def jet_systematics(years):
+    """(pickle tag, nuisance name) of every jet energy / mass nuisance. A name ending in the year
+    is uncorrelated across years (written to that year's card only)."""
+    out = jes_nuisances(years)                    # AK4 + AK8 shifted together (analysis_years.JES_SCHEME)
+    for y in years:                               # resolution and mass: uncorrelated across years
+        out += [('AK4PFchs_JER', f'jer_ak4_{y}'), ('AK8PFPuppi_JER', f'jer_ak8_{y}'),
+                ('JMS', f'jms_{y}'), ('JMR', f'jmr_{y}')]
+    return out
+
 
 # PDF / alpha_s shape uncertainties (requires the pdfweight_<i> columns in the pickles and the
 # pdf/alphas factors in process_norms_<year>.json). The PDF set of a process follows from its number
@@ -184,10 +195,11 @@ class ShapeSystematic(Systematic):
     df       = None
 
     def __init__(self, name, stype, subtype, process_ids, value, up=None, down=None, info=None, extraQC=False,
-                 nominal=None):
+                 nominal=None, tag=None):
         super().__init__(name, stype, process_ids, value, info)
         self.up     = up
         self.down   = down
+        self.tag    = tag or name       # 'jec': variation tag of the varied pickles
         self.subtype = subtype
         self.extraQC = extraQC
         self.nominal = nominal      # explicit nominal column; default: derived from the 'up' name
@@ -216,12 +228,12 @@ class ShapeSystematic(Systematic):
         for process in self.ids:
             for y in self.years:
                 for ud in ['Up', 'Down']:
-                    key = f'{process}_{y}_{self.name}{ud}'
+                    key = f'{process}_{y}_{self.tag}{ud}'
                     if key not in self.data_dict:
-                        continue          # handleQC falls back to the nominal template
+                        continue          # no events of this process: handleQC uses the nominal template
                     df = self.data_dict[key]
                     sumw, sumw2 = self.get_sumw_sumw2(df, getZhbbWeight(df, y), y)
-                    self.histos[key] = {'sumw': sumw, 'sumw2': sumw2}
+                    self.histos[f'{process}_{y}_{self.name}{ud}'] = {'sumw': sumw, 'sumw2': sumw2}
 
     def handleErdOn(self):
         for process in self.ids:
@@ -398,6 +410,7 @@ class MakeDataCard:
                       'mu_reco_sfup', 'mu_reco_sfdown', 'mu_trig_sfup', 'mu_trig_sfdown',
                       'xbb_sfup', 'xbb_sfdown',
                       'puWeight_up', 'puWeight_down', 'l1prefire_sfup', 'l1prefire_sfdown',
+                      'jet_puId_sfup', 'jet_puId_sfdown',
                       'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
                       'mu_r_up', 'mu_r_down', 'mu_f_up', 'mu_f_down', 'mu_rf_up', 'mu_rf_down']
         weight_sys += [f'btag_sf{src}{suffix}'
@@ -405,6 +418,7 @@ class MakeDataCard:
                        for suffix in ('', '_up', '_down')]
         pdf_cols = list(pdf_vars) if USE_PDF else []
                       
+        self.weight_sys = weight_sys
         self.bkg_v = weights + weight_sys + pdf_cols + [self.nn_name, 'ZH_M', 'ZH_pt', 'process', 'sample',
                                                         'n_ak4jets', 'ZH_bbvLscore', 'n_b_outZH', 'MET_pt',
                                                         'era', 'year']
@@ -455,12 +469,13 @@ class MakeDataCard:
         self.bkg  = [f'{bkg}_{y}'   for bkg  in self.bkg_base for y in self.years]
         self.data = [f'{data}_{y}'  for data in ['data_obs'] for y in self.years]
         
-        # Varied samples for the jet systematics (see JEC_SOURCES)
-        affected_mc = self.sig_base + self.bkg_base
-        self.sys_samples = [f'{mc}_{y}_{sys}{ud}' 
-                            for mc in affected_mc 
-                            for y in self.years 
-                            for sys in JEC_SOURCES 
+        # Varied samples for the jet systematics (see jet_systematics)
+        jet_tags = sorted({tag for tag, _ in jet_systematics(self.years)}) if USE_JET_VARIATIONS else []
+        affected_mc = [p for p in self.sig_base + self.bkg_base if p in JET_SYST_PROCESSES]
+        self.sys_samples = [f'{mc}_{y}_{tag}{ud}'
+                            for mc in affected_mc
+                            for y in self.years
+                            for tag in jet_tags
                             for ud in ['Up', 'Down']]
         
         all_samples = self.sig + self.bkg + self.data + self.sys_samples
@@ -487,11 +502,14 @@ class MakeDataCard:
         y = find_year(process)
         is_signal = any(sig_base in process for sig_base in ['ttH', 'ttZ'])
         p_vars = self.sig_v if is_signal else self.bkg_v
+        if process in self.sys_samples:
+            # varied samples only need the nominal weight (no up/down or PDF columns: saves memory)
+            p_vars = [v for v in p_vars if v not in self.weight_sys and not v.startswith('pdfweight_')]
         if 'TTBar' in process : p_vars = p_vars + ['tt_type']
         if 'tt_B' in process : p_vars = p_vars + ['tt_type']
         if 'data'  in process : p_vars = p_vars + ['tt_type']
         
-        return self.updatedict(process.replace(f'_{y}', ''), p_vars, y)
+        return self.updatedict(process.replace(f'_{y}', '', 1), p_vars, y)   # tags may contain the year too
 
     def updatedict(self, p, v, y=''):
         filepath = f'{PICKLE_DIR.format(year=y)}/{p}.pkl'
@@ -615,7 +633,7 @@ class MakeDataCard:
         ttz_sig  = [s for s in self.accepted_sig if 'ttZ' in s]
         ttbar_mc = [p for p in ['TTBar', 'tt_B'] if p in self.accepted_bkg]
         minor_bkg = [p for p in self.accepted_bkg if p not in ttbar_mc]
-        jec_mc   = all_mc
+        jec_mc   = [p for p in all_mc if re.sub(r'\d+$', '', p) in JET_SYST_PROCESSES]
 
         # Nuisance groups, written at the end (useful for stat/exp/theory breakdowns)
         groups = {'exp': [], 'theo': [], 'sig_rtheo': [], 'antisig_rtheo': []}
@@ -687,9 +705,14 @@ class MakeDataCard:
         self.write2dc('# Shape uncertainties \n')
 
         # Jet energy / mass scale and resolution (separately processed samples)
-        for sys in JEC_SOURCES:
-            self.histos = ShapeSystematic(sys, 'shape', 'jec', jec_mc, 1, f'{sys}Up', f'{sys}Down').get_shape()
-            groups['exp'].append(sys)
+        if USE_JET_VARIATIONS:
+            for tag, name in jet_systematics(self.years):
+                for y in re.findall(YEAR_RE, name) or self.years:
+                    if not any(f'{p}_{y}_{tag}Up' in self.data_dict for p in jec_mc):
+                        raise FileNotFoundError(f'No varied pickles for {tag} ({y}): run the {tag} variation '
+                                                f'(run_pipeline.py --jec-variations) or set USE_JET_VARIATIONS = False')
+                self.histos = ShapeSystematic(name, 'shape', 'jec', jec_mc, 1, tag=tag).get_shape()
+                groups['exp'].append(name)
 
         # Experimental weight variations
         for y in self.years:

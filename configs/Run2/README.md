@@ -23,7 +23,7 @@
    ```bash
    pocket-coffea run --cfg inference_conf_signal.py -o outputs/nominal/signal
    PC_ERAS=2017,2018 pocket-coffea run --cfg inference_conf_bkg.py -o outputs/nominal/bkg
-   PC_JEC_VARIATION=JES_Total pocket-coffea run --cfg inference_conf_minor.py -o outputs/JES_Total/minor
+   PC_JEC_VARIATION=JER pocket-coffea run --cfg inference_conf_minor.py -o outputs/JER/minor
    PC_SAMPLES=ttHTobb pocket-coffea run --cfg inference_conf_signal.py -o test --test   # quick test
    ```
 3. **b-tag SF normalization**: `python btag_norm.py -i outputs/nominal/*/output_all.coffea -o btag_norm.json`
@@ -33,8 +33,8 @@
 
 `run_pipeline.py` chains steps 2-5 with the output layout above:
 ```bash
-python run_pipeline.py inference --groups signal bkg minor --eras 2018 --jec-variations JES_Total
-python run_pipeline.py btagnorm pickle datacard --jec-variations JES_Total
+python run_pipeline.py inference --groups signal bkg minor --eras 2018 --jec-variations JER
+python run_pipeline.py btagnorm pickle datacard --jec-variations JER
 python run_pipeline.py all --dry-run            # show the commands only
 python run_pipeline.py inference -- --executor futures --test   # args after -- go to pocket-coffea
 ```
@@ -58,10 +58,10 @@ resubmitting.
 
 From the host (where `qsub` is available; pocket-coffea is run inside apptainer automatically):
 ```bash
-python run_pipeline.py inference --backend pbs --groups signal bkg minor --eras 2018 --jec-variations JES_Total JER
-python run_pipeline.py status    --backend pbs --jec-variations JES_Total JER     # done/failed/running per group
-python run_pipeline.py resubmit  --backend pbs --jec-variations JES_Total JER     # failed jobs + new merge
-python run_pipeline.py btagnorm pickle datacard --jec-variations JES_Total JER    # once everything is merged
+python run_pipeline.py inference --backend pbs --groups signal bkg minor --eras 2018 --jec-variations JES_ALL JER JMSJMR
+python run_pipeline.py status    --backend pbs --jec-variations JES_ALL JER JMSJMR     # done/failed/running per group
+python run_pipeline.py resubmit  --backend pbs --jec-variations JES_ALL JER JMSJMR     # failed jobs + new merge
+python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMSJMR    # once everything is merged
 ```
 `resubmit --include-unfinished` also resubmits jobs that never finished (e.g. killed by the batch
 system); it refuses while PBS still lists the arrays. Per directory the same is available as
@@ -73,9 +73,11 @@ The PBS executor and tools are shared with other analyses in `../common` (see `.
 
 The configs target the latest pocket-coffea (0.9.x, calibrator-based). `params/*.yaml` only hold
 overrides of the pocket-coffea defaults (correction files come from cvmfs via `${cvmfs:...}`):
-muon SF names for the MediumID selection, the UL jet veto maps, the MET filters, and the jet
-variations (selected per job with `PC_JEC_VARIATION`; names are checked against
-`default_jets_calibration.variations`). MET filters and the golden JSON are applied with the
+muon SF names for the MediumID selection, the UL jet veto maps and the MET filters.
+Shape variations are selected per job with `PC_JEC_VARIATION` (`inference_common.py`):
+`JES_<source>` (each individual JES source of `analysis_years.JES_SOURCES`, AK4 + AK8 jets shifted
+together, checked against the JME files), `JER` (AK4 and AK8 varied separately) and `JMSJMR`
+(AK8 mass scale/resolution, declared by `fatjet_mass_variations.py`, applied in the processor). MET filters and the golden JSON are applied with the
 standard `eventFlags` / `goldenJson` skim cuts; JEC/JER and type-1 MET come from the default
 calibrator sequence.
 
@@ -87,7 +89,7 @@ calibrator sequence.
   columns), then drops the events failing `btag_mask` before the expensive part
   (ZH candidate variables, control variables, SPANet). `btag_norm.py` reads these sums;
   older outputs with a `btag_calib` column category still work.
-* For AK4 JES shape variations (e.g. `AK4PFchs_JES_TotalUp`) `btag_sf` is the JES-varied BTV
+* For JES shape variations (e.g. `AK4AK8_JES_AbsoluteStatUp`) `btag_sf` is the JES-varied BTV
   shape SF (`up_jes*`/`down_jes*`, c jets keep the central SF), and `btag_norm.py` derives the
   normalization separately for every shape variation (`shape_variations` in the JSON).
 * Nominal MC weight (`outvars.nominal_weight_factors`) includes `l1prefire_sf` (UL NanoAOD

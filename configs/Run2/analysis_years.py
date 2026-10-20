@@ -104,3 +104,58 @@ def _lumi_per_year():
 
 
 LUMI_UNCERTAINTIES = _lumi_per_year()      # per analysis year, used by make_datacard.py
+
+
+# ---------------------------------------------------------------- jet energy scale sources
+# One shape variation per JES source (AK4 + AK8 jets shifted together), one production each
+# (run_pipeline.py --jec-variations JES_ALL). The sources are checked against the JME files when
+# the config is built (inference_common.py).
+#   "regrouped": the JME reduced set of 11 groups (6 correlated across years + 5 per year)
+#   "full"     : the 27 individual sources
+JES_SCHEME = "regrouped"
+
+JES_GROUPS = ["Absolute", "BBEC1", "EC2", "FlavorQCD", "HF", "RelativeBal"]       # correlated
+JES_GROUPS_PER_YEAR = ["Absolute", "BBEC1", "EC2", "HF", "RelativeSample"]         # <group>_<year>
+
+JES_SOURCES = [
+    "AbsoluteMPFBias", "AbsoluteScale", "AbsoluteStat", "FlavorQCD", "Fragmentation",
+    "PileUpDataMC", "PileUpPtBB", "PileUpPtEC1", "PileUpPtEC2", "PileUpPtHF", "PileUpPtRef",
+    "RelativeBal", "RelativeFSR", "RelativeJEREC1", "RelativeJEREC2", "RelativeJERHF",
+    "RelativePtBB", "RelativePtEC1", "RelativePtEC2", "RelativePtHF", "RelativeSample",
+    "RelativeStatEC", "RelativeStatFSR", "RelativeStatHF", "SinglePionECAL", "SinglePionHCAL",
+    "TimePtEta",
+]
+# Full sources uncorrelated across years (one nuisance per year); all others fully correlated.
+# Same split as the regrouped scheme (the sources making up its <group>_<year> groups).
+JES_SOURCES_UNCORRELATED = [
+    "AbsoluteStat", "RelativeStatFSR", "TimePtEta",           # Absolute_<year>
+    "RelativeJEREC1", "RelativePtEC1", "RelativeStatEC",       # BBEC1_<year>
+    "RelativeJEREC2", "RelativePtEC2",                         # EC2_<year>
+    "RelativeStatHF",                                          # HF_<year>
+    "RelativeSample",                                          # RelativeSample_<year>
+]
+
+
+def jes_run_tags(scheme=JES_SCHEME):
+    """Run tags (PC_JEC_VARIATION / --jec-variations) of every JES variation of a scheme.
+    '_year' stands for the year of each era (e.g. JES_Regrouped_HF_year -> Regrouped_HF_2016)."""
+    if scheme == "full":
+        return [f"JES_{s}" for s in JES_SOURCES]
+    return ([f"JES_Regrouped_{g}" for g in JES_GROUPS] +
+            [f"JES_Regrouped_{g}_year" for g in JES_GROUPS_PER_YEAR])
+
+
+def jes_source(tag, era):
+    """JME source name of a run tag for one era, e.g. ('JES_Regrouped_HF_year', '2016_PreVFP') -> 'Regrouped_HF_2016'."""
+    source = tag[len("JES_"):]
+    return source[:-len("_year")] + "_" + era[:4] if source.endswith("_year") else source
+
+
+def jes_nuisances(years, scheme=JES_SCHEME):
+    """(variation tag in the pickles, nuisance name) of every JES nuisance. A name ending in the
+    year is uncorrelated across years."""
+    if scheme == "full":
+        return [(f"AK4AK8_JES_{s}", f"jes_{s}_{y}") for s in JES_SOURCES_UNCORRELATED for y in years] + \
+               [(f"AK4AK8_JES_{s}", f"jes_{s}") for s in JES_SOURCES if s not in JES_SOURCES_UNCORRELATED]
+    return [(f"AK4AK8_JES_Regrouped_{g}", f"jes_{g}") for g in JES_GROUPS] + \
+           [(f"AK4AK8_JES_Regrouped_{g}_{y}", f"jes_{g}_{y}") for g in JES_GROUPS_PER_YEAR for y in years]

@@ -14,7 +14,7 @@ With --btag-norm, the b-tag SF columns are multiplied by the BTV normalization f
 r(era, sample, n_ak4jets) from btag_norm.py.
 
 Shape variations (e.g. a PC_JEC_VARIATION run) are exported as <process>_<variation>.pkl,
-e.g. ttZ_AK4PFchs_JES_TotalUp.pkl, which is the naming JEC_SOURCES in makeDatacard.py expects.
+e.g. ttZ_AK4AK8_JES_AbsoluteStatUp.pkl, which is the naming makeDatacard.jet_systematics expects.
 """
 import gc
 import json

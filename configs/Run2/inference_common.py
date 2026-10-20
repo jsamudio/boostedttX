@@ -10,8 +10,13 @@ the SPANet models in spanet_models.py.
 Environment overrides (no need to edit any file for these):
     PC_ERAS=2017,2018            eras to process (default: DEFAULT_ERAS below)
     PC_SAMPLES=ttHTobb,TTZToBB   only these samples of the group (quick tests)
-    PC_SHAPE_CALIBRATOR=...      shape calibrator to run (default: jet_calibration)
-    PC_JEC_VARIATION=JES_Total   jet variation to run on top of nominal (default: nominal only)
+    PC_JEC_VARIATION=...         shape variation to run on top of nominal (default: nominal only):
+                                   JES_...       one JES source (analysis_years.jes_run_tags), AK4 + AK8
+                                                 + type-1 MET jets shifted together -> AK4AK8_JES_<source>Up/Down
+                                                 e.g. JES_Regrouped_FlavorQCD, JES_Regrouped_HF_year (per-year
+                                                 group, the year of each era), JES_AbsoluteStat (full set)
+                                   JER           AK4 and AK8 separately -> AK4PFchs_JERUp/Down, AK8PFPuppi_JERUp/Down
+                                   JMSJMR        AK8 mass scale/resolution -> JMSUp/Down, JMRUp/Down
 """
 import os
 
@@ -29,7 +34,8 @@ import samples
 import spanet_inference
 import spanet_models
 import outvars
-from analysis_years import xbb_wp_cuts, ERAS
+from analysis_years import xbb_wp_cuts, ERAS, jes_run_tags, jes_source
+from fatjet_mass_variations import FatJetMassVariations
 from custom_cut_functions import (precut, hlt_cut, get_JetVetoMap, event_selection, vetoE, vetoMu,
                                   HEM_veto, btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq,
                                   trig_event_selection_run2, HLT_PATHS)
@@ -37,7 +43,11 @@ from pocket_coffea.parameters.cuts import passthrough
 from spanet_inference import ZHbbSpanetProcessor
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))  # configs/common
-from met_calibration import CALIBRATORS   # type-1 PF MET for Run 2 (configs/common/met_calibration.py)
+from met_calibration import CALIBRATORS as MET_CALIBRATORS   # type-1 PF MET for Run 2 (configs/common/met_calibration.py)
+from pocket_coffea.lib.correction_cache import load_correction_set
+
+# Default pocket-coffea sequence with the type-1 MET, plus the JMS/JMR variations (no correction)
+CALIBRATORS = MET_CALIBRATORS + [FatJetMassVariations]
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models):
     cloudpickle.register_pickle_by_value(_module)
@@ -54,6 +64,10 @@ PARAMETER_FILES = ["object_preselection", "skim_params", "lepton_scale_factors",
 
 # Jet types whose JES/JER variations are run (AK4CorrT1METJetchs follows AK4PFchs for the type-1 MET)
 VARIED_JET_TYPES = ["AK4PFchs", "AK8PFPuppi"]
+# For JES: one variation shifts all of these together (pocket-coffea merge_collections_for_variations);
+# the variation is then named AK4AK8_JES_<source>Up/Down
+JES_MERGED_NAME = "AK4AK8"
+JES_MERGED_JET_TYPES = ["AK4PFchs", "AK4CorrT1METJetchs", "AK8PFPuppi"]
 
 # Kept for reference / parity with the old configs: the pocket-coffea runner takes its run options
 # from the command line or a --custom-run-options YAML, not from this dictionary.
@@ -88,10 +102,34 @@ def _env_list(name):
     return [v.strip() for v in value.split(",") if v.strip()] if value else None
 
 
-def available_jet_variations(parameters, era):
-    """Jet variations pocket-coffea knows for an era (JES_Total, JER, JES_Regrouped_*)."""
-    default = parameters.default_jets_calibration.variations
-    return set(default.total_variation.AK4PFchs[era]) | set(default.full_variations.AK4PFchs[era])
+def check_jes_source(parameters, era, source):
+    """Raise if the JES source is missing in the JME file of AK4PFchs or AK8PFPuppi for this era."""
+    for jet_type in VARIED_JET_TYPES:
+        calib = parameters.jets_calibration.jet_types[jet_type][era]
+        key = f"{calib.jec_mc}_{source}_{jet_type}"
+        if key not in load_correction_set(calib.json_path).keys():
+            raise ValueError(f"JES source '{source}' not found for {jet_type} {era}: no '{key}' in {calib.json_path}")
+
+
+def shape_variation_settings(parameters, eras, variation):
+    """Shape calibrator for PC_JEC_VARIATION, and the jet calibrator settings it needs."""
+    no_jet_variations = {jet_type: {era: [] for era in ERAS} for jet_type in VARIED_JET_TYPES}
+    if not variation or variation.lower() == "nominal":
+        return "jet_calibration", no_jet_variations
+    if variation == "JMSJMR":
+        return "fatjet_mass", no_jet_variations
+    if variation == "JER":
+        # default merging (AK4PFchs with the type-1 MET jets): AK4 and AK8 are varied separately
+        return "jet_calibration", {jet_type: {era: ["JER"] for era in ERAS} for jet_type in VARIED_JET_TYPES}
+    if variation in jes_run_tags("regrouped") + jes_run_tags("full"):
+        for era in eras:
+            check_jes_source(parameters, era, jes_source(variation, era))
+        parameters.jets_calibration.merge_collections_for_variations = {
+            era: {JES_MERGED_NAME: JES_MERGED_JET_TYPES} for era in ERAS}
+        jes = {era: [f"JES_{jes_source(variation, era)}"] for era in ERAS}
+        return "jet_calibration", {jet_type: jes for jet_type in VARIED_JET_TYPES}
+    raise ValueError(f"PC_JEC_VARIATION={variation} not known: use nominal, JER, JMSJMR or a JES tag "
+                     f"of analysis_years.jes_run_tags(): {jes_run_tags()}")
 
 
 def load_parameters(eras):
@@ -102,19 +140,11 @@ def load_parameters(eras):
         *[f"{LOCALDIR}/params/{name}.yaml" for name in PARAMETER_FILES],
         update=True)
 
-    shape_calibrator = os.environ.get("PC_SHAPE_CALIBRATOR") or "jet_calibration"
-    jec_var = os.environ.get("PC_JEC_VARIATION")
-    jet_variations = [jec_var] if (shape_calibrator == "jet_calibration" and jec_var
-                                   and jec_var.lower() != "nominal") else []
-    for era in eras:
-        unknown = set(jet_variations) - available_jet_variations(parameters, era)
-        if unknown:
-            raise ValueError(f"PC_JEC_VARIATION={jec_var} is not a jet variation for {era}; available: "
-                             f"{sorted(available_jet_variations(parameters, era))}")
+    variation = os.environ.get("PC_JEC_VARIATION")
+    shape_calibrator, jet_variations = shape_variation_settings(parameters, eras, variation)
     # Only the requested variation (or none) is run in this job
-    parameters.jets_calibration.variations = {
-        jet_type: {era: list(jet_variations) for era in ERAS} for jet_type in VARIED_JET_TYPES}
-    print(f"--> Shape calibrator: {shape_calibrator}, jet variations: {jet_variations or 'nominal only'}")
+    parameters.jets_calibration.variations = jet_variations
+    print(f"--> Shape calibrator: {shape_calibrator}, variation: {variation or 'nominal only'}")
     return parameters, [shape_calibrator]
 
 

@@ -38,8 +38,9 @@ def btag_jes_systematic(variation):
          'AK4PFchs_JES_TotalUp'                     -> 'up_jes'
          'AK4PFchs_JES_Regrouped_Absolute_2018Down' -> 'down_jesAbsolute_2018'
          'AK4PFchs_JES_FlavorQCDUp'                 -> 'up_jesFlavorQCD'
-    None for every other variation (nominal, JER, AK8 jets, ...), which use the central SF."""
-    m = re.match(r"^AK4[A-Za-z]*_JES_(.+?)(Up|Down)$", variation)
+         'AK4AK8_JES_AbsoluteStatUp'                -> 'up_jesAbsoluteStat'  (AK4+AK8 shifted together)
+    None for every other variation (nominal, JER, AK8 jets only, ...), which use the central SF."""
+    m = re.match(r"^AK4[A-Za-z0-9]*_JES_(.+?)(Up|Down)$", variation)
     if m is None:
         return None
     source, direction = m.groups()
