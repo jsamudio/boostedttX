@@ -675,6 +675,7 @@ class MakeDataCard:
                 (f'mu_trig_sf_{y}',  'mu_trig_sfup',  'mu_trig_sfdown',  'mu_trig_sf'),
                 (f'xbb_sf_{y}',      'xbb_sfup',      'xbb_sfdown',      'xbb_sf'),
                 (f'pu_{y}',          'puWeight_up',   'puWeight_down',   'puWeight'),
+                (f'jet_puid_{y}',    'jet_puId_sfup', 'jet_puId_sfdown', 'jet_puId_sf'),
                 (f'l1prefire_{y}',   'l1prefire_sfup', 'l1prefire_sfdown', 'l1prefire_sf'),
             ]:
                 weight_shape(name, 'up/down', all_mc, up, down, ('exp',), nominal=nominal)

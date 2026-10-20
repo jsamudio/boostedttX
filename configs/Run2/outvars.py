@@ -57,7 +57,7 @@ mc_only_vars = ['xbb_genmatch', 'n_genb_matchZH']
 # Used by datacard_shapes.getZhbbWeight and (without btag_sf) by the b-tag normalization.
 nominal_weight_factors = ['topptWeight', 'ele_reco_sf', 'ele_id_sf', 'ele_trig_sf',
                           'mu_id_sf', 'mu_iso_sf', 'mu_reco_sf', 'mu_trig_sf',
-                          'xbb_sf', 'btag_sf', 'puWeight', 'l1prefire_sf']
+                          'xbb_sf', 'btag_sf', 'puWeight', 'l1prefire_sf', 'jet_puId_sf']
 
 wz_bkg_vars = ['nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M'] # probably not needed with common vars now
 
@@ -81,6 +81,7 @@ weight_vars = ['genWeight', 'norm_weight',
                'btag_sfcferr1', 'btag_sfcferr1_up', 'btag_sfcferr1_down',
                'btag_sfcferr2', 'btag_sfcferr2_up', 'btag_sfcferr2_down',
                'puWeight', 'puWeight_up', 'puWeight_down',
+               'jet_puId_sf', 'jet_puId_sfup', 'jet_puId_sfdown',
                'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
                'mu_r_up', 'mu_r_down', # scale weight not in some samples
                'mu_f_up', 'mu_f_down',

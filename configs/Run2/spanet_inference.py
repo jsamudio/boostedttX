@@ -12,7 +12,7 @@ from custom_cut_functions import sortbyscore, btag_mask
 from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
 from weight_handler import calc_weight
-from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_pileup_reweight, sf_L1prefiring
+from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_pileup_reweight, sf_L1prefiring, sf_jet_puId
 from custom_scale_factors import set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, apply_jms_jmr, sf_ele_trig, sf_mu_trig, chunk_rng, btag_jes_systematic, sf_btag_jes
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
@@ -248,6 +248,9 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
             ev['btag_sf'] = sf_btag_jes(self.params, ev.JetGood, self._year, ev.nJetGood, jes_syst)
 
         ev['puWeight'], ev['puWeight_up'], ev['puWeight_down'] = sf_pileup_reweight(self.params, ev, self._year)
+        # Pileup jet ID SF (JME jmar.json, PUJetID_eff): AK4 jets with pT < maxpt that pass the PU ID WP
+        # and are matched to a GenJet; WP / pT limit from object_preselection.yaml (Jet: puId)
+        ev['jet_puId_sf'], ev['jet_puId_sfup'], ev['jet_puId_sfdown'] = sf_jet_puId(self.params, ev.JetGood, self._year, ev.nJetGood)
         ev['isr'], ev['isr_up'], ev['isr_down'] = sf_partonshower_isr(ev)
         ev['fsr'], ev['fsr_up'], ev['fsr_down'] = sf_partonshower_fsr(ev)
         ev['mu_r_up'], ev['mu_r_down'], ev['mu_f_up'], ev['mu_f_down'], ev['mu_rf_up'], ev['mu_rf_down'] = sf_scaleweights(ev)
