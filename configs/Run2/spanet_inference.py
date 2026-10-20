@@ -17,6 +17,7 @@ from custom_scale_factors import sf_jet_puId_era, set_fatjet_mass, sf_mu, sf_par
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
 from theory_norms import fill_theory_sums
+from spanet_models import SPANET_CLASSES
 
 sig = ['ttHTobb', 'ttHToNonbb', 'TTZToBB', 'TTZToQQ', 'TTZToLLNuNu', 'ttHSMEFT', 'ttZSMEFT']
 
@@ -443,9 +444,13 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
                     "FatJet_data": fatjet_data, "FatJet_mask": mask_global,
                 },
             )
-            self.events[f"spanet_output_{model_name}"] = ak.zip({"signal": probs[:, 1] / probs[:, :4].sum(axis=1)})
-            self.events[f"sig_score_{model_name}"] = probs[:, 1]
-            self.events[f"ttbb_score_{model_name}"] = probs[:, 2]
-            self.events[f"ttlf_score_{model_name}"] = probs[:, 3]
+            if probs.shape[1] != len(SPANET_CLASSES):
+                raise ValueError(f"{model_name}: {probs.shape[1]} SPANet classes, expected {SPANET_CLASSES}")
+            score = {name: probs[:, i] for name, i in SPANET_CLASSES.items()}
+            signal = score["tth"] + score["ttz"]
+            self.events[f"spanet_output_{model_name}"] = ak.zip({"signal": signal / probs.sum(axis=1)})
+            self.events[f"sig_score_{model_name}"] = signal
+            for name, values in score.items():
+                self.events[f"{name}_score_{model_name}"] = values
             for i in range(encoder.shape[1]):
                 self.events[f"encoderFeature{i + 1}_{model_name}"] = encoder[:, i]

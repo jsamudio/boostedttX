@@ -48,7 +48,9 @@ sig_vars = ['process', 'Zbb', 'Hbb', 'Hnonbb', 'Zqq',
         'nJetGood', 'ZH_pt', 'MET_pt', 'ZH_M', 'genZHpt']#, 'ZH_sdm']
 '''
 
-bkg_vars = ['tt_B']
+# tt+jets categories (genmatcher.match_gen_tt, genTtbarId % 100): tt_2b = 52, tt_C = 41-46;
+# used for the tt+2b and tt+C cross-section uncertainties in the datacard
+bkg_vars = ['tt_B', 'tt_2b', 'tt_C']
 
 # PDF / alpha_s members (custom_scale_factors.pdfweight_columns), exported for the samples that
 # get PDF shape uncertainties: signal and tt+jets (the 'sig' and 'bkg' column groups)

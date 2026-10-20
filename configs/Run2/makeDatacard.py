@@ -46,6 +46,16 @@ BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets']
 # (ttX and VJets have their own nuisances in add_Systematics: ttx_qsc, v_qsc, qqpdf)
 BKG_XSEC_UNC = {'SingleTop': 1.10, 'QCD': 1.50}
 
+# tt+2b (in tt_B) and tt+C (in TTBar) cross sections: events of the category scaled by these
+# factors (up, down), as in the previous analysis. Categories: outvars.bkg_vars (tt_2b, tt_C).
+TT_CATEGORY_XSEC_UNC = {'tt2bxsec': ('tt_2b', 'tt_B', 1.5, 0.5),
+                        'ttCxsec':  ('tt_C', 'TTBar', 1.5, 0.5)}
+
+# Theory event weights (scale, parton shower, PDF members) are clipped at these percentiles of
+# each process's events in the pickle, against outlier weights (previous analysis)
+THEORY_CLIP_PERCENTILES = (0.15, 99.85)
+THEORY_CLIP_COLUMNS = [f'{s}_{ud}' for s in ['mu_r', 'mu_f', 'mu_rf', 'isr', 'fsr'] for ud in ['up', 'down']]
+
 # V+jets inclusive cross-section uncertainty: inclusive W -> l nu at NNLO (FEWZ 3.1),
 # 20508.9 pb +165.7 -88.2 (scales) +-770.9 (PDF+alpha_s), CMS SM cross-section twiki (as before)
 VJETS_SCALE_UNC = (1.008, 0.996)
@@ -269,7 +279,7 @@ class ShapeSystematic(Systematic):
                 self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw': down, 'sumw2': down}
 
     # Variations stored as standalone factors (no nominal column to divide out)
-    STANDALONE_WEIGHTS = ('pdfWeight', 'mu_r', 'mu_f', 'mu_rf', 'isr', 'fsr')
+    STANDALONE_WEIGHTS = ('pdfWeight', 'mu_r', 'mu_f', 'mu_rf', 'isr', 'fsr') + tuple(TT_CATEGORY_XSEC_UNC)
 
     def makeUpDownHist(self):
         for process in self.ids:
@@ -421,7 +431,7 @@ class MakeDataCard:
         self.weight_sys = weight_sys
         self.bkg_v = weights + weight_sys + pdf_cols + [self.nn_name, 'ZH_M', 'ZH_pt', 'process', 'sample',
                                                         'n_ak4jets', 'ZH_bbvLscore', 'n_b_outZH', 'MET_pt',
-                                                        'era', 'year']
+                                                        'era', 'year', 'tt_2b', 'tt_C']
         self.sig_v = self.bkg_v + ['genZHpt']
         
         self.accepted_sig  = [f'{s}{i}' for i in range(len(self.pt_bins)) for s in ['ttH','ttZ']]
@@ -517,6 +527,15 @@ class MakeDataCard:
             return {}
 
         df = pd.read_pickle(filepath).filter(items=v)
+        for col in [c for c in THEORY_CLIP_COLUMNS + list(pdf_vars) if c in df and df[c].notna().any()]:
+            low, high = np.nanpercentile(df[col].to_numpy(dtype=float), THEORY_CLIP_PERCENTILES)
+            df[col] = df[col].clip(low, high)
+        # tt+2b / tt+C cross-section variations as event-weight factors (1 outside the category)
+        for name, (flag, _, up, down) in TT_CATEGORY_XSEC_UNC.items():
+            if flag in df:
+                in_category = (df[flag] == True).to_numpy()
+                df[f'{name}_up'] = np.where(in_category, up, 1.0)
+                df[f'{name}_down'] = np.where(in_category, down, 1.0)
         df = df[cuts(df, y)]
         df = df.astype({k:'float32' for k in df if df[k].dtype == 'float64'}) 
         df.loc[:,'ZH_pt'] = df['ZH_pt'].clip(pt_bins[0]+1, pt_bins[-1]+1)
@@ -742,6 +761,8 @@ class MakeDataCard:
                              ('exp',), nominal=btag_nom(src))
 
         # Modeling: top pT reweighting, parton shower, scales, PDF
+        for name, (_, process, _, _) in TT_CATEGORY_XSEC_UNC.items():
+            weight_shape(name, 'up/down', [process], f'{name}_up', f'{name}_down', ('theo',))
         weight_shape('toppt', 'up/down', ttbar_mc, 'topptWeight_Up', 'topptWeight_Down', ('theo',),
                      nominal='topptWeight')
         weight_shape('isr_tt',   'ps',          ['TTBar'], 'isr_up', 'isr_down', ('theo',), extraQC=True)

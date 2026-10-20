@@ -47,13 +47,19 @@ ACTIVE_MODELS = ["noOverlap_MultiWP"]
 
 N_ENCODER_FEATURES = 32
 
+# Classes of the SPANet "EVENT/signal" output (mapping_encoding of the Run 2 training):
+#   0 ttHTobb, 1 TTZToBB, 2 tt+B, 3 tt+C and tt+LF
+# sig_score = ttH + ttZ; the single-class scores are stored too
+SPANET_CLASSES = {"tth": 0, "ttz": 1, "ttbb": 2, "ttlf": 3}
+
 
 def active_models():
     return {name: SPANET_MODELS[name] for name in ACTIVE_MODELS}
 
 
 def score_columns(model):
-    return [f"sig_score_{model}", f"ttbb_score_{model}", f"ttlf_score_{model}"]
+    return [f"sig_score_{model}", f"ttbb_score_{model}", f"ttlf_score_{model}",
+            f"tth_score_{model}", f"ttz_score_{model}"]
 
 
 def encoder_columns(model):
