@@ -14,6 +14,8 @@ the futures executor on all cores of its node inside apptainer) plus a merge job
 after the array and writes <outputdir>/output_all.coffea.
 
     python pbs_tools.py submit   <outputdir>    # array + merge job
+    python pbs_tools.py pending  <outputdir>... # submit the prepared, not yet submitted dirs, until
+                                                # the per-user queue limit is reached (rerun later)
     python pbs_tools.py status   <outputdir>    # done / failed / running / idle per job
     python pbs_tools.py resubmit <outputdir>    # failed jobs (+ --include-unfinished) and a new merge
     python pbs_tools.py merge    <outputdir>    # (re)submit only the merge job
@@ -44,6 +46,14 @@ DEFAULTS = {
 
 
 # ---------------------------------------------------------------- helpers
+def find_jobs_dir(path):
+    """The prepared jobs directory of an output dir, or None if it was not prepared."""
+    for d in (path, os.path.join(path, "job")):
+        if os.path.isfile(os.path.join(d, SETTINGS_FILE)):
+            return d
+    return None
+
+
 def jobs_dir_of(path):
     """Accept either the pocket-coffea output dir or its job/ subdirectory."""
     for d in (path, os.path.join(path, "job")):
@@ -78,6 +88,10 @@ def _mem_gb(mem):
     return float(m) / 1024. ** 3        # plain bytes
 
 
+class QueueFull(Exception):
+    """qsub refused the job: the per-user limit of queued jobs is reached."""
+
+
 def qsub(script, depend=None):
     if shutil.which("qsub") is None:
         sys.exit("qsub not found. Inside the apptainer image PBS is not available: run\n"
@@ -86,6 +100,8 @@ def qsub(script, depend=None):
     cmd = ["qsub"] + (["-W", f"depend={depend}"] if depend else []) + [script]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode != 0:
+        if "would exceed" in res.stderr:
+            raise QueueFull(res.stderr.strip())
         sys.exit(f"qsub failed ({' '.join(cmd)}):\n{res.stderr}")
     return res.stdout.strip()
 
@@ -220,11 +236,66 @@ def submit(path, ids=None, tag="all"):
 
     joblist = write_joblist(jobs_dir, f"joblist_{tag}.txt", ids, settings)
     array_id = qsub(write_array_script(jobs_dir, settings, joblist, tag))
-    merge_id = qsub(write_merge_script(jobs_dir, settings, tag), depend=f"afterany:{array_id}")
+    try:
+        merge_id = qsub(write_merge_script(jobs_dir, settings, tag), depend=f"afterany:{array_id}")
+    except QueueFull:
+        # the array is in; the merge job is submitted later by submit_pending
+        record_submission(jobs_dir, {"tag": tag, "array": array_id, "merge": None, "jobs": list(ids)})
+        print(f"{settings['name']}: submitted {len(ids)} job(s) as {array_id}; merge job not yet (queue full)")
+        raise
     record_submission(jobs_dir, {"tag": tag, "array": array_id, "merge": merge_id, "jobs": list(ids)})
     print(f"{settings['name']}: submitted {len(ids)} job(s) as {array_id}; merge job {merge_id} "
           f"-> {settings['output-dir']}/output_all.coffea")
     return array_id, merge_id
+
+
+def submissions(jobs_dir):
+    path = os.path.join(jobs_dir, SUBMISSIONS_FILE)
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        return json.load(f)
+
+
+def submit_pending(paths):
+    """Submit, in order, every prepared output dir that has no job array submitted yet, and the
+    missing merge jobs, until PBS refuses (per-user queue limit). Returns the number still pending."""
+    pending = []
+    for path in paths:
+        jobs_dir = find_jobs_dir(path)
+        if jobs_dir is None:
+            continue
+        arrays = [s for s in submissions(jobs_dir) if s.get("array")]
+        if not arrays:
+            pending.append((jobs_dir, "array"))
+        elif arrays[-1].get("merge") is None:
+            pending.append((jobs_dir, "merge"))
+    for n, (jobs_dir, what) in enumerate(pending):
+        try:
+            if what == "array":
+                submit(jobs_dir)
+            else:
+                submit_missing_merge(jobs_dir)
+        except QueueFull as err:
+            print(f"Queue limit reached ({err}).\n{len(pending) - n} submission(s) still pending: "
+                  f"run the same command again later.")
+            return len(pending) - n
+    print("Nothing pending." if not pending else "All pending submissions done.")
+    return 0
+
+
+def submit_missing_merge(jobs_dir):
+    """Merge job of the last array, which could not be submitted when the queue was full."""
+    settings = load_settings(jobs_dir)
+    subs = submissions(jobs_dir)
+    last = [s for s in subs if s.get("array")][-1]
+    active = subprocess.run(["qstat", last["array"]], capture_output=True).returncode == 0
+    merge_id = qsub(write_merge_script(jobs_dir, settings, last["tag"]),
+                    depend=f"afterany:{last['array']}" if active else None)
+    last["merge"] = merge_id
+    with open(os.path.join(jobs_dir, SUBMISSIONS_FILE), "w") as f:
+        json.dump(subs, f, indent=1)
+    print(f"{settings['name']}: merge job {merge_id}")
 
 
 def states(jobs_dir):
@@ -292,13 +363,7 @@ def merge(path):
     print(f"{settings['name']}: merge job {merge_id}")
 
 
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["submit", "status", "resubmit", "merge"])
-    ap.add_argument("outputdirs", nargs="+", help="pocket-coffea output dir(s) (or their job/ subdir)")
-    ap.add_argument("--include-unfinished", action="store_true",
-                    help="resubmit: also jobs left running/idle/missing (e.g. killed by the batch system)")
-    args = ap.parse_args()
+def _run_command(args):
     for d in args.outputdirs:
         if args.command == "submit":
             submit(d)
@@ -308,3 +373,18 @@ if __name__ == "__main__":
             resubmit(d, args.include_unfinished)
         else:
             merge(d)
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("command", choices=["submit", "pending", "status", "resubmit", "merge"])
+    ap.add_argument("outputdirs", nargs="+", help="pocket-coffea output dir(s) (or their job/ subdir)")
+    ap.add_argument("--include-unfinished", action="store_true",
+                    help="resubmit: also jobs left running/idle/missing (e.g. killed by the batch system)")
+    args = ap.parse_args()
+    if args.command == "pending":
+        sys.exit(1 if submit_pending(args.outputdirs) else 0)
+    try:
+        _run_command(args)
+    except QueueFull as err:
+        sys.exit(f"Queue limit reached ({err}); try again later.")

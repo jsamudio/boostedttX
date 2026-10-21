@@ -3,6 +3,9 @@
 Driver for the analysis chain after the SPANet training:
 
     inference    pocket-coffea run --cfg inference_conf_<group>.py   (per group, era set, jet variation)
+                 PBS: prepares the jobs of every output dir not prepared yet, then submits them
+    submit       PBS: submit the prepared dirs not submitted yet (when the queue limit stopped
+                 `inference`); --every MIN keeps retrying until all are in
     status       PBS backend: state of the jobs and merges
     resubmit     PBS backend: resubmit failed jobs (+ a new merge)
     btagnorm     btag_norm.py on the nominal + variation outputs     -> btag_norm.json
@@ -47,6 +50,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 COMMON = os.path.join(os.path.dirname(HERE), "common")       # shared PBS tools (configs/common)
@@ -57,7 +61,7 @@ from samples import GROUPS  # noqa: E402
 from analysis_years import jes_run_tags  # noqa: E402
 
 MC_GROUPS = ['signal', 'bkg', 'minor']
-STEPS = ['inference', 'status', 'resubmit', 'btagnorm', 'pickle', 'norms', 'datacard']
+STEPS = ['inference', 'submit', 'status', 'resubmit', 'btagnorm', 'pickle', 'norms', 'datacard']
 PBS_RUN_OPTIONS = "run_options_pbs.yaml"
 
 
@@ -125,8 +129,11 @@ def existing(paths, dry):
 
 # ---------------------------------------------------------------- steps
 def step_inference(args):
-    can_submit = shutil.which("qsub") is not None
     for tag, group, outdir in runs(args):
+        if args.backend == "pbs" and pbs_tools.find_jobs_dir(os.path.join(HERE, outdir)):
+            print(f"  [skip] {outdir}: jobs already prepared (submit / status / resubmit; "
+                  f"delete the directory to prepare it again)")
+            continue
         env = {"PC_ERAS": ",".join(args.eras), "PC_JEC_VARIATION": tag}
         cmd = ["pocket-coffea", "run", "--cfg", f"inference_conf_{group}.py", "-o", outdir]
         if args.backend == "pbs":
@@ -134,15 +141,25 @@ def step_inference(args):
                     "-ro", PBS_RUN_OPTIONS]
             env[pbs_tools.NO_SUBMIT_ENV] = "1"       # the jobs are submitted below, from the host
         run(cmd + args.pc_args, args, env)
+    if args.backend == "pbs":
+        step_submit(args)
 
-        if args.backend == "pbs":
-            if args.dry_run:
-                print(f">>> pbs_tools.submit({outdir})")
-            elif can_submit:
-                pbs_tools.submit(os.path.join(HERE, outdir))
-            else:
-                print(f"  qsub not available here: submit from the host with\n"
-                      f"    python {pbs_tools.__file__} submit {os.path.join(HERE, outdir)}")
+
+def step_submit(args):
+    """Submit the prepared, not yet submitted output dirs until the per-user queue limit."""
+    if args.backend != "pbs":
+        sys.exit("submit needs --backend pbs")
+    dirs = [os.path.join(HERE, outdir) for _, _, outdir in runs(args)]
+    if args.dry_run:
+        print(f">>> pbs_tools.submit_pending({len(dirs)} output dirs)")
+        return
+    if shutil.which("qsub") is None:
+        print(f"  qsub not available here: submit from the host with\n"
+              f"    python {pbs_tools.__file__} pending {' '.join(dirs)}")
+        return
+    while pbs_tools.submit_pending(dirs) and args.every:
+        print(f"  retrying in {args.every} min ...")
+        time.sleep(60 * args.every)
 
 
 def _pbs_dirs(args):
@@ -226,6 +243,8 @@ if __name__ == '__main__':
     ap.add_argument('--btag-norm', default='btag_norm.json')
     ap.add_argument('--eft-ttbb', action='store_true', help='passed to makeDatacard.py')
     ap.add_argument('--dry-run', action='store_true', help='print the commands only')
+    ap.add_argument('--every', type=float, default=0,
+                    help='submit: retry every MIN minutes until everything is submitted')
     args = ap.parse_args(argv)
     args.pc_args = pc_args
     args.jec_variations = [v for tag in args.jec_variations
@@ -235,10 +254,10 @@ if __name__ == '__main__':
         steps = ['inference', 'btagnorm', 'pickle', 'datacard']
     else:
         steps = [s for s in STEPS if s in args.steps]
-    if args.backend == 'pbs' and 'inference' in steps and len(steps) > 1:
+    if args.backend == 'pbs' and {'inference', 'submit'} & set(steps) and len(steps) > 1:
         print("PBS backend: the inference jobs run asynchronously; only submitting them now.\n"
               "Run `status` / `resubmit`, then btagnorm pickle datacard once all outputs are merged.")
-        steps = ['inference']
+        steps = [s for s in ('inference', 'submit') if s in steps][:1]
     for step in steps:
         print(f"\n===================== {step} =====================")
         globals()[f"step_{step}"](args)
