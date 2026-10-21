@@ -4,11 +4,12 @@ SPANet training inputs of the Run 3 analysis: the ONE place to edit when the tra
 Pure Python (no coffea imports). Read by
   * inference_common.build_config("spanet") / inference_conf_spanet.py  (pocket-coffea columns, cuts,
     subsamples, weights, gen matching options)
-  * make_spanet_configs.py  (YAML configs of the converters in ../spanet_inputs: coffea -> parquet -> h5)
+  * ../common/make_spanet_configs.py  (YAML configs of the converters in ../spanet_inputs: coffea ->
+    parquet -> h5, and the INPUTS section of the SPANet event-info file)
 
 Workflow (see README.md, "SPANet training inputs"):
     python3 run_pipeline.py inference --backend pbs --groups spanet        # 1. ntuples (.coffea)
-    python3 make_spanet_configs.py                                         # 2. converter YAMLs
+    python3 ../common/make_spanet_configs.py                               # 2. converter YAMLs
     cd ../spanet_inputs
     python3 coffea_to_parquet_script.py -c ../Run3/spanet/features_parquet.yaml \\
         -i ../Run3/outputs/nominal/spanet/output_all.coffea -o <dir>/run3.parquet --cat spanet
@@ -36,15 +37,16 @@ SAMPLES = {
     "TTToSemiLeptonic":  {"subsamples": "ttbar"},
 }
 
-# Classification targets: <sample>__<subsample> (or sample) substring -> (class, one-hot index).
+# Classification targets: <sample>__<subsample> (or sample) substring -> (class, index). The index is
+# the SPANet output position (0..N-1), which spanet_models.SPANET_CLASSES must follow (same as Run 2).
 # The converter writes one parquet per (sub)sample, named <output>_<sample>__<subsample>.parquet; each
 # key must match exactly one of those names.
 CLASSES = {
-    "ttHTobb":      ("tthbb", 1),
-    "TTZToQQ__Zbb": ("ttzbb", 2),
-    "tt+B":         ("ttbb", 3),
-    "tt+C":         ("ttlf", 4),
-    "tt+LF":        ("ttlf", 4),
+    "ttHTobb":      ("tthbb", 0),
+    "TTZToQQ__Zbb": ("ttzbb", 1),
+    "tt+B":         ("ttbb", 2),
+    "tt+C":         ("ttlf", 3),
+    "tt+LF":        ("ttlf", 3),
 }
 
 # ---------------------------------------------------------------- event selection
@@ -53,7 +55,7 @@ CLASSES = {
 CATEGORY = "spanet"
 SELECTION = {
     "min_b_jets":  2,           # nbJetGood >= (UParT medium), the analysis btag_mask
-    "min_ak4_jets": 5,          # n_ak4jets >= (after the optional cleaning below)
+    "min_ak4_jets": 5,          # n_ak4jets >= (all AK4 jets, as in the analysis)
     "n_b_outZH":   2,           # b jets outside the candidate cone ==
     "zh_mass":     (50, 200),   # GloParT regressed mass window of the candidate [GeV]
     "min_xbb":     None,        # candidate GloParT XbbVsQCD >= (no Run 3 WP yet)
@@ -62,6 +64,14 @@ SELECTION = {
 # AK4 jets used by SPANet: False = all JetGood, True = only jets with dR > 0.8 from the ZH candidate.
 # Must agree with the model's "clean_jets" in spanet_models.py.
 CLEAN_JETS = False
+
+# Event-level inputs (../common/event_variables.py): sphericity, aplanarity, centrality over the
+# lepton, the candidate fat jet and the AK4 jets outside it; jet / b-jet counts.
+# COUNT_CLEAN_JETS: count only AK4 jets outside the candidate (False = all AK4 jets).
+# Must agree with the model's "event_features" / "count_clean_jets" in spanet_models.py.
+BTAG_COUNT_WPS = ["L", "M", "T"]        # UParT working points
+COUNT_CLEAN_JETS = False
+EVENT_FEATURES = ["sphericity", "aplanarity", "centrality", "n_jets"] + [f"n_bjets_{wp}" for wp in BTAG_COUNT_WPS]
 
 # ---------------------------------------------------------------- gen matching
 MATCHING = {
@@ -82,7 +92,7 @@ WEIGHTS = ["genWeight", "lumi", "XS", "pileup"]
 #   jagged       - keep as a variable-length list (awkward collection in the parquet)
 #   max          - export only the first n objects (1 = one value per event, as a flat column)
 # "events" holds per-event columns. Fields added by the workflow: JetGood.btag_{L,M,T,XT,XXT},
-# JetGood/FatJetSorted.{matched,prov,dRMatchedJet}, LeptonGood.is_electron, events.n_*.
+# JetGood/FatJetSorted.{matched,prov,dRMatchedJet}, LeptonGood.is_electron, events.n_*, the EVENT_FEATURES.
 EXPORT = {
     "JetGood": {"jagged": True, "fields": {
         "pt": "pt", "eta": "eta", "phi": "phi", "mass": "mass",
@@ -106,7 +116,8 @@ EXPORT = {
     "events": {"fields": {
         "n_ak4jets": "n_ak4jets", "n_b_inZH": "n_b_inZH", "n_b_outZH": "n_b_outZH", "ZH_M": "ZH_M",
         "nParton": "nParton", "nPartonMatched": "nPartonMatched",
-        "nBosonPartonsInFatJet": "nBosonPartonsInFatJet"}},
+        "nBosonPartonsInFatJet": "nBosonPartonsInFatJet",
+        **{f: f for f in EVENT_FEATURES}}},
 }
 
 # Matched collections for the parquet converter: entries with pt == -999 become None
@@ -115,18 +126,27 @@ MATCHED_COLLECTIONS = {"Parton": "PartonMatched"}
 # ---------------------------------------------------------------- SPANet inputs (h5)
 # {SPANet input: (exported collection, [features])}. Besides the exported feature names the h5
 # converter provides MASK (pt != 0), sin_phi, cos_phi and is_electron (from pdgId).
-# The inference (spanet_inference.onnx_inference) feeds: Jet [pt, eta, sin_phi, cos_phi, btagB] +
-# mask, Lepton [pt, eta, sin_phi, cos_phi], Met [pt, sin_phi, cos_phi], FatJet [pt, eta, sin_phi,
-# cos_phi, bbtag]; a model trained on other inputs needs the inference extended accordingly
-# (make_spanet_configs.py warns).
 SPANET_INPUTS = {
     "Jet":    ("JetGood",      ["MASK", "pt", "eta", "sin_phi", "cos_phi", "btagB"]),
     "Lepton": ("LeptonGood",   ["pt", "eta", "sin_phi", "cos_phi"]),
     "Met":    ("PuppiMET",     ["pt", "sin_phi", "cos_phi"]),
     "FatJet": ("FatJetSorted", ["pt", "eta", "sin_phi", "cos_phi", "bbtag"]),
+    "Event":  ("events",       list(EVENT_FEATURES)),
 }
 PARTICLES = ["t1", "t2", "h"]       # assignment targets (h5.py: t1 = hadronic top, t2 = leptonic b, h = prov 1)
 FRAC_TRAIN = 0.8
+
+# What the inference (spanet_inference.onnx_inference) can feed: Jet / FatJet / Event any subset (the
+# model's feature lists in spanet_models.py), Lepton and Met fixed; a model trained on other inputs
+# needs the inference extended (../common/make_spanet_configs.py warns)
+INFERENCE_FEATURES = {
+    "Jet": ["MASK", "pt", "eta", "sin_phi", "cos_phi", "btagB"],
+    "FatJet": ["pt", "eta", "sin_phi", "cos_phi", "bbtag"],
+    "Event": list(EVENT_FEATURES),
+    "Lepton": ["pt", "eta", "sin_phi", "cos_phi"],
+    "Met": ["pt", "sin_phi", "cos_phi"],
+}
+INFERENCE_FIXED = {"Lepton", "Met"}
 
 
 # ---------------------------------------------------------------- helpers

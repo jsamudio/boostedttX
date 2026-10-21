@@ -67,11 +67,10 @@ class H5Dataset:
 
     def build_labels(self, df, sample):
         '''Build labels for the classification nodes.'''
-        for s, label in self.mapping_sample.items():
-            if s == sample:
-                df[label] = ak.values_astype(np.ones(len(df), dtype=int), int)
-            else:
-                df[label] = ak.values_astype(np.zeros(len(df), dtype=int), int)
+        # one 0/1 column per class; several samples can share a class (e.g. tt+C and tt+LF -> ttlf)
+        for label in dict.fromkeys(self.mapping_sample.values()):
+            value = 1 if self.mapping_sample[sample] == label else 0
+            df[label] = ak.values_astype(np.full(len(df), value, dtype=int), int)
 
         # Define one hot encoded label for multiclassifier
         if self.one_hot_encoding:

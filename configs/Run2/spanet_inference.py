@@ -18,6 +18,7 @@ from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
 from theory_norms import fill_theory_sums
 from spanet_models import SPANET_CLASSES
+from event_variables import event_variables
 
 sig = ['ttHTobb', 'ttHToNonbb', 'TTZToBB', 'TTZToQQ', 'TTZToLLNuNu', 'ttHSMEFT', 'ttZSMEFT']
 
@@ -377,8 +378,12 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
     def apply_btag_prefilter(self):
         """Keep only events of the btag_mask category. The category itself still applies the cut,
         so this is purely an optimization (skipped if no event would remain)."""
-        mask = ak.to_numpy(btag_mask.get_mask(self.events, processor_params=self.params, year=self._year,
-                                              sample=self._sample, isMC=self._isMC))
+        self.apply_prefilter(btag_mask)
+
+    def apply_prefilter(self, cut):
+        """Keep only events passing `cut` (the category cut, so the output is unchanged)."""
+        mask = ak.to_numpy(cut.get_mask(self.events, processor_params=self.params, year=self._year,
+                                        sample=self._sample, isMC=self._isMC))
         if mask.all() or not mask.any():
             return
         self.events = self.events[mask]
@@ -436,16 +441,22 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
             jet_vars, jet_mask = jet_inputs[info.get("clean_jets", False)]
             jet_data = np.stack([jet_vars[f] for f in info["jet_features"]], axis=-1).astype(np.float32)
             fatjet_data = np.stack([fatjet_vars[f] for f in info["fatjet_features"]], axis=1)[:, None, :].astype(np.float32)
+            inputs = {
+                "Jet_data": jet_data, "Jet_mask": jet_mask,
+                "Met_data": met_data, "Met_mask": mask_global,
+                "Lepton_data": lep_data, "Lepton_mask": mask_global,
+                "FatJet_data": fatjet_data, "FatJet_mask": mask_global,
+            }
+            if info.get("event_features"):
+                # event-level inputs (../common/event_variables.py), on all AK4 jets as in the training
+                features = info["event_features"]
+                wps = [f[len("n_bjets_"):] for f in features if f.startswith("n_bjets_")]
+                values = event_variables(ev.JetGood, ak.firsts(ev.FatJetSorted), ak.firsts(ev.LeptonGood),
+                                         wps, info.get("count_clean_jets", False))
+                inputs["Event_data"] = np.stack([values[f] for f in features], axis=1)[:, None, :].astype(np.float32)
+                inputs["Event_mask"] = mask_global
 
-            probs, encoder = _onnx_session(info["path"]).run(
-                ["EVENT/signal", "encoder_event_vector"],
-                {
-                    "Jet_data": jet_data, "Jet_mask": jet_mask,
-                    "Met_data": met_data, "Met_mask": mask_global,
-                    "Lepton_data": lep_data, "Lepton_mask": mask_global,
-                    "FatJet_data": fatjet_data, "FatJet_mask": mask_global,
-                },
-            )
+            probs, encoder = _onnx_session(info["path"]).run(["EVENT/signal", "encoder_event_vector"], inputs)
             if probs.shape[1] != len(SPANET_CLASSES):
                 raise ValueError(f"{model_name}: {probs.shape[1]} SPANet classes, expected {SPANET_CLASSES}")
             score = {name: probs[:, i] for name, i in SPANET_CLASSES.items()}

@@ -229,6 +229,36 @@ lepstudy_event_selection = Cut(
         function = lepstudy_event_selection,
 )
 
+def _spanet_selection(events, params, year, sample, **kwargs):
+    """SPANet training category (spanet_training.SELECTION); None disables a requirement."""
+    mask = np.ones(len(events), dtype=bool)
+    if params.get("min_b_jets") is not None:
+        mask = mask & (events.nbJetGood >= params["min_b_jets"])
+    if params.get("min_ak4_jets") is not None:
+        mask = mask & (events.n_ak4jets >= params["min_ak4_jets"])
+    if params.get("n_b_outZH") is not None:
+        mask = mask & (events.n_b_outZH == params["n_b_outZH"])
+    if params.get("zh_mass") is not None:
+        low, high = params["zh_mass"]
+        mask = mask & (events.ZH_M >= low) & (events.ZH_M <= high)
+    if params.get("xbb_wp") is not None:
+        mask = mask & (events.ZH_bbvLscore >= xbb_wp_cuts(year)[params["xbb_wp"]])
+    return ak.where(ak.is_none(mask), False, mask)
+
+
+def get_spanet_selection(selection):
+    return Cut(name="spanetSelection", params=dict(selection), function=_spanet_selection)
+
+
+def _event_flag(events, params, **kwargs):
+    return ak.where(ak.is_none(events[params["flag"]]), False, events[params["flag"]])
+
+
+def get_flag_cut(flag):
+    """Cut on a boolean event column set by the workflow (e.g. Zbb from genmatcher.match_gen_sig)."""
+    return Cut(name=f"flag_{flag}", params={"flag": flag}, function=_event_flag)
+
+
 '''
 btag mask
 '''

@@ -14,6 +14,8 @@ from weight_handler import calc_weight
 from custom_scale_factors import (set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr,
                                   sf_scaleweights, sf_ele_trig, sf_mu_trig)
 from get_controlvars import get_controlvars
+from spanet_models import SPANET_CLASSES
+from event_variables import event_variables
 
 vector.register_awkward()
 
@@ -250,15 +252,26 @@ class ZHbbRun3Processor(BaseProcessorABC):
             jet_vars, jet_mask = jet_inputs[info.get("clean_jets", False)]
             jet_data = np.stack([jet_vars[f] for f in info["jet_features"]], axis=-1).astype(np.float32)
             fatjet_data = np.stack([fatjet_vars[f] for f in info["fatjet_features"]], axis=1)[:, None, :].astype(np.float32)
-            probs, encoder = _onnx_session(info["path"]).run(
-                ["EVENT/signal", "encoder_event_vector"],
-                {"Jet_data": jet_data, "Jet_mask": jet_mask,
-                 "Met_data": met_data, "Met_mask": mask_global,
-                 "Lepton_data": lep_data, "Lepton_mask": mask_global,
-                 "FatJet_data": fatjet_data, "FatJet_mask": mask_global})
-            self.events[f"spanet_output_{model_name}"] = ak.zip({"signal": probs[:, 1] / probs[:, :4].sum(axis=1)})
-            self.events[f"sig_score_{model_name}"] = probs[:, 1]
-            self.events[f"ttbb_score_{model_name}"] = probs[:, 2]
-            self.events[f"ttlf_score_{model_name}"] = probs[:, 3]
+            inputs = {"Jet_data": jet_data, "Jet_mask": jet_mask,
+                      "Met_data": met_data, "Met_mask": mask_global,
+                      "Lepton_data": lep_data, "Lepton_mask": mask_global,
+                      "FatJet_data": fatjet_data, "FatJet_mask": mask_global}
+            if info.get("event_features"):
+                # event-level inputs (../common/event_variables.py), on all AK4 jets as in the training
+                features = info["event_features"]
+                wps = [f[len("n_bjets_"):] for f in features if f.startswith("n_bjets_")]
+                values = event_variables(ev.JetGood, ak.firsts(ev.FatJetSorted), ak.firsts(ev.LeptonGood),
+                                         wps, info.get("count_clean_jets", False))
+                inputs["Event_data"] = np.stack([values[f] for f in features], axis=1)[:, None, :].astype(np.float32)
+                inputs["Event_mask"] = mask_global
+            probs, encoder = _onnx_session(info["path"]).run(["EVENT/signal", "encoder_event_vector"], inputs)
+            if probs.shape[1] != len(SPANET_CLASSES):
+                raise ValueError(f"{model_name}: {probs.shape[1]} SPANet classes, expected {SPANET_CLASSES}")
+            score = {name: probs[:, i] for name, i in SPANET_CLASSES.items()}
+            signal = score["tth"] + score["ttz"]
+            self.events[f"spanet_output_{model_name}"] = ak.zip({"signal": signal / probs.sum(axis=1)})
+            self.events[f"sig_score_{model_name}"] = signal
+            for name, values in score.items():
+                self.events[f"{name}_score_{model_name}"] = values
             for i in range(encoder.shape[1]):
                 self.events[f"encoderFeature{i + 1}_{model_name}"] = encoder[:, i]

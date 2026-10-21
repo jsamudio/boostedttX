@@ -40,6 +40,36 @@ python run_pipeline.py inference -- --executor futures --test   # args after -- 
 ```
 (see below for running the inference as PBS jobs)
 
+## SPANet training inputs
+
+Everything that defines the training inputs is in `spanet_training.py`: samples and subsamples,
+classes (index = SPANet output position, 0..N-1, as in `spanet_models.SPANET_CLASSES`), the training
+category (`SELECTION`), AK4 cleaning, the event-level inputs, gen-matching dR, event weights, the
+exported collections / fields (`EXPORT`) and the SPANet inputs (`SPANET_INPUTS`). After editing it:
+
+```bash
+python3 run_pipeline.py inference --backend pbs --groups spanet --eras 2016_PreVFP 2016_PostVFP 2017 2018
+python3 ../common/make_spanet_configs.py                             # spanet/*.yaml
+cd ../spanet_inputs
+python3 coffea_to_parquet_script.py -c ../Run2/spanet/features_parquet.yaml \
+    -i ../Run2/outputs/nominal/spanet/output_all.coffea -o <dir>/run2.parquet --cat spanet
+python3 parquet_to_h5.py -c ../Run2/spanet/features_h5.yaml -i <dir>/run2_*.parquet -o <dir>/run2.h5
+```
+
+- Workflow `spanet_training_workflow.py`: the analysis objects, the selection variables (all AK4
+  jets, as the analysis), the event-level inputs, then the training category and the gen matching
+  (`../common/parton_matching.py`, shared with Run 3). Partons come from the GenPart ancestry, not the
+  LHE ordering. AK4 jets carry `matched` / `prov`, and the fatjets are matched to the hard-process H/Z.
+- Event-level inputs (`../common/event_variables.py`, SPANet input `Event`): sphericity, aplanarity
+  and centrality over the lepton, the candidate fat jet and the AK4 jets outside it; the number of AK4
+  jets and of b-tagged jets per working point (`COUNT_CLEAN_JETS`: only jets outside the candidate).
+- `make_spanet_configs.py` also writes `spanet/event_info_inputs.yaml` (the INPUTS section of the
+  SPANet event-info file), warns if `SPANET_INPUTS` uses inputs the inference does not feed, and prints
+  the `spanet_models.py` entry for the trained model.
+
+The old training export (`testconf_spanet.py`, `zhbbworkflow_spanet.py`) is kept for comparison;
+the current model `noOverlap_MultiWP` was trained with it.
+
 ## Running on the PBS Pro cluster
 
 Each group / jet variation becomes a PBS job array: pocket-coffea splits the files into jobs

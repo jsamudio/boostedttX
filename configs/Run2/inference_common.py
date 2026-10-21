@@ -21,6 +21,7 @@ Environment overrides (no need to edit any file for these):
                                    JMSJMR        AK8 mass scale/resolution -> JMSUp/Down, JMRUp/Down
 """
 import os
+import sys
 
 import cloudpickle
 from pocket_coffea.utils.configurator import Configurator
@@ -30,22 +31,26 @@ from pocket_coffea.lib.hist_manager import Axis, HistConf
 from pocket_coffea.lib.weights.common.common import common_weights
 from pocket_coffea.parameters import defaults
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))  # configs/common
 import analysis_years
 import custom_cut_functions
 import samples
 import spanet_inference
 import spanet_models
+import spanet_training
 import outvars
 from analysis_years import xbb_wp_cuts, ERAS, jes_run_tags, jes_source, jes_jet_types
 from fatjet_mass_variations import FatJetMassVariations
 from jet_variation_splits import JetsCalibratorSplit
 from custom_cut_functions import (precut, hlt_cut, get_JetVetoMap, event_selection, vetoE, vetoMu,
                                   HEM_veto, btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq,
-                                  trig_event_selection_run2, HLT_PATHS)
+                                  trig_event_selection_run2, HLT_PATHS, get_spanet_selection, get_flag_cut)
 from pocket_coffea.parameters.cuts import passthrough
 from spanet_inference import ZHbbSpanetProcessor
-import os, sys
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))  # configs/common
+import parton_matching
+import event_variables
+import spanet_training_workflow
+from spanet_training_workflow import ZHbbSpanetTrainingProcessor
 from met_calibration import CALIBRATORS as MET_CALIBRATORS   # type-1 PF MET for Run 2 (configs/common/met_calibration.py)
 from pocket_coffea.lib.correction_cache import load_correction_set
 
@@ -53,7 +58,8 @@ from pocket_coffea.lib.correction_cache import load_correction_set
 # JER and pure-flavour JES variations (jet_variation_splits.py); plus the JMS/JMR variations
 CALIBRATORS = [JetsCalibratorSplit if c.name == "jet_calibration" else c for c in MET_CALIBRATORS] + [FatJetMassVariations]
 
-for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models):
+for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models,
+                spanet_training, spanet_training_workflow, parton_matching, event_variables):
     cloudpickle.register_pickle_by_value(_module)
 
 LOCALDIR = os.path.dirname(os.path.abspath(__file__))
@@ -165,6 +171,29 @@ def build_subsamples():
     return subsamples
 
 
+def build_spanet_subsamples():
+    subsamples = {}
+    for sample, opts in spanet_training.SAMPLES.items():
+        subs = opts.get("subsamples")
+        if subs == "ttbar":
+            subsamples[sample] = {name: [get_genTtbarId_100_eq(ids)] for name, ids in samples.TTBAR_SPLIT.items()}
+        elif subs:
+            subsamples[sample] = {name: [get_flag_cut(flag)] for name, flag in subs.items()}
+    return subsamples
+
+
+def build_spanet_columns(category):
+    """Columns of the SPANet training inputs (spanet_training.EXPORT), MC only."""
+    cols = []
+    for collection, spec in spanet_training.EXPORT.items():
+        fields = spanet_training.exported_fields(collection)
+        if spec.get("max") == 1:
+            cols.append(ColOut(collection, fields, pos_end=1, store_size=False))
+        else:
+            cols.append(ColOut(collection, fields, pos_end=spec.get("max")))
+    return {"common": {"inclusive": [], "bycategory": {category: cols}}, "bysample": {}}
+
+
 def build_columns(sample_list, is_data):
     models = spanet_models.ACTIVE_MODELS
     spanet_vars = [c for m in models for c in spanet_models.score_columns(m) + spanet_models.encoder_columns(m)]
@@ -226,12 +255,27 @@ def build_config(group, eras=None, sample_list=None):
     parameters, shape_calibrators = load_parameters(eras)
 
     # HEM_veto only acts on 2018 (MC: the HEM-affected lumi fraction, data: run >= 319077)
+    workflow = ZHbbSpanetProcessor
+    weights = ["genWeight"]
+    subsamples = build_subsamples()
     if selection == "trigeff":
         # ttbar e-mu, no trigger requirement (TrigEff.ipynb applies the reference / target triggers)
         skim = [eventFlags, goldenJson, precut]
         preselections = [get_JetVetoMap(), trig_event_selection_run2, vetoE, vetoMu, HEM_veto]
         categories = {"btag_mask": [passthrough]}
         columns = build_trigeff_columns(sample_list)
+    elif selection == "spanet":
+        # analysis preselection + the training category of spanet_training.SELECTION
+        spanet_training.validate()
+        if is_data or any(s in samples.DATA_SAMPLES for s in sample_list):
+            raise ValueError("The SPANet training inputs need gen information, not data")
+        skim = [eventFlags, goldenJson, precut, hlt_cut]
+        preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu, HEM_veto]
+        categories = {spanet_training.CATEGORY: [get_spanet_selection(spanet_training.SELECTION)]}
+        columns = build_spanet_columns(spanet_training.CATEGORY)
+        workflow = ZHbbSpanetTrainingProcessor
+        weights = list(spanet_training.WEIGHTS)
+        subsamples = build_spanet_subsamples()
     else:
         skim = [eventFlags, goldenJson, precut, hlt_cut]
         preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu, HEM_veto]
@@ -252,6 +296,16 @@ def build_config(group, eras=None, sample_list=None):
         "trigger_reference_muon": opts.get("reference_muon", False),
         "hlt_columns": TRIGEFF_HLT_COLUMNS if selection == "trigeff" else [],
     }
+    if selection == "spanet":
+        workflow_options.update({
+            "clean_jets": spanet_training.CLEAN_JETS,
+            "matching": dict(spanet_training.MATCHING),
+            "extra_b_samples": [s for s, o in spanet_training.SAMPLES.items() if o.get("extra_b_as_boson")],
+            # plain dicts (the workflow options are saved as JSON); the workflow builds the Cut
+            "spanet_selection": dict(spanet_training.SELECTION),
+            "event_features": {"btag_wps": list(spanet_training.BTAG_COUNT_WPS),
+                               "count_clean": spanet_training.COUNT_CLEAN_JETS},
+        })
     if opts.get("dump_dir"):
         workflow_options["dump_columns_as_arrays_per_chunk"] = opts["dump_dir"].format(era="_".join(eras))
 
@@ -264,9 +318,9 @@ def build_config(group, eras=None, sample_list=None):
                 "samples_exclude": [],
                 "year": eras,
             },
-            "subsamples": build_subsamples(),
+            "subsamples": subsamples,
         },
-        workflow=ZHbbSpanetProcessor,
+        workflow=workflow,
         calibrators=CALIBRATORS,
         workflow_options=workflow_options,
         # MET filters (params/event_flags.yaml) and golden JSON (data) are standard pocket-coffea skim cuts
@@ -274,7 +328,7 @@ def build_config(group, eras=None, sample_list=None):
         preselections=preselections,
         categories=categories,
         weights_classes=common_weights,
-        weights={"common": {"inclusive": ["genWeight"]}},
+        weights={"common": {"inclusive": weights}},
         variations={
             "weights": {"common": {"inclusive": []}},
             "shape": {"common": {"inclusive": shape_calibrators}},

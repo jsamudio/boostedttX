@@ -41,24 +41,29 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
 ## SPANet training inputs
 
 Everything that defines the training inputs is in `spanet_training.py`: samples and subsamples,
-classes, the training category (`SELECTION`), AK4 cleaning, gen-matching dR, event weights, the
+classes (index = SPANet output position, 0..N-1, as in `spanet_models.SPANET_CLASSES`), the training
+category (`SELECTION`), AK4 cleaning, the event-level inputs, gen-matching dR, event weights, the
 exported collections / fields (`EXPORT`) and the SPANet inputs (`SPANET_INPUTS`). After editing it:
 
 ```bash
 python3 run_pipeline.py inference --backend pbs --groups spanet     # ntuples: outputs/nominal/spanet
-python3 make_spanet_configs.py                                       # spanet/features_{parquet,h5}.yaml
+python3 ../common/make_spanet_configs.py                             # spanet/*.yaml
 cd ../spanet_inputs
 python3 coffea_to_parquet_script.py -c ../Run3/spanet/features_parquet.yaml \
     -i ../Run3/outputs/nominal/spanet/output_all.coffea -o <dir>/run3.parquet --cat spanet
 python3 parquet_to_h5.py -c ../Run3/spanet/features_h5.yaml -i <dir>/run3_*.parquet -o <dir>/run3.h5
 ```
 
-- Workflow `spanet_training_workflow.py`: the analysis objects, then the training category and the gen
-  matching (`parton_matching.py`). Partons come from the GenPart ancestry, not the LHE ordering, with
-  the Run 2 provenance codes. AK4 jets carry `matched` / `prov`, and the fatjets are matched to the
-  hard-process H/Z.
-- `make_spanet_configs.py` warns if `SPANET_INPUTS` uses inputs the inference does not feed
-  (`spanet_inference.onnx_inference`), and prints the `spanet_models.py` entry for the trained model.
+- Workflow `spanet_training_workflow.py`: the analysis objects, the selection variables (all AK4
+  jets, as the analysis), the event-level inputs, then the training category and the gen matching
+  (`../common/parton_matching.py`, shared with Run 2). Partons come from the GenPart ancestry, not the
+  LHE ordering. AK4 jets carry `matched` / `prov`, and the fatjets are matched to the hard-process H/Z.
+- Event-level inputs (`../common/event_variables.py`, SPANet input `Event`): sphericity, aplanarity
+  and centrality over the lepton, the candidate fat jet and the AK4 jets outside it; the number of AK4
+  jets and of b-tagged jets per working point (`COUNT_CLEAN_JETS`: only jets outside the candidate).
+- `make_spanet_configs.py` also writes `spanet/event_info_inputs.yaml` (the INPUTS section of the
+  SPANet event-info file), warns if `SPANET_INPUTS` uses inputs the inference does not feed, and prints
+  the `spanet_models.py` entry for the trained model.
 
 ## Running
 

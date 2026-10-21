@@ -12,6 +12,8 @@ Pure Python (no coffea / pocket-coffea imports) so that the post-processing scri
     PICKLE_BACKGROUND - which (sub)samples outputToPkl.py exports to the analysis pickles
 """
 
+import spanet_training
+
 # ---------------------------------------------------------------- dataset definition files
 DATASET_JSONS = [
     "ttHTobb", "ttHToNonbb",
@@ -37,7 +39,8 @@ TRIGEFF_MC_SAMPLES = ["TTToSemiLeptonic", "TTTo2L2Nu", "TTbb_SemiLeptonic", "TTb
 #   samples   - samples to process
 #   is_data   - no MC weights / gen information in the output columns
 #   dump_dir  - pocket-coffea 'dump_columns_as_arrays_per_chunk' directory (None = keep in .coffea)
-#   selection - "analysis" (default) or "trigeff" (trigger efficiencies, see inference_common.py)
+#   selection - "analysis" (default), "trigeff" (trigger efficiencies, see inference_common.py) or
+#               "spanet" (SPANet training inputs, samples and options in spanet_training.py)
 #   reference_muon - trigeff only: True = muons pass the MUO trigger-SF denominator selection
 #                    (tight ID + PFIsoTight, lep_selTrig_Mu) instead of the analysis muon selection
 GROUPS = {
@@ -47,6 +50,7 @@ GROUPS = {
     "EFT":    {"samples": EFT_SAMPLES,
                "dump_dir": "/cms/data/store/user/jsamudio/eftchunks/{era}/"},
     "data":   {"samples": DATA_SAMPLES, "is_data": True},
+    "spanet": {"samples": spanet_training.sample_names(), "selection": "spanet"},
     # Pass 1, electron trigger efficiency: muon trigger = reference -> SingleMuon data, reference muon
     "trigeff_ele": {"samples": TRIGEFF_MC_SAMPLES + ["DATA_Muon"], "selection": "trigeff",
                     "reference_muon": True},

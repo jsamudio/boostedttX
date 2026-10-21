@@ -18,6 +18,7 @@ recomputed from RawPuppiMET with the recommended JECs, data and MC), UParT AK4 b
 XbbVsQCD for the fatjets and the GloParT 2-prong regressed fatjet mass.
 """
 import os
+import sys
 
 import cloudpickle
 from pocket_coffea.utils.configurator import Configurator
@@ -28,9 +29,11 @@ from pocket_coffea.lib.weights.common.common import common_weights
 from pocket_coffea.parameters import defaults
 from pocket_coffea.parameters.cuts import passthrough
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))  # configs/common
 import analysis_years
 import custom_cut_functions
 import samples
+import event_variables
 import spanet_inference
 import spanet_models
 import spanet_training
@@ -46,7 +49,7 @@ from spanet_training_workflow import ZHbbRun3TrainingProcessor
 from xbb_wp_workflow import ZHbbRun3XbbWPProcessor
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models,
-                spanet_training, spanet_training_workflow, parton_matching, xbb_wp_workflow):
+                spanet_training, spanet_training_workflow, parton_matching, event_variables, xbb_wp_workflow):
     cloudpickle.register_pickle_by_value(_module)
 
 LOCALDIR = os.path.dirname(os.path.abspath(__file__))
@@ -280,6 +283,8 @@ def build_config(group, eras=None, sample_list=None):
             "extra_b_samples": [s for s, o in spanet_training.SAMPLES.items() if o.get("extra_b_as_boson")],
             # plain dict (the workflow options are saved as JSON); the workflow builds the Cut
             "spanet_selection": dict(spanet_training.SELECTION),
+            "event_features": {"btag_wps": list(spanet_training.BTAG_COUNT_WPS),
+                               "count_clean": spanet_training.COUNT_CLEAN_JETS},
         })
     if opts.get("dump_dir"):
         workflow_options["dump_columns_as_arrays_per_chunk"] = opts["dump_dir"].format(era="_".join(eras))

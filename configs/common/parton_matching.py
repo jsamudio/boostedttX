@@ -1,5 +1,5 @@
 """
-Gen matching for the SPANet training inputs (Run 3).
+Gen matching for the SPANet training inputs (Run 2 and Run 3).
 
 The partons are the hard-process quarks / gluons of GenPart and their provenance comes from the
 ancestry (distinctParent), so it does not depend on the LHE record of the generator: the Run 2

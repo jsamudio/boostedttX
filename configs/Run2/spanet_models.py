@@ -11,7 +11,11 @@ Model options:
   jet_features    - AK4 inputs, subset of pt, eta, sin_phi, cos_phi, btagB
   fatjet_features - AK8 inputs, subset of pt, eta, sin_phi, cos_phi, bbtag, xbb_wp_L, xbb_wp_M, xbb_wp_T
   clean_jets      - True if the model was trained on AK4 jets with dR > 0.8 from the
-                    leading (highest Xbb) AK8 jet, as done in zhbbworkflow_spanet.py
+                    leading (highest Xbb) AK8 jet (spanet_training.CLEAN_JETS)
+  event_features  - optional event-level inputs (SPANet input "Event"), subset in order of
+                    sphericity, aplanarity, centrality, n_jets, n_bjets_<WP> (../common/event_variables.py)
+  count_clean_jets - event_features: count only AK4 jets outside the candidate (spanet_training.COUNT_CLEAN_JETS)
+The entry for a newly trained model is printed by ../common/make_spanet_configs.py.
 """
 
 SPANET_DIR = "/cms/data/jsamudio/boosted/boostedttX/configs/SPANet"
