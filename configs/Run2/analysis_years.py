@@ -80,13 +80,13 @@ def bbvl_wp(era):
 PICKLE_DIR = 'pickled/Nominal{year}'
 
 # ---------------------------------------------------------------- luminosity uncertainties
-# Run 2 UL correlation scheme, per era. Verify against the current LUMI POG recommendation.
+# LUM POG recommendation for 2016+2017+2018, "3 parameter" scheme (new recommendation), per era.
+# Each nuisance is correlated across the years it has an entry for; a single-year card gets only the
+# nuisances whose name contains that year (e.g. 2018: lumi_13TeV_15161718).
 LUMI_UNCERTAINTIES_ERA = {
-    'lumi_13TeV_2016':       {'2016_PreVFP': 1.010, '2016_PostVFP': 1.010},
-    'lumi_13TeV_2017':       {'2017': 1.020},
-    'lumi_13TeV_2018':       {'2018': 1.015},
-    'lumi_13TeV_correlated': {'2016_PreVFP': 1.006, '2016_PostVFP': 1.006, '2017': 1.009, '2018': 1.020},
-    'lumi_13TeV_1718':       {'2017': 1.006, '2018': 1.002},
+    'lumi_13TeV_1516':     {'2016_PreVFP': 1.0118, '2016_PostVFP': 1.0118},
+    'lumi_13TeV_151617':   {'2016_PreVFP': 1.0004, '2016_PostVFP': 1.0004, '2017': 1.0055},
+    'lumi_13TeV_15161718': {'2016_PreVFP': 1.0035, '2016_PostVFP': 1.0035, '2017': 1.0061, '2018': 1.0084},
 }
 
 
