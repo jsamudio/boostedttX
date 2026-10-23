@@ -17,6 +17,7 @@ from custom_scale_factors import sf_jet_puId_era, set_fatjet_mass, sf_mu, sf_par
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
 from theory_norms import fill_theory_sums
+from eft_genbb import fill_eft_genbb
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
 
@@ -109,6 +110,8 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         # make_process_norms.py). Runs before the skim, so no event selection is applied.
         if self._isMC:
             fill_theory_sums(self.events, self.output, self._sample, self._dataset)
+            # EFT samples: EFT-coefficient sums of the gen bb pT spectrum (eft_genbb.py, plot_eft_pt.py)
+            fill_eft_genbb(self.events, self.output, self._dataset)
 
     # ------------------------------------------------------------------ objects
     # (MET filters and the golden JSON are standard skim cuts in the config: eventFlags, goldenJson)
