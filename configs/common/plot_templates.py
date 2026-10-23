@@ -130,7 +130,7 @@ def nn_bins(edges_file, year, channel, n_bins):
 # ---------------------------------------------------------------- plot
 def plot(templates, out, edges_file, year, lumi, stat_only, com):
     plt.style.use(hep.style.CMS)
-    fig, (ax, rax) = plt.subplots(2, 1, figsize=(18, 9), gridspec_kw={"height_ratios": [4, 1]}, sharex=True)
+    fig, (ax, rax) = plt.subplots(2, 1, figsize=(21, 9), gridspec_kw={"height_ratios": [4, 1]}, sharex=True)
     channels = list(templates)
     present = [g for g, *_ in GROUPS if any(g in templates[ch]["groups"] for ch in channels)]
     others = any("other" in templates[ch]["groups"] for ch in channels)
@@ -174,22 +174,24 @@ def plot(templates, out, edges_file, year, lumi, stat_only, com):
     rax.set_xlabel("Analysis bins")
 
     ax.set_yscale("log")
-    ymax = np.max(total) if np.any(total > 0) else 1
-    ax.set_ylim(max(1e-2, 1e-3 * ymax), 1e3 * ymax)
+    ymax = np.max(total + unc) if np.any(total > 0) else 1
+    ylow, ytop = max(1e-2, 1e-3 * ymax), 1e4 * ymax
+    ax.set_ylim(ylow, ytop)
     ax.set_ylabel("Events / bin")
-    for a in (ax, rax):
-        for b in boundaries[1:-1]:
-            a.axvline(b, color="black", lw=1.5)
-        for b in nn_lines:
-            a.axvline(b, color="black", lw=0.8, ls="--")
+    line_top = 3 * ymax                       # separators end here; the header above stays clean
+    ax.vlines(boundaries[1:-1], ylow, ytop, color="black", lw=1.5)
+    ax.vlines(nn_lines, ylow, line_top, color="black", lw=0.8, ls="--")
+    for b in boundaries[1:-1]:
+        rax.axvline(b, color="black", lw=1.5)
+    for b in nn_lines:
+        rax.axvline(b, color="black", lw=0.8, ls="--")
     for start, stop, ch, n_nn, n_mass in labels:
-        ax.text(0.5 * (start + stop), 3e2 * ymax, CHANNEL_LABELS.get(ch, ch), ha="center", fontsize="x-small")
-        if start == 0:
-            ax.text(start + 0.3, 30 * ymax, r"NN$_{bin}$", fontsize="x-small")
-            for k in range(n_nn):
-                ax.text(start + (k + 0.5) * n_mass, 8 * ymax, str(k + 1), ha="center", fontsize="x-small")
+        ax.text(0.5 * (start + stop), 6e2 * ymax, CHANNEL_LABELS.get(ch, ch), ha="center", fontsize="x-small")
+        for k in range(n_nn):                 # SPANet bin numbers, in every channel, above the lines
+            ax.text(start + (k + 0.5) * n_mass, 6 * ymax, str(k + 1), ha="center", fontsize="xx-small")
+    ax.text(0.3, 4e1 * ymax, "SPANet bin", fontsize="xx-small")
     ax.set_xlim(0, len(total))
-    ax.legend(ncol=3, fontsize="x-small", loc="upper right", bbox_to_anchor=(1.0, 0.86))
+    ax.legend(ncol=1, fontsize="x-small", loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False)
     hep.cms.label("Preliminary", data=False, lumi=lumi, com=com, ax=ax)
 
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
