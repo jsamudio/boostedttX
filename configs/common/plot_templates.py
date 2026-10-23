@@ -6,8 +6,11 @@ uncertainty band. One figure per datacard (year). Works for any datacard written
 makeDatacard.py (Run 2, and Run 3 once it has datacards in the same format).
 
     cd configs/Run2
-    python3 ../common/plot_templates.py datacards/datacard_nominal_disc_<model>_2018.txt \\
-        --edges nn_edges_disc_<model>.json --year 2018 --lumi 59.8 -o plots/templates
+    python3 ../common/plot_templates.py datacards/datacard_nominal_disc_<model>_{2016,2017,2018}.txt \\
+        --edges nn_edges_disc_<model>.json -o plots/templates
+
+The luminosity label is taken per card from analysis_years.py of the directory the script is run
+from (the year in the card name); --lumi overrides it.
 
 The uncertainty band per bin is the quadratic sum of
   * the MC statistical uncertainty (sum of the template variances),
@@ -20,6 +23,7 @@ import argparse
 import json
 import os
 import re
+import sys
 
 import matplotlib
 matplotlib.use("Agg")
@@ -201,12 +205,25 @@ def plot(templates, out, edges_file, year, lumi, stat_only, com):
     print(f"Saved {out}")
 
 
+def default_lumi(year):
+    """Luminosity of a year from the analysis_years.py of the directory the script is run from
+    (sum of its eras, e.g. 2016 = PreVFP + PostVFP); None if not available."""
+    sys.path.insert(0, os.getcwd())
+    try:
+        from analysis_years import LUMI_FB, ERA_TO_YEAR
+    except ImportError:
+        return None
+    total = sum(l for era, l in LUMI_FB.items() if ERA_TO_YEAR.get(era) == year)
+    return round(total, 1) if total else None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cards", nargs="+", help="datacard .txt file(s), one figure each")
     ap.add_argument("--edges", default=None, help="nn_edges_disc_<model>.json (number of SPANet bins)")
     ap.add_argument("--year", default=None, help="year key in the edges file (default: from the card name)")
-    ap.add_argument("--lumi", type=float, default=None, help="luminosity label [fb^-1]")
+    ap.add_argument("--lumi", type=float, default=None,
+                    help="luminosity label [fb^-1] (default: the card's year from analysis_years.py)")
     ap.add_argument("--com", type=float, default=13, help="centre-of-mass energy label [TeV]")
     ap.add_argument("--stat-only", action="store_true", help="band = MC statistical uncertainty only")
     ap.add_argument("-o", "--outdir", default="plots/templates")
@@ -214,7 +231,8 @@ def main():
     for card in args.cards:
         year = args.year or (re.findall(r"(20\d\d)", os.path.basename(card)) or [None])[-1]
         out = os.path.join(args.outdir, os.path.splitext(os.path.basename(card))[0] + ".pdf")
-        plot(load(card), out, args.edges, year, args.lumi, args.stat_only, args.com)
+        lumi = args.lumi if args.lumi is not None else default_lumi(year)
+        plot(load(card), out, args.edges, year, lumi, args.stat_only, args.com)
 
 
 if __name__ == "__main__":
