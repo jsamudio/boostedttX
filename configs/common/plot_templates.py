@@ -8,6 +8,12 @@ makeDatacard.py (Run 2, and Run 3 once it has datacards in the same format).
     cd configs/Run2
     python3 ../common/plot_templates.py datacards/datacard_nominal_disc_<model>_{2016,2017,2018}.txt \\
         --edges nn_edges_disc_<model>.json -o plots/templates
+    python3 ../common/plot_templates.py datacards/datacard_nominal_disc_<model>_{2016,2017,2018}.txt \\
+        --edges nn_edges_disc_<model>.json --sum -o plots/templates      # Run 2 summed
+
+--sum adds the cards bin by bin per channel (same SPANet x mass layout in every year; with per-year
+SPANet binning bin k is the same signal-quantile bin in each year). Nuisances with the same name
+(correlated across years) add linearly, per-year ones in quadrature; the luminosity is summed.
 
 The luminosity label is taken per card from analysis_years.py of the directory the script is run
 from (the year in the card name); --lumi overrides it.
@@ -84,7 +90,8 @@ def lnn(value):
 
 # ---------------------------------------------------------------- templates
 def load(card):
-    """{channel: {"groups": {group: sumw}, "stat2": array, "shifts": [array per nuisance]}}."""
+    """{channel: {"groups": {group: sumw}, "stat2": array, "shifts": {nuisance: (up, down)}}}, the
+    signed shifts of the total yield per nuisance (summed over processes)."""
     columns, nuisances, shapes_file = parse_card(card)
     f = uproot.open(shapes_file)
     channels = list(dict.fromkeys(ch for ch, _ in columns))
@@ -101,7 +108,7 @@ def load(card):
             stat2 = var if stat2 is None else stat2 + var
             group = next((g for g, pattern, _, _ in GROUPS if re.match(pattern, proc)), "other")
             groups[group] = groups.get(group, 0) + nominal[proc]
-        shifts = []
+        shifts = {}
         for name, kind, values in nuisances:
             up = np.zeros_like(stat2)
             down = np.zeros_like(stat2)
@@ -117,8 +124,29 @@ def load(card):
                     if f"{key}Up" in f and f"{key}Down" in f:
                         up += f[f"{key}Up"].values() - nominal[proc]
                         down += f[f"{key}Down"].values() - nominal[proc]
-            shifts.append(0.5 * (np.abs(up) + np.abs(down)))
+            shifts[name] = (up, down)
         out[ch] = {"groups": groups, "stat2": stat2, "shifts": shifts}
+    return out
+
+
+def sum_templates(per_card):
+    """Sum the templates of several cards (years) bin by bin per channel. Nuisances with the same name
+    (correlated across years) add linearly; differently named ones stay separate (added in quadrature)."""
+    out = {}
+    for templates in per_card:
+        for ch, t in templates.items():
+            if ch not in out:
+                out[ch] = {"groups": dict(t["groups"]), "stat2": t["stat2"].copy(), "shifts": dict(t["shifts"])}
+                continue
+            o = out[ch]
+            if len(o["stat2"]) != len(t["stat2"]):
+                raise SystemExit(f"{ch}: different number of bins in the cards, they cannot be summed")
+            for g, v in t["groups"].items():
+                o["groups"][g] = o["groups"].get(g, 0) + v
+            o["stat2"] = o["stat2"] + t["stat2"]
+            for name, (up, down) in t["shifts"].items():
+                old_up, old_down = o["shifts"].get(name, (0, 0))
+                o["shifts"][name] = (old_up + up, old_down + down)
     return out
 
 
@@ -148,7 +176,8 @@ def plot(templates, out, edges_file, year, lumi, stat_only, com):
         for g in stacks:
             stacks[g].append(t["groups"].get(g, np.zeros(n)))
         tot = sum(t["groups"].values())
-        var = t["stat2"] + (0 if stat_only else sum(s ** 2 for s in t["shifts"]))
+        syst2 = sum((0.5 * (np.abs(up) + np.abs(down))) ** 2 for up, down in t["shifts"].values())
+        var = t["stat2"] + (0 if stat_only else syst2)
         total.append(tot)
         unc.append(np.sqrt(var))
         n_nn = nn_bins(edges_file, year, ch, n)
@@ -219,7 +248,9 @@ def default_lumi(year):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cards", nargs="+", help="datacard .txt file(s), one figure each")
+    ap.add_argument("cards", nargs="+", help="datacard .txt file(s), one figure each (or one summed figure with --sum)")
+    ap.add_argument("--sum", action="store_true",
+                    help="sum the cards (e.g. the three Run 2 years) bin by bin into one figure")
     ap.add_argument("--edges", default=None, help="nn_edges_disc_<model>.json (number of SPANet bins)")
     ap.add_argument("--year", default=None, help="year key in the edges file (default: from the card name)")
     ap.add_argument("--lumi", type=float, default=None,
@@ -228,6 +259,17 @@ def main():
     ap.add_argument("--stat-only", action="store_true", help="band = MC statistical uncertainty only")
     ap.add_argument("-o", "--outdir", default="plots/templates")
     args = ap.parse_args()
+    if args.sum:
+        years = [(re.findall(r"(20\d\d)", os.path.basename(c)) or [None])[-1] for c in args.cards]
+        stem = re.sub(r"_?20\d\d", "", os.path.splitext(os.path.basename(args.cards[0]))[0]) + "_sum"
+        out = os.path.join(args.outdir, stem + ".pdf")
+        lumi = args.lumi
+        if lumi is None and all(years):
+            lumis = [default_lumi(y) for y in years]
+            lumi = round(sum(lumis), 1) if all(l is not None for l in lumis) else None
+        plot(sum_templates([load(c) for c in args.cards]), out, args.edges, args.year or years[0], lumi,
+             args.stat_only, args.com)
+        return
     for card in args.cards:
         year = args.year or (re.findall(r"(20\d\d)", os.path.basename(card)) or [None])[-1]
         out = os.path.join(args.outdir, os.path.splitext(os.path.basename(card))[0] + ".pdf")
