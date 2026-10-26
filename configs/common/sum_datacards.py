@@ -49,6 +49,10 @@ def parse_card(path):
             "groups": OrderedDict(), "dir": os.path.dirname(os.path.abspath(path))}
     lines = [l.split("#")[0].rstrip() for l in open(path)]
     lines = [l for l in lines if l.strip() and not set(l.strip()) <= {"-"}]
+    start = next((i for i, l in enumerate(lines) if l.split()[0] == "imax"), None)
+    if start is None:
+        raise SystemExit(f"{path}: no imax line")
+    lines = lines[start:]           # free-text header (e.g. "Datacard for 2016") is ignored
     for i, line in enumerate(lines):
         tok = line.split()
         key = tok[0]
