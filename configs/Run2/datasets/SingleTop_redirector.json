@@ -5,7 +5,7 @@
             "sample": "SingleTop",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "11.4",
+            "xsec": "39.65",
             "nevents": "2491000",
             "size": "4849808718"
         },
@@ -42,7 +42,7 @@
             "sample": "SingleTop",
             "year": "2017",
             "isMC": "True",
-            "xsec": "11.4",
+            "xsec": "39.65",
             "nevents": "5649000",
             "size": "11417425055"
         },
@@ -98,7 +98,7 @@
             "sample": "SingleTop",
             "year": "2018",
             "isMC": "True",
-            "xsec": "11.4",
+            "xsec": "39.65",
             "nevents": "7956000",
             "size": "15685057180"
         },
@@ -163,7 +163,7 @@
             "sample": "SingleTop",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "11.4",
+            "xsec": "39.65",
             "nevents": "2300000",
             "size": "4452131643"
         },
@@ -181,7 +181,7 @@
             "sample": "SingleTop",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "11.5",
+            "xsec": "39.65",
             "nevents": "2554000",
             "size": "4970623035"
         },
@@ -217,7 +217,7 @@
             "sample": "SingleTop",
             "year": "2017",
             "isMC": "True",
-            "xsec": "11.5",
+            "xsec": "39.65",
             "nevents": "5674000",
             "size": "11483037509"
         },
@@ -278,7 +278,7 @@
             "sample": "SingleTop",
             "year": "2018",
             "isMC": "True",
-            "xsec": "11.5",
+            "xsec": "39.65",
             "nevents": "7749000",
             "size": "15186318776"
         },
@@ -314,7 +314,7 @@
             "sample": "SingleTop",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "11.5",
+            "xsec": "39.65",
             "nevents": "2300000",
             "size": "4452671720"
         },
@@ -331,7 +331,7 @@
             "sample": "SingleTop",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "22.6",
+            "xsec": "3.608",
             "nevents": "5471000",
             "size": "8679047980"
         },
@@ -363,7 +363,7 @@
             "sample": "SingleTop",
             "year": "2017",
             "isMC": "True",
-            "xsec": "22.6",
+            "xsec": "3.608",
             "nevents": "13620000",
             "size": "22561990396"
         },
@@ -392,7 +392,7 @@
             "sample": "SingleTop",
             "year": "2018",
             "isMC": "True",
-            "xsec": "22.6",
+            "xsec": "3.608",
             "nevents": "19365999",
             "size": "31359845271"
         },
@@ -424,7 +424,7 @@
             "sample": "SingleTop",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "22.6",
+            "xsec": "3.608",
             "nevents": "5518000",
             "size": "8792611031"
         },
@@ -449,7 +449,7 @@
             "sample": "SingleTop",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "224.8",
+            "xsec": "134.2",
             "nevents": "63073000",
             "size": "104561850145"
         },
@@ -548,7 +548,7 @@
             "sample": "SingleTop",
             "year": "2017",
             "isMC": "True",
-            "xsec": "224.8",
+            "xsec": "134.2",
             "nevents": "129903000",
             "size": "224757312185"
         },
@@ -758,7 +758,7 @@
             "sample": "SingleTop",
             "year": "2018",
             "isMC": "True",
-            "xsec": "224.8",
+            "xsec": "134.2",
             "nevents": "178336000",
             "size": "301233146161"
         },
@@ -920,7 +920,7 @@
             "sample": "SingleTop",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "224.8",
+            "xsec": "134.2",
             "nevents": "55961000",
             "size": "93368367665"
         },
@@ -982,7 +982,7 @@
             "sample": "SingleTop",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "120.9",
+            "xsec": "80.0",
             "nevents": "30609000",
             "size": "50855485124"
         },
@@ -1030,7 +1030,7 @@
             "sample": "SingleTop",
             "year": "2017",
             "isMC": "True",
-            "xsec": "120.9",
+            "xsec": "80.0",
             "nevents": "69793000",
             "size": "120886632668"
         },
@@ -1103,7 +1103,7 @@
             "sample": "SingleTop",
             "year": "2018",
             "isMC": "True",
-            "xsec": "120.9",
+            "xsec": "80.0",
             "nevents": "95627000",
             "size": "162127100330"
         },
@@ -1246,7 +1246,7 @@
             "sample": "SingleTop",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "120.9",
+            "xsec": "80.0",
             "nevents": "31024000",
             "size": "51961989832"
         },
