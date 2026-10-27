@@ -1202,7 +1202,7 @@
             "sample": "SingleTop",
             "year": "2024",
             "isMC": "True",
-            "xsec": "2.278",
+            "xsec": "2.360",
             "nevents": "12999000",
             "size": "29919369222"
         },
@@ -1309,7 +1309,7 @@
             "sample": "SingleTop",
             "year": "2024",
             "isMC": "True",
-            "xsec": "1.43",
+            "xsec": "1.477",
             "nevents": "7980999",
             "size": "18352019375"
         },
