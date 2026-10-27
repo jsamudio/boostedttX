@@ -28,7 +28,8 @@ import awkward as ak
 import numpy as np
 
 from pocket_coffea.lib.calibrators.calibrator import Calibrator
-from pocket_coffea.lib.calibrators.common.common import JetsCalibrator, ElectronsScaleCalibrator, MuonsCalibrator
+from pocket_coffea.lib.calibrators.common.common import JetsCalibrator, ElectronsScaleCalibrator
+from pocket_coffea.lib.calibrators.legacy.legacy_calibrators import MuonsRochesterCalibrator
 from pocket_coffea.lib.correction_cache import load_correction_set
 from pocket_coffea.lib.jets import get_rho
 from pocket_coffea.utils.utils import get_nano_version
@@ -110,5 +111,6 @@ class METType1Calibrator(Calibrator):
         return {"MET.pt": np.hypot(mx, my), "MET.phi": np.arctan2(my, mx)}
 
 
-# Default pocket-coffea sequence with the Run 2 type-1 MET recomputation in place of METCalibrator
-CALIBRATORS = [JetsCalibrator, ElectronsScaleCalibrator, MuonsCalibrator, METType1Calibrator]
+# Default pocket-coffea sequence with the Run 2 type-1 MET recomputation in place of METCalibrator,
+# and the Rochester corrections (UL) in place of the Run 3 muon scale/resolution, which is off for Run 2
+CALIBRATORS = [JetsCalibrator, ElectronsScaleCalibrator, MuonsRochesterCalibrator, METType1Calibrator]

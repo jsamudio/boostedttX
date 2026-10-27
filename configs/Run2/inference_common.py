@@ -19,6 +19,7 @@ Environment overrides (no need to edit any file for these):
                                    JER           AK4 in 6 (|eta|, pT) regions -> AK4PFchs_JER_<region>Up/Down,
                                                  AK8 -> AK8PFPuppi_JERUp/Down
                                    JMSJMR        AK8 mass scale/resolution -> JMSUp/Down, JMRUp/Down
+    PC_NO_ROCHESTER=1            muon Rochester corrections off (impact check against the nominal)
 """
 import os
 import sys
@@ -153,6 +154,11 @@ def load_parameters(eras):
         defaults.get_default_parameters(),
         *[f"{LOCALDIR}/params/{name}.yaml" for name in PARAMETER_FILES],
         update=True)
+
+    if os.environ.get("PC_NO_ROCHESTER"):
+        for era in ERAS:
+            parameters.lepton_scale_factors.muon_sf.rochester.apply[era] = False
+        print("--> Rochester corrections off")
 
     variation = os.environ.get("PC_JEC_VARIATION")
     shape_calibrator, jet_variations = shape_variation_settings(parameters, eras, variation)
