@@ -151,3 +151,90 @@ def set_fatjet_mass(fatjets):
     if "mass_jec" not in fatjets.fields:
         fatjets = ak.with_field(fatjets, fatjets.mass, "mass_jec")
     return ak.with_field(fatjets, gloparT_regressed_mass(fatjets), "mass")
+
+
+# ---------------------------------------------------------------- b tagging (fixed WPs)
+# Uncertainty sources of the multi-WP b-tag SFs: column suffix -> (jets varied, BTV systematic).
+# b and c jets (UParTAK4_comb, c = b SF with doubled syst) vary together; light jets (UParTAK4_light)
+# separately. 'correlated' (syst) is correlated between years, 'uncorrelated' (stat) is not.
+BTAG_SF_SOURCES = {
+    "bc_correlated": ("bc", "correlated"),
+    "bc_uncorrelated": ("bc", "uncorrelated"),
+    "light_correlated": ("light", "correlated"),
+    "light_uncorrelated": ("light", "uncorrelated"),
+}
+
+
+def btag_sf_columns():
+    """Output columns of sf_btag_multiwp: btag_sf and btag_sf_<source>_up/down."""
+    return ["btag_sf"] + [f"btag_sf_{src}_{d}" for src in BTAG_SF_SOURCES for d in ("up", "down")]
+
+
+def sf_btag_multiwp(params, jets, year, wps, eff_file, eff_group):
+    """Fixed-WP b-tag SFs, BTV method 1a extended to several working points:
+
+        w = prod_{tagged at the tightest WP} SF_n
+          * prod_{tagged at WP k, not at WP k+1} (SF_k eps_k - SF_k+1 eps_k+1) / (eps_k - eps_k+1)
+          * prod_{not tagged at the loosest WP}   (1 - SF_1 eps_1) / (1 - eps_1)
+
+    over all `jets` (the jets whose b-tag information the analysis uses), with eps the MC
+    efficiencies (eff_file: correction UParTAK4_eff_<eff_group>, from derive_btag_eff.py) and SF
+    from BTV (UParTAK4_comb for b/c, UParTAK4_light for light jets). A factor with a negative
+    numerator (SF_k+1 eps_k+1 > SF_k eps_k, unphysical) is set to 1, as BTV recommends; the same is
+    done for the untagged factor (SF_1 eps_1 > 1) and for a factor with a vanishing denominator.
+
+    wps: working points, loosest first (analysis_years.BTAG_SF_WPS). A jet's tag level is the number of
+    them it passes (btagB > cut), so it agrees with JetGood.btag_<WP> and bJetGood.
+    Returns {column: per-event weight} for btag_sf_columns().
+    """
+    cfg = params.jet_scale_factors.btagSF[year]
+    sf_file, tagger = cfg["file"], cfg["name"]
+    cuts = params.btagging.working_point[year]["btagging_WP"]
+    if any(cuts[a] >= cuts[b] for a, b in zip(wps, wps[1:])):
+        raise ValueError(f"b-tag working points {wps} not ordered loosest first: {dict(cuts)}")
+    sf_bc = _load_correction(sf_file, f"{tagger}_comb")
+    sf_light = _load_correction(sf_file, f"{tagger}_light")
+    eff = _load_correction(eff_file, f"{tagger}_eff_{eff_group}")
+
+    counts = ak.num(jets)
+    flat = ak.flatten(jets)
+    pt = ak.to_numpy(flat.pt).astype(np.float64)
+    abseta = np.abs(ak.to_numpy(flat.eta)).astype(np.float64)
+    flavor = ak.to_numpy(flat.hadronFlavour).astype(int)
+    btag = ak.to_numpy(flat.btagB)
+    level = sum((btag > cuts[wp]).astype(int) for wp in wps)       # 0 = untagged, len(wps) = tightest
+    heavy = flavor > 0
+
+    eps = {wp: np.clip(eff.evaluate(wp, flavor, abseta, pt), 0.0, 1.0) for wp in wps}
+
+    def scale_factors(syst_bc, syst_light):
+        out = {}
+        for wp in wps:
+            sf = np.ones(len(pt))
+            if heavy.any():
+                sf[heavy] = sf_bc.evaluate(syst_bc, wp, flavor[heavy], abseta[heavy], pt[heavy])
+            if (~heavy).any():
+                sf[~heavy] = sf_light.evaluate(syst_light, wp, flavor[~heavy], abseta[~heavy], pt[~heavy])
+            out[wp] = sf
+        return out
+
+    def event_weight(sf):
+        num, den = 1.0 - sf[wps[0]] * eps[wps[0]], 1.0 - eps[wps[0]]
+        factor = np.where((num > 0) & (den > 0), num / np.where(den > 0, den, 1.0), 1.0)
+        factor = np.where(level == 0, factor, 1.0)
+        for k in range(len(wps) - 1):
+            lo, hi = wps[k], wps[k + 1]
+            num = sf[lo] * eps[lo] - sf[hi] * eps[hi]
+            den = eps[lo] - eps[hi]
+            f = np.where((num > 0) & (den > 0), num / np.where(den > 0, den, 1.0), 1.0)
+            factor = np.where(level == k + 1, f, factor)
+        factor = np.where(level == len(wps), sf[wps[-1]], factor)
+        return ak.to_numpy(ak.prod(ak.unflatten(factor, counts), axis=1))
+
+    out = {"btag_sf": event_weight(scale_factors("central", "central"))}
+    for src, (jets_varied, kind) in BTAG_SF_SOURCES.items():
+        for d in ("up", "down"):
+            syst = f"{d}_{kind}"
+            sf = scale_factors(syst, "central") if jets_varied == "bc" else scale_factors("central", syst)
+            out[f"btag_sf_{src}_{d}"] = event_weight(sf)
+    return out

@@ -1,0 +1,7 @@
+# Luminosity override: pocket-coffea's 2024 total is 109950 pb^-1; the analysis uses 109.82 fb^-1
+# (analysis_years.LUMI_FB). Only 'tot' enters the weights (norm_weight, the 'lumi' weight); the
+# per-era values stay pocket-coffea's.
+lumi:
+  picobarns:
+    "2024":
+      tot: 109820

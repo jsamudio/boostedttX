@@ -35,8 +35,13 @@ def find_year(s):
 
 
 # ---------------------------------------------------------------- per-era settings
-# Integrated luminosity in fb^-1 (golden JSON, runs C-I; same as pocket-coffea's lumi.yaml)
-LUMI_FB = {'2024': 109.95}
+# Integrated luminosity in fb^-1 (golden JSON, runs C-I); the weights take it from params/lumi.yaml
+LUMI_FB = {'2024': 109.82}
+
+# AK4 b-tag working points (UParT) whose information the analysis uses: the b-jet counts n_bjets_<WP>
+# (SPANet) and the M requirement of the btag_mask category. The b-tag SFs (multi-WP method 1a,
+# custom_scale_factors.sf_btag_multiwp) and the efficiency maps cover exactly these, loosest first.
+BTAG_SF_WPS = ["L", "M", "T"]
 
 # GloParT XbbVsQCD working points of the ZH candidate. Not defined centrally for Run 3 yet: to be
 # derived from mistag rates (then e.g. {"2024": {"LP": ..., "MP": ..., "HP": ...}}).

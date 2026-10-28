@@ -7,10 +7,10 @@ Same structure as `configs/Run2`, with the Run 3 object definitions. The previou
 
 | | 2024 |
 |---|---|
-| Data / MC | NanoAODv15, Summer24 MC, runs C-I (109.95 fb^-1, golden JSON) |
+| Data / MC | NanoAODv15, Summer24 MC, runs C-I (109.82 fb^-1, golden JSON) |
 | MET | PUPPI MET; pocket-coffea's MET calibrator recomputes the type-1 PUPPI MET from `RawPuppiMET` with the recommended JECs (data and MC) |
 | JECs | pocket-coffea defaults: `Summer24Prompt24_V5`, JER `Summer24Prompt24_JRV2`, reapplied to data and MC (AK4 PUPPI, CorrT1METJet, AK8) |
-| AK4 b tagging | UParTAK4, medium WP from pocket-coffea's btagging parameters (`object_preselection.btag.wp`) |
+| AK4 b tagging | UParTAK4, medium WP from pocket-coffea's btagging parameters (`object_preselection.btag.wp`); fixed-WP SFs over L/M/T (multi-WP method 1a) |
 | AK8 tagger | GloParT XbbVsQCD = Xbb / (Xbb + QCD); the ZH candidate is the leading fatjet in it |
 | Fatjet mass | GloParT 2-prong regressed mass (`globalParT3_massCorrX2p` x raw mass), in data and MC, for the mass window, `ZH_M`, the columns and 4-vectors (`custom_scale_factors.set_fatjet_mass`) |
 | Triggers | Ele30_WPTight_Gsf, Ele115_CaloIdVT_GsfTrkIdT / IsoMu24, Mu50, HighPtTkMu100, CascadeMu100; per primary dataset in data (Muon PD: muon paths; EGamma PD: e/gamma paths and no muon path) |
@@ -28,8 +28,16 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
    2. set `"ele"` to that file, rerun `trigeff`; muon cell -> `muon_trig_sf_2024.json.gz`
    3. set `"mu"` to that file (`inference_common.TRIGGER_SFS`) for the analysis
    Until then `ele_trig_sf` = 1 and `mu_trig_sf` = MUO reference SF.
-2. **b-tag SFs**: no shape SFs for UParT yet, so fixed-WP (method 1a) with our efficiency maps;
-   `btag_sf` = 1 until then.
+2. **b-tag SFs**: fixed-WP SFs (BTV `UParTAK4_comb` for b/c, `UParTAK4_light`), multi-WP method 1a
+   over the WPs whose information the analysis uses (`analysis_years.BTAG_SF_WPS` = L/M/T: the
+   `n_bjets_<WP>` counts and the M requirement), on all `JetGood`, with our MC efficiency maps
+   (`custom_scale_factors.sf_btag_multiwp`; a factor with a negative numerator is set to 1, as BTV
+   recommends). Maps per process group (`samples.BTAG_EFF_GROUPS`):
+   1. `run_pipeline.py inference --groups btageff` (preselection, before the b-tag requirement)
+   2. `python3 derive_btag_eff.py --plots plots/btageff` -> `btag_eff_2024.json.gz`
+   3. set `inference_common.BTAG_SFS["2024"]["eff"]` to that file
+   Columns: `btag_sf` and `btag_sf_{bc,light}_{correlated,uncorrelated}_{up,down}`; `btag_sf` = 1
+   until the maps exist. SPANet also uses the continuous `btagB`, which these SFs do not correct.
 3. **Xbb working points**: no central GloParT WPs, so they come from the mistag rate of light-flavour
    fatjets (no B/C hadrons) in tt+LF events: 10% / 5% / 1% for LP / MP / HP.
    `run_pipeline.py inference --groups xbbwp`, then `python3 derive_xbb_wps.py --plots plots/xbbwp`
@@ -68,7 +76,7 @@ python3 parquet_to_h5.py -c ../Run3/spanet/features_h5.yaml -i <dir>/run3_*.parq
 ## Running
 
 ```bash
-python3 run_pipeline.py inference --backend pbs --groups trigeff
+python3 run_pipeline.py inference --backend pbs --groups trigeff btageff
 python3 run_pipeline.py inference --backend pbs --groups signal bkg minor data
 python3 run_pipeline.py status    --backend pbs --groups trigeff signal bkg minor data
 PC_SAMPLES=ttHTobb python3 run_pipeline.py inference --groups signal -- --executor futures --test

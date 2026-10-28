@@ -26,6 +26,7 @@ sig_vars = ['Zbb', 'Hbb', 'Hnonbb', 'Zqq',
 bkg_vars = ['tt_B']
 
 # Per-event weights (MC). Trigger SFs and b-tag SFs are 1 until they are derived (see README).
+# b-tag: btag_sf and its variations per source (custom_scale_factors.btag_sf_columns, BTAG_SF_SOURCES)
 weight_vars = ['genWeight', 'norm_weight',
                'topptWeight', 'topptWeight_Up', 'topptWeight_Down',
                'ele_reco_sf', 'ele_reco_sfup', 'ele_reco_sfdown',
@@ -34,7 +35,11 @@ weight_vars = ['genWeight', 'norm_weight',
                'mu_id_sf', 'mu_id_sfup', 'mu_id_sfdown',
                'mu_iso_sf', 'mu_iso_sfup', 'mu_iso_sfdown',
                'mu_trig_sf', 'mu_trig_sfup', 'mu_trig_sfdown',
-               'btag_sf', 'btag_sfup', 'btag_sfdown',
+               'btag_sf',
+               'btag_sf_bc_correlated_up', 'btag_sf_bc_correlated_down',
+               'btag_sf_bc_uncorrelated_up', 'btag_sf_bc_uncorrelated_down',
+               'btag_sf_light_correlated_up', 'btag_sf_light_correlated_down',
+               'btag_sf_light_uncorrelated_up', 'btag_sf_light_uncorrelated_down',
                'puWeight', 'puWeight_up', 'puWeight_down',
                'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
                'dctr_hdamp_up', 'dctr_hdamp_down',

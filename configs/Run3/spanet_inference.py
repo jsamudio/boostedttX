@@ -12,11 +12,12 @@ from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
 from weight_handler import calc_weight
 from custom_scale_factors import (set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr,
-                                  sf_scaleweights, sf_ele_trig, sf_mu_trig)
+                                  sf_scaleweights, sf_ele_trig, sf_mu_trig, sf_btag_multiwp, btag_sf_columns)
 from get_controlvars import get_controlvars
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
 from dctr import apply_dctr_hdamp, set_default_dctr_columns
+from samples import btag_eff_group
 
 vector.register_awkward()
 
@@ -71,6 +72,8 @@ class ZHbbRun3Processor(BaseProcessorABC):
       spanet_models       - {name: {path, jet_features, fatjet_features, clean_jets}} (may be empty)
       prefilter_btag_mask - drop events failing btag_mask before stage 2 (analysis selection only)
       dctr_hdamp          - {samples, models: {up, down}}: DCTR hdamp weights (dctr.py); None = off
+      btag_sfs            - {"wps": [loosest .. tightest], "eff": {era: efficiency-map file|None}}:
+                            fixed-WP b-tag SFs (custom_scale_factors.sf_btag_multiwp); no file = 1
     '''
 
     def __init__(self, cfg: Configurator):
@@ -81,6 +84,7 @@ class ZHbbRun3Processor(BaseProcessorABC):
         self.spanet_models = self.workflow_options.get("spanet_models", {})
         self.prefilter_btag_mask = self.workflow_options.get("prefilter_btag_mask", True)
         self.dctr_hdamp = self.workflow_options.get("dctr_hdamp")
+        self.btag_sfs = self.workflow_options.get("btag_sfs") or {}
 
     def process_extra_before_skim(self):
         # DCTR hdamp weights and their sums over all generated events (dctr.py; off unless configured)
@@ -179,8 +183,16 @@ class ZHbbRun3Processor(BaseProcessorABC):
         else:
             ev['mu_trig_sf'] = ev['mu_trig_sfup'] = ev['mu_trig_sfdown'] = _ones(ev)
 
-        # b tagging: fixed-WP SFs (UParT, method 1a) need the b-tag efficiency maps; 1 until then
-        ev['btag_sf'] = ev['btag_sfup'] = ev['btag_sfdown'] = _ones(ev)
+        # b tagging: fixed-WP SFs (UParT, multi-WP method 1a) with our efficiency maps; 1 until they exist
+        eff_file = self.btag_sfs.get("eff", {}).get(self._year)
+        if eff_file:
+            sfs = sf_btag_multiwp(self.params, ev.JetGood, self._year, self.btag_sfs["wps"], eff_file,
+                                  btag_eff_group(self._sample))
+            for name, values in sfs.items():
+                ev[name] = values
+        else:
+            for name in btag_sf_columns():
+                ev[name] = _ones(ev)
 
         ev['puWeight'], ev['puWeight_up'], ev['puWeight_down'] = sf_pileup_reweight(self.params, ev, self._year)
         ev['isr'], ev['isr_up'], ev['isr_down'] = sf_partonshower_isr(ev)

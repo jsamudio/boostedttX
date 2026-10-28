@@ -41,17 +41,20 @@ import spanet_training
 import spanet_training_workflow
 import parton_matching
 import xbb_wp_workflow
+import btag_eff_workflow
 import outvars
 import dctr
-from analysis_years import ERAS
+from analysis_years import ERAS, BTAG_SF_WPS
 from custom_cut_functions import (precut, hlt_cut, hlt_paths, event_selection, trig_event_selection, vetoE, vetoMu,
                                   btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq, get_spanet_selection, get_flag_cut)
 from spanet_inference import ZHbbRun3Processor
 from spanet_training_workflow import ZHbbRun3TrainingProcessor
 from xbb_wp_workflow import ZHbbRun3XbbWPProcessor
+from btag_eff_workflow import ZHbbRun3BtagEffProcessor
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models,
-                spanet_training, spanet_training_workflow, parton_matching, event_variables, xbb_wp_workflow, dctr):
+                spanet_training, spanet_training_workflow, parton_matching, event_variables, xbb_wp_workflow, dctr,
+                btag_eff_workflow):
     cloudpickle.register_pickle_by_value(_module)
 
 LOCALDIR = os.path.dirname(os.path.abspath(__file__))
@@ -68,7 +71,7 @@ DCTR_HDAMP = {
 }
 
 # params/<name>.yaml merged on top of the pocket-coffea defaults (overrides only)
-PARAMETER_FILES = ["object_preselection", "lepton_scale_factors", "jets_calibration"]
+PARAMETER_FILES = ["object_preselection", "lepton_scale_factors", "jets_calibration", "lumi"]
 
 # Jet types whose JES/JER variations are run (AK4CorrT1METJetPuppi follows AK4PFPuppi for the MET)
 VARIED_JET_TYPES = ["AK4PFPuppi", "AK8PFPuppi"]
@@ -81,6 +84,31 @@ VARIED_JET_TYPES = ["AK4PFPuppi", "AK8PFPuppi"]
 #   3. set "mu" to that file for the analysis
 TRIGGER_SFS = {
     "2024": {"ele": None, "mu": "pog"},
+}
+
+# b-tag SFs per era: fixed-WP SFs (BTV UParTAK4_comb / _light, multi-WP method 1a over
+# analysis_years.BTAG_SF_WPS) with our MC efficiency maps (path relative to this directory or
+# absolute); None = btag_sf 1. Derivation:
+#   1. run_pipeline.py inference --groups btageff
+#   2. python3 derive_btag_eff.py -> btag_eff_2024.json.gz; set "eff" to that file
+BTAG_SFS = {
+    "2024": {"eff": None},
+}
+
+# Efficiency-map histogram of the btageff group (AK4 jets of the preselection, btag_eff_workflow.py)
+BTAG_EFF_PT_BINS = [30, 50, 70, 100, 140, 200, 300, 600, 1000]
+BTAG_EFF_ABSETA_BINS = [0.0, 0.6, 1.2, 1.8, 2.4]
+BTAG_EFF_HISTOGRAMS = {
+    "btag_eff": HistConf([
+        Axis(coll="JetGood", field="hadronFlavour", type="intcat", bins=[0, 4, 5], name="flavor",
+             label="Hadron flavour"),
+        Axis(coll="JetGood", field="pt", type="variable", bins=BTAG_EFF_PT_BINS, name="pt",
+             label=r"$p_T$ [GeV]"),
+        Axis(coll="JetGood", field="abseta", type="variable", bins=BTAG_EFF_ABSETA_BINS, name="abseta",
+             label=r"$|\eta|$"),
+        Axis(coll="JetGood", field="btag_level", type="int", start=0, stop=len(BTAG_SF_WPS) + 1,
+             name="level", label=f"b-tag level (0 = untagged, 1..{len(BTAG_SF_WPS)} = {'/'.join(BTAG_SF_WPS)})"),
+    ]),
 }
 
 HISTOGRAMS = {
@@ -102,6 +130,28 @@ def _resolve_trigger_sfs(eras):
                 raise FileNotFoundError(f"Trigger SF file for {flavour} {era} not found: {value}")
             out[era][flavour] = value
     return out
+
+
+def _resolve_btag_sfs(eras):
+    """Workflow option 'btag_sfs': the working points and the efficiency-map file per era."""
+    eff = {}
+    for era in eras:
+        value = BTAG_SFS.get(era, {}).get("eff")
+        if value and not os.path.isabs(value):
+            value = os.path.join(LOCALDIR, value)
+        if value and not os.path.isfile(value):
+            raise FileNotFoundError(f"b-tag efficiency maps for {era} not found: {value}")
+        eff[era] = value
+    return {"wps": list(BTAG_SF_WPS), "eff": eff}
+
+
+def _check_btag_wps(parameters):
+    """The b-tag SFs must cover every working point whose information the analysis uses."""
+    used = set(spanet_training.BTAG_COUNT_WPS) | {parameters.object_preselection.btag.wp}
+    missing = used - set(BTAG_SF_WPS)
+    if missing:
+        raise ValueError(f"b-tag working points {sorted(missing)} are used but not in "
+                         f"analysis_years.BTAG_SF_WPS {BTAG_SF_WPS}: their SFs would be missing")
 
 
 def _env_list(name):
@@ -261,6 +311,7 @@ def build_config(group, eras=None, sample_list=None):
           f"SPANet models {spanet_models.ACTIVE_MODELS}")
 
     parameters, shape_calibrators = load_parameters(eras)
+    _check_btag_wps(parameters)
 
     workflow = ZHbbRun3Processor
     weights = ["genWeight"]
@@ -297,6 +348,19 @@ def build_config(group, eras=None, sample_list=None):
         workflow = ZHbbRun3XbbWPProcessor
         weights = ["genWeight", "lumi", "XS", "pileup"]
         subsamples = build_xbbwp_subsamples()
+    elif selection == "btageff":
+        # analysis preselection, before the b-tag requirement; histograms only (BTAG_EFF_HISTOGRAMS)
+        data = [s for s in sample_list if s in samples.DATA_SAMPLES]
+        if data:
+            raise ValueError(f"The b-tag efficiency maps need the hadron flavour, not data: {data}")
+        skim = [eventFlags, goldenJson, precut, hlt_cut]
+        preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu]
+        category = "presel"
+        categories = {category: [passthrough]}
+        workflow = ZHbbRun3BtagEffProcessor
+        weights = ["genWeight", "lumi", "XS", "pileup"]
+        subsamples = {s: {name: [get_genTtbarId_100_eq(ids)] for name, ids in samples.TTBAR_SPLIT.items()}
+                      for s in samples.TTBAR_SAMPLES}
     else:
         skim = [eventFlags, goldenJson, precut, hlt_cut]
         preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu]
@@ -310,6 +374,7 @@ def build_config(group, eras=None, sample_list=None):
         "spanet_models": spanet_models.active_models() if selection == "analysis" else {},
         "prefilter_btag_mask": selection == "analysis",
         "dctr_hdamp": dctr_options() if selection == "analysis" else None,
+        "btag_sfs": _resolve_btag_sfs(eras),
     }
     if selection == "spanet":
         workflow_options.update({
@@ -343,8 +408,9 @@ def build_config(group, eras=None, sample_list=None):
             "weights": {"common": {"inclusive": []}},
             "shape": {"common": {"inclusive": shape_calibrators}},
         },
-        variables=HISTOGRAMS,
+        variables=BTAG_EFF_HISTOGRAMS if selection == "btageff" else HISTOGRAMS,
         columns=(build_spanet_columns(category) if selection == "spanet"
                  else build_xbbwp_columns(category) if selection == "xbbwp"
+                 else {"common": {"inclusive": [], "bycategory": {}}, "bysample": {}} if selection == "btageff"
                  else build_columns(sample_list, category, selection)),
     )

@@ -12,6 +12,8 @@ post-processing scripts.
     GENMATCH_SPLIT - subsample definitions (turned into Cut objects in inference_common.py)
 """
 
+import re
+
 import spanet_training
 
 # ---------------------------------------------------------------- dataset definition files
@@ -54,12 +56,38 @@ XBBWP_MISTAG_SAMPLES = ["TTToSemiLeptonic", "TTTo2L2Nu"]
 XBBWP_SIGNAL_SAMPLES = ["ttHTobb", "TTZToQQ"]
 XBBWP_SAMPLES = XBBWP_MISTAG_SAMPLES + XBBWP_SIGNAL_SAMPLES
 
+# b-tag efficiency maps (derive_btag_eff.py), one per group of processes: the jets of each sample
+# are corrected with the map of its group. The subsamples are those the analysis takes from the
+# sample (tt+B from the 4FS TTbb, tt+LF / tt+C from the 5FS TTTo), so no event enters twice.
+BTAG_EFF_GROUPS = {
+    "ttLF_C": {"samples": ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"], "subsamples": ["tt+LF", "tt+C"]},
+    "ttB":    {"samples": ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu", "ttbbSMEFT"], "subsamples": ["tt+B"]},
+    "signal": {"samples": SIGNAL_SAMPLES + ["ttHSMEFT"]},
+    "minor":  {"samples": MINOR_SAMPLES + QCD_SAMPLES},
+}
+# Processed for the maps: the nominal MC of the analysis (QCD uses the 'minor' map)
+BTAG_EFF_SAMPLES = SIGNAL_SAMPLES + TTBAR_SAMPLES + MINOR_SAMPLES
+
+
+def btag_eff_group(sample, subsample=None):
+    """Efficiency-map group of a sample (variation samples: that of their nominal sample). With a
+    subsample: None if the analysis does not use that subsample of the sample."""
+    nominal = re.sub(r"_(hdampUP|hdampDOWN|TuneCP5up|TuneCP5down)$", "", sample)
+    for group, opts in BTAG_EFF_GROUPS.items():
+        if nominal in opts["samples"]:
+            if subsample is not None and subsample not in opts.get("subsamples", [subsample]):
+                return None
+            return group
+    raise ValueError(f"Sample '{sample}' is in no b-tag efficiency group (samples.BTAG_EFF_GROUPS)")
+
+
 # One entry per inference_conf_<group>.py. Options:
 #   samples   - samples to process
 #   is_data   - no MC weights / gen information in the output columns
 #   selection - "analysis" (default), "trigeff" (e-mu ttbar, no trigger requirement) or "spanet"
 #               (SPANet training inputs, samples and options in spanet_training.py) or "xbbwp"
-#               (all fatjets of the preselection, for the Xbb working points)
+#               (all fatjets of the preselection, for the Xbb working points) or "btageff"
+#               (AK4 jets of the preselection, b-tag efficiency histograms)
 #   dump_dir  - pocket-coffea 'dump_columns_as_arrays_per_chunk' directory (None = keep in .coffea)
 GROUPS = {
     "signal":  {"samples": SIGNAL_SAMPLES},
@@ -72,6 +100,7 @@ GROUPS = {
     "trigeff": {"samples": TRIGEFF_SAMPLES, "selection": "trigeff"},
     "spanet":  {"samples": spanet_training.sample_names(), "selection": "spanet"},
     "xbbwp":   {"samples": XBBWP_SAMPLES, "selection": "xbbwp"},
+    "btageff": {"samples": BTAG_EFF_SAMPLES, "selection": "btageff"},
 }
 
 # ---------------------------------------------------------------- process labels
