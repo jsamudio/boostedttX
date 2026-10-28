@@ -20,6 +20,7 @@ from theory_norms import fill_theory_sums
 from eft_genbb import fill_eft_genbb
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
+from dctr import apply_dctr_hdamp, set_default_dctr_columns
 
 sig = ['ttHTobb', 'ttHToNonbb', 'TTZToBB', 'TTZToQQ', 'TTZToLLNuNu', 'ttHSMEFT', 'ttZSMEFT']
 
@@ -84,6 +85,7 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
       xbb_wp_cuts         - {era: {L, M, T}} XbbVsQCD thresholds (analysis_years.py)
       btag_calib          - accumulate the b-tag normalization sums (default True; binning in btag_norm.py)
       prefilter_btag_mask - drop events failing btag_mask before stage 2 (default True)
+      dctr_hdamp          - {samples, models: {up, down}}: DCTR hdamp weights (dctr.py); None = off
     '''
 
     def __init__(self, cfg: Configurator):
@@ -95,6 +97,7 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         self.xbb_wp = self.workflow_options["xbb_wp_cuts"]
         self.btag_calib = self.workflow_options.get("btag_calib", True)
         self.prefilter_btag_mask = self.workflow_options.get("prefilter_btag_mask", True)
+        self.dctr_hdamp = self.workflow_options.get("dctr_hdamp")
         # Trigger efficiencies (selection "trigeff" in inference_common.py):
         #   trigger_reference_muon - muons = MUO trigger-SF denominator selection (lep_selTrig_Mu:
         #                            tight ID + PFIsoTight, cuts in params/skim_params.yaml) instead of
@@ -112,6 +115,8 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
             fill_theory_sums(self.events, self.output, self._sample, self._dataset)
             # EFT samples: EFT-coefficient sums of the gen bb pT spectrum (eft_genbb.py, plot_eft_pt.py)
             fill_eft_genbb(self.events, self.output, self._dataset)
+            # DCTR hdamp weights and their sums over all generated events (dctr.py; off unless configured)
+            apply_dctr_hdamp(self.events, self.output, self._sample, self._dataset, self.dctr_hdamp)
 
     # ------------------------------------------------------------------ objects
     # (MET filters and the golden JSON are standard skim cuts in the config: eventFlags, goldenJson)
@@ -261,6 +266,7 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         ev['jet_puId_sf'], ev['jet_puId_sfup'], ev['jet_puId_sfdown'] = sf_jet_puId_era(self.params, ev.JetGood, self._year, ev.nJetGood)
         ev['isr'], ev['isr_up'], ev['isr_down'] = sf_partonshower_isr(ev)
         ev['fsr'], ev['fsr_up'], ev['fsr_down'] = sf_partonshower_fsr(ev)
+        set_default_dctr_columns(ev)          # 1 where no DCTR weights were computed before the skim
         ev['mu_r_up'], ev['mu_r_down'], ev['mu_f_up'], ev['mu_f_down'], ev['mu_rf_up'], ev['mu_rf_down'] = sf_scaleweights(ev)
         # PDF / alpha_s members pdfweight_0..102 (exported for signal and tt+jets, outvars.pdf_vars)
         for name, values in pdfweight_columns(ev).items():

@@ -92,6 +92,7 @@ weight_vars = ['genWeight', 'norm_weight',
                'puWeight', 'puWeight_up', 'puWeight_down',
                'jet_puId_sf', 'jet_puId_sfup', 'jet_puId_sfdown',
                'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
+               'dctr_hdamp_up', 'dctr_hdamp_down',
                'mu_r_up', 'mu_r_down', # scale weight not in some samples
                'mu_f_up', 'mu_f_down',
                'mu_rf_up', 'mu_rf_down',

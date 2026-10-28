@@ -12,6 +12,7 @@ Environment overrides:
     PC_SAMPLES=ttHTobb,TTLL      only these samples of the group (quick tests)
     PC_SHAPE_CALIBRATOR=...      shape calibrator to run (default: jet_calibration)
     PC_JEC_VARIATION=JES_Total   jet variation to run on top of nominal (default: nominal only)
+    PC_DCTR=1                    DCTR hdamp weights dctr_hdamp_up/down for DCTR_HDAMP['samples'] (dctr.py)
 
 Run 3 object definitions: PUPPI MET (pocket-coffea's default MET calibrator: type-1 PUPPI MET
 recomputed from RawPuppiMET with the recommended JECs, data and MC), UParT AK4 b tagging, GloParT
@@ -41,6 +42,7 @@ import spanet_training_workflow
 import parton_matching
 import xbb_wp_workflow
 import outvars
+import dctr
 from analysis_years import ERAS
 from custom_cut_functions import (precut, hlt_cut, hlt_paths, event_selection, trig_event_selection, vetoE, vetoMu,
                                   btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq, get_spanet_selection, get_flag_cut)
@@ -49,13 +51,21 @@ from spanet_training_workflow import ZHbbRun3TrainingProcessor
 from xbb_wp_workflow import ZHbbRun3XbbWPProcessor
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models,
-                spanet_training, spanet_training_workflow, parton_matching, event_variables, xbb_wp_workflow):
+                spanet_training, spanet_training_workflow, parton_matching, event_variables, xbb_wp_workflow, dctr):
     cloudpickle.register_pickle_by_value(_module)
 
 LOCALDIR = os.path.dirname(os.path.abspath(__file__))
 
 # Eras processed when PC_ERAS is not set
 DEFAULT_ERAS = ['2024']
+
+# DCTR hdamp weights (PC_DCTR=1): no dedicated hdamp samples in 2024 (13.6 TeV classifiers)
+DCTR_DIR = "/cms/data/jsamudio/boosted/boostedttX/configs/SemiLeptonic_2024/dctr_models"
+DCTR_HDAMP = {
+    "samples": list(samples.TTBAR_SAMPLES),
+    "models": {"up": f"{DCTR_DIR}/mymodel12_hdamp_up_13.6TeV.onnx",
+               "down": f"{DCTR_DIR}/mymodel12_hdamp_down_13.6TeV.onnx"},
+}
 
 # params/<name>.yaml merged on top of the pocket-coffea defaults (overrides only)
 PARAMETER_FILES = ["object_preselection", "lepton_scale_factors", "jets_calibration"]
@@ -108,6 +118,17 @@ def available_jet_variations(parameters, era):
         if era in node:
             out |= set(node[era])
     return out
+
+
+def dctr_options():
+    """Workflow option 'dctr_hdamp' (configs/common/dctr.py): DCTR_HDAMP with PC_DCTR=1, else None (off)."""
+    if not os.environ.get("PC_DCTR"):
+        return None
+    missing = [var for var, path in DCTR_HDAMP["models"].items() if not path]
+    if missing:
+        raise ValueError(f"PC_DCTR=1 but no DCTR model for {missing}: set DCTR_HDAMP['models'] in inference_common.py")
+    print(f"--> DCTR hdamp weights for {DCTR_HDAMP['samples']}")
+    return {"samples": list(DCTR_HDAMP["samples"]), "models": dict(DCTR_HDAMP["models"])}
 
 
 def load_parameters(eras):
@@ -275,6 +296,7 @@ def build_config(group, eras=None, sample_list=None):
         "trigger_sfs": _resolve_trigger_sfs(eras),
         "spanet_models": spanet_models.active_models() if selection == "analysis" else {},
         "prefilter_btag_mask": selection == "analysis",
+        "dctr_hdamp": dctr_options() if selection == "analysis" else None,
     }
     if selection == "spanet":
         workflow_options.update({

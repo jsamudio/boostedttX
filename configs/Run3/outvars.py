@@ -37,6 +37,7 @@ weight_vars = ['genWeight', 'norm_weight',
                'btag_sf', 'btag_sfup', 'btag_sfdown',
                'puWeight', 'puWeight_up', 'puWeight_down',
                'isr_up', 'isr_down', 'fsr_up', 'fsr_down',
+               'dctr_hdamp_up', 'dctr_hdamp_down',
                'mu_r_up', 'mu_r_down', 'mu_f_up', 'mu_f_down', 'mu_rf_up', 'mu_rf_down']
 
 # Per-event factors that enter the nominal event weight on top of norm_weight * sign(genWeight)

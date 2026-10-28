@@ -16,6 +16,7 @@ from custom_scale_factors import (set_fatjet_mass, sf_mu, sf_partonshower_isr, s
 from get_controlvars import get_controlvars
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
+from dctr import apply_dctr_hdamp, set_default_dctr_columns
 
 vector.register_awkward()
 
@@ -69,6 +70,7 @@ class ZHbbRun3Processor(BaseProcessorABC):
                             files (EleTrigSF / MuTrigSF), "pog" = MUO reference SF, None = 1
       spanet_models       - {name: {path, jet_features, fatjet_features, clean_jets}} (may be empty)
       prefilter_btag_mask - drop events failing btag_mask before stage 2 (analysis selection only)
+      dctr_hdamp          - {samples, models: {up, down}}: DCTR hdamp weights (dctr.py); None = off
     '''
 
     def __init__(self, cfg: Configurator):
@@ -78,6 +80,12 @@ class ZHbbRun3Processor(BaseProcessorABC):
         self.trigger_sfs = self.workflow_options.get("trigger_sfs", {})
         self.spanet_models = self.workflow_options.get("spanet_models", {})
         self.prefilter_btag_mask = self.workflow_options.get("prefilter_btag_mask", True)
+        self.dctr_hdamp = self.workflow_options.get("dctr_hdamp")
+
+    def process_extra_before_skim(self):
+        # DCTR hdamp weights and their sums over all generated events (dctr.py; off unless configured)
+        if self._isMC:
+            apply_dctr_hdamp(self.events, self.output, self._sample, self._dataset, self.dctr_hdamp)
 
     # ------------------------------------------------------------------ objects
     # (MET filters and the golden JSON are standard skim cuts in the config: eventFlags, goldenJson)
@@ -177,6 +185,7 @@ class ZHbbRun3Processor(BaseProcessorABC):
         ev['puWeight'], ev['puWeight_up'], ev['puWeight_down'] = sf_pileup_reweight(self.params, ev, self._year)
         ev['isr'], ev['isr_up'], ev['isr_down'] = sf_partonshower_isr(ev)
         ev['fsr'], ev['fsr_up'], ev['fsr_down'] = sf_partonshower_fsr(ev)
+        set_default_dctr_columns(ev)          # 1 where no DCTR weights were computed before the skim
         scale = sf_scaleweights(ev)
         if scale is None:
             scale = (_ones(ev),) * 6

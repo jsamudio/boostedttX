@@ -20,6 +20,7 @@ Environment overrides (no need to edit any file for these):
                                                  AK8 -> AK8PFPuppi_JERUp/Down
                                    JMSJMR        AK8 mass scale/resolution -> JMSUp/Down, JMRUp/Down
     PC_NO_ROCHESTER=1            muon Rochester corrections off (impact check against the nominal)
+    PC_DCTR=1                    DCTR hdamp weights dctr_hdamp_up/down for DCTR_HDAMP['samples'] (dctr.py)
 """
 import os
 import sys
@@ -40,6 +41,7 @@ import spanet_inference
 import spanet_models
 import spanet_training
 import outvars
+import dctr
 from analysis_years import xbb_wp_cuts, ERAS, jes_run_tags, jes_source, jes_jet_types
 from fatjet_mass_variations import FatJetMassVariations
 from jet_variation_splits import JetsCalibratorSplit
@@ -60,13 +62,20 @@ from pocket_coffea.lib.correction_cache import load_correction_set
 CALIBRATORS = [JetsCalibratorSplit if c.name == "jet_calibration" else c for c in MET_CALIBRATORS] + [FatJetMassVariations]
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models,
-                spanet_training, spanet_training_workflow, parton_matching, event_variables):
+                spanet_training, spanet_training_workflow, parton_matching, event_variables, dctr):
     cloudpickle.register_pickle_by_value(_module)
 
 LOCALDIR = os.path.dirname(os.path.abspath(__file__))
 
 # Eras processed when PC_ERAS is not set
 DEFAULT_ERAS = ['2018']
+
+# DCTR hdamp weights (PC_DCTR=1): tried on the nominal 4FS ttbb against the dedicated hdamp samples.
+# Needs the 13 TeV classifiers: set the paths before use.
+DCTR_HDAMP = {
+    "samples": ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu"],
+    "models": {"up": None, "down": None},
+}
 
 # params/<name>.yaml merged on top of the pocket-coffea defaults (overrides only).
 # skim_params holds the lepton selection cuts read by object_cleaning_functions.lep_sel / soft_lep_sel.
@@ -145,6 +154,17 @@ def shape_variation_settings(parameters, eras, variation):
                                    for jet_type in VARIED_JET_TYPES}
     raise ValueError(f"PC_JEC_VARIATION={variation} not known: use nominal, JER, JMSJMR or a JES tag "
                      f"of analysis_years.jes_run_tags(): {jes_run_tags()}")
+
+
+def dctr_options():
+    """Workflow option 'dctr_hdamp' (configs/common/dctr.py): DCTR_HDAMP with PC_DCTR=1, else None (off)."""
+    if not os.environ.get("PC_DCTR"):
+        return None
+    missing = [var for var, path in DCTR_HDAMP["models"].items() if not path]
+    if missing:
+        raise ValueError(f"PC_DCTR=1 but no DCTR model for {missing}: set DCTR_HDAMP['models'] in inference_common.py")
+    print(f"--> DCTR hdamp weights for {DCTR_HDAMP['samples']}")
+    return {"samples": list(DCTR_HDAMP["samples"]), "models": dict(DCTR_HDAMP["models"])}
 
 
 def load_parameters(eras):
@@ -299,6 +319,7 @@ def build_config(group, eras=None, sample_list=None):
         "xbb_wp_cuts": {era: xbb_wp_cuts(era) for era in ERAS},
         "btag_calib": not is_data and selection == "analysis",
         "prefilter_btag_mask": selection == "analysis",
+        "dctr_hdamp": dctr_options() if selection == "analysis" and not is_data else None,
         "trigger_reference_muon": opts.get("reference_muon", False),
         "hlt_columns": TRIGEFF_HLT_COLUMNS if selection == "trigeff" else [],
     }
