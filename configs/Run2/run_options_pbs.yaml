@@ -10,9 +10,9 @@ chunksize: 100000           # events per futures task (memory: one chunk per cor
 # ---- PBS resources (per job)
 queue: batch
 cores-per-worker: 8         # = futures workers per job
-mem-per-worker: 32gb        # memory of the whole job
+mem-per-worker: 48gb        # memory of the whole job
 walltime: null              # no request; e.g. "12:00:00"
-merge-mem: 32gb             # merge job (1 core)
+merge-mem: 64gb             # merge job (1 core)
 
 # ---- execution environment
 scratch-dir: /tmp           # job working directory (bound into the image)

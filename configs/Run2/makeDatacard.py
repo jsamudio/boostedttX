@@ -71,7 +71,7 @@ VJETS_PDF_UNC   = 1.038
 
 # Jet energy / mass shape uncertainties, from separately processed samples
 # (run_pipeline.py --jec-variations JES_ALL JER JMSJMR -> pickles <process>_<tag>Up/Down.pkl).
-USE_JET_VARIATIONS = True
+USE_JET_VARIATIONS = False
 # Processes the jet variations are applied to (as before); the others keep the nominal template
 JET_SYST_PROCESSES = ['ttH', 'ttZ', 'TTBar', 'tt_B', 'SingleTop']
 
@@ -119,15 +119,15 @@ def cuts(df_, year):
     )
     return base
 
-class Systematic: 
-    ''' 
+class Systematic:
+    '''
     Syntax: Systematic(Systematic Name,Systematic Type, Channel, Affected Processes, Value, Additional Information)
     '''
     dc_root_dir = ''
     datacard     = None
     allowed_processes = None
     all_years    = ['2018']
-    
+
     def __init__(self, name, stype, process_ids, value, optvalue=None, info=None):
         self.name     = name
         self.stype    = stype
@@ -136,7 +136,7 @@ class Systematic:
         # all others are written to every year's card (correlated across years).
         self.years     = re.findall(YEAR_RE, name) if name != 'jesHEMIssue' else ['2018']
         if len(self.years) == 0: self.years = list(self.all_years)
-        
+
         if type(value) is list:
             self.value = {i:v for i,v in zip(self.ids,value)}
         elif type(value) is float or type(value) is int:
@@ -146,15 +146,15 @@ class Systematic:
             self.years = list(value.keys())
         else:
             self.value = None
-            
+
         self.optvalue = optvalue
         self.info     = '' if info is None else info
-        
-        if self.datacard is not None: 
+
+        if self.datacard is not None:
             for year in self.years:
                 if type(value) is dict:
                     self.value = value[year]
-                self.datacard[year].write(self.get_DC_line()) 
+                self.datacard[year].write(self.get_DC_line())
 
     @property
     def line(self):
@@ -188,7 +188,7 @@ class Systematic:
         value = self.value
         optvalue = self.optvalue
         for p in self.allowed_processes:
-            if p in self.ids: 
+            if p in self.ids:
                 if type(self.value) is dict:
                     value = self.value[p]
                     if type(value) is list:
@@ -205,7 +205,7 @@ class Systematic:
         _line += '\t'+self.info+'\n'
         return _line
 
-class ShapeSystematic(Systematic): 
+class ShapeSystematic(Systematic):
     bins_dict = None
     cut_op   = None
     df       = None
@@ -219,7 +219,7 @@ class ShapeSystematic(Systematic):
         self.subtype = subtype
         self.extraQC = extraQC
         self.nominal = nominal      # explicit nominal column; default: derived from the 'up' name
-        
+
     def get_shape(self):
         fun_dict = {'mcstat' :self.makeMCStatHist,
                     'up/down'    :self.makeUpDownHist,
@@ -227,7 +227,7 @@ class ShapeSystematic(Systematic):
                     'ps'     :self.makeUpDownHist,
                     'pdfas'  :self.makeUpDownPdfasHist,
                     'erdOn'  :self.handleErdOn,
-                    'jec'    :self.makeShapeVarHist} 
+                    'jec'    :self.makeShapeVarHist}
         if self.subtype in fun_dict: fun_dict[self.subtype]()
         if self.extraQC and __name__ == '__main__': self.handle_extraQC()
         self.handleQC()
@@ -236,8 +236,8 @@ class ShapeSystematic(Systematic):
     @classmethod
     def set_df_histos_histfuncs(cls, data_dict, hist_dict, sumw_sumw2):
         cls.data_dict = data_dict
-        cls.histos = hist_dict 
-        cls.get_sumw_sumw2 = sumw_sumw2 
+        cls.histos = hist_dict
+        cls.get_sumw_sumw2 = sumw_sumw2
 
     def makeShapeVarHist(self):
         """Up/down templates from separately processed (varied) samples, e.g. JES/JER/JMS/JMR."""
@@ -292,7 +292,7 @@ class ShapeSystematic(Systematic):
             for y in self.years:
                 if f'{process}_{y}' not in self.data_dict: continue
                 df = self.data_dict[f'{process}_{y}']
-                w_nom  = self.nominal or self.up.replace(re.search(r'(Up|up)\w*',self.up).group(),'').rstrip('_') 
+                w_nom  = self.nominal or self.up.replace(re.search(r'(Up|up)\w*',self.up).group(),'').rstrip('_')
                 # FIX: the old check ('mu_' in w_nom) also matched the muon scale factors
                 # (mu_id_sf, mu_iso_sf, ...) and overwrote their nominal column with 1.0 in place,
                 # which corrupted the nominal weight of every later systematic.
@@ -307,16 +307,16 @@ class ShapeSystematic(Systematic):
                         w_var = w_var * self.norm_factor(y, process, ud)
                     sumw, sumw2 = self.get_sumw_sumw2(df,w_var,y)
                     self.histos[f'{process}_{y}_{self.name}{ud_str}'] = {'sumw':sumw, 'sumw2':sumw2}
-                
+
     def makeMCStatHist(self):
         for process in self.ids:
             for y in self.years:
                 nom_hist = self.histos[f'{process}_{y}']
                 stat_err = np.sqrt(nom_hist['sumw2'])
                 mcstat_up, mcstat_down = nom_hist['sumw']+stat_err, nom_hist['sumw']-stat_err
-                self.histos[f'{process}_{y}_{self.name}Up'] =   {'sumw' :mcstat_up, 'sumw2':mcstat_up} 
-                self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw' :mcstat_down, 'sumw2':mcstat_down} 
-                
+                self.histos[f'{process}_{y}_{self.name}Up'] =   {'sumw' :mcstat_up, 'sumw2':mcstat_up}
+                self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw' :mcstat_down, 'sumw2':mcstat_down}
+
     def handleQC(self):
         for process in self.ids:
             for y in self.years:
@@ -342,18 +342,18 @@ class ShapeSystematic(Systematic):
 
                 up   = np.float32(self.histos[up_key]['sumw'])
                 down = np.float32(self.histos[down_key]['sumw'])
-                
-                up   = np.where(nom<nom_err, nom, up)   
+
+                up   = np.where(nom<nom_err, nom, up)
                 down = np.where(nom<nom_err, nom, down)
-                
+
                 is_onesided = (( (up > nom) & (down > nom) ) | ( (up < nom) & (down < nom) ))
                 geo_mean = np.sqrt( up * down )
-                up , down = np.where(is_onesided, np.divide(up*nom, geo_mean) , up), np.where(is_onesided, np.divide(down*nom, geo_mean) , down) 
-                up, down = np.where((np.isinf(up)) | (np.isnan(up)), nom, up), np.where((np.isinf(down)) | (np.isnan(down)), nom, down) 
-                
-                self.histos[up_key]['sumw']   = up      
+                up , down = np.where(is_onesided, np.divide(up*nom, geo_mean) , up), np.where(is_onesided, np.divide(down*nom, geo_mean) , down)
+                up, down = np.where((np.isinf(up)) | (np.isnan(up)), nom, up), np.where((np.isinf(down)) | (np.isnan(down)), nom, down)
+
+                self.histos[up_key]['sumw']   = up
                 self.histos[down_key]['sumw'] = down
-        
+
     def handle_extraQC(self):
         for process in self.ids:
             for y in self.years:
@@ -361,9 +361,9 @@ class ShapeSystematic(Systematic):
                 nom_err = np.sqrt(np.float32(self.histos[f'{process}_{y}']['sumw2']))
                 if re.search(r'(jms)|(jmr)', self.name) is not None and f'{process}_{y}_{self.name}Up' not in self.histos:
                     tmp_name = re.search(r'(jms)|(jmr)', self.name).group()+f'_{y}'
-                    self.histos[f'{process}_{y}_{self.name}Up'] = {'sumw':[], 
-                                                                   'sumw2':self.histos[f'{process}_{y}_{tmp_name}Up']['sumw2']}     
-                    self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw':[], 
+                    self.histos[f'{process}_{y}_{self.name}Up'] = {'sumw':[],
+                                                                   'sumw2':self.histos[f'{process}_{y}_{tmp_name}Up']['sumw2']}
+                    self.histos[f'{process}_{y}_{self.name}Down'] = {'sumw':[],
                                                                      'sumw2': self.histos[f'{process}_{y}_{tmp_name}Down']['sumw2']}
                 else:
                     tmp_name = self.name
@@ -371,21 +371,21 @@ class ShapeSystematic(Systematic):
                 down = np.float32(self.histos[f'{process}_{y}_{tmp_name}Down']['sumw'])
 
                 if 'hdamp' not in self.name and 'UE' not in self.name:
-                    for i in range(nom.shape[-1]): 
-                        for j in range(nom.shape[0]): 
-                            if 'fsr' in self.name : 
+                    for i in range(nom.shape[-1]):
+                        for j in range(nom.shape[0]):
+                            if 'fsr' in self.name :
                                 up[j,:,i]   = nom[j,:,i] * np.nansum(up[j,:,i])/np.nansum(nom[j,:,i])
                                 down[j,:,i] = nom[j,:,i] * np.nansum(down[j,:,i])/np.nansum(nom[j,:,i])
-                            else : 
+                            else :
                                 up[j,2:,i]   = nom[j,2:,i] * np.nansum(up[j,2:,i])/np.nansum(nom[j,2:,i])
                                 down[j,2:,i] = nom[j,2:,i] * np.nansum(down[j,2:,i])/np.nansum(nom[j,2:,i])
 
-                else: 
-                    for j in range(nom.shape[0]): 
+                else:
+                    for j in range(nom.shape[0]):
                         up[j,:,:]   = nom[j,:,:] * np.nansum(up[j,:,:])/np.nansum(nom[j,:,:])
                         down[j,:,:]   = nom[j,:,:] * np.nansum(down[j,:,:])/np.nansum(nom[j,:,:])
 
-                self.histos[f'{process}_{y}_{self.name}Up']['sumw']   = up      
+                self.histos[f'{process}_{y}_{self.name}Up']['sumw']   = up
                 self.histos[f'{process}_{y}_{self.name}Down']['sumw'] = down
 
 class MakeDataCard:
@@ -395,7 +395,7 @@ class MakeDataCard:
     pt_bins = pt_bins
     mass_bins = mass_bins
     dc_dir = './datacards'
-    
+
     def __init__(self, nn_name, hist2d, sig=['ttZ', 'ttH'], bkg=None, years=None, isblind=True,
                  eft_ttbb=EFT_SCALE_TTBB):
         years = list(YEARS) if years is None else list(years)
@@ -434,13 +434,13 @@ class MakeDataCard:
                        for src in BTAG_SOURCES_CORRELATED + BTAG_SOURCES_UNCORRELATED
                        for suffix in ('', '_up', '_down')]
         pdf_cols = list(pdf_vars) if USE_PDF else []
-                      
+
         self.weight_sys = weight_sys
         self.bkg_v = weights + weight_sys + pdf_cols + [self.nn_name, 'ZH_M', 'ZH_pt', 'process', 'sample',
                                                         'n_ak4jets', 'ZH_bbvLscore', 'n_b_outZH', 'MET_pt',
                                                         'era', 'year', 'tt_2b', 'tt_C']
         self.sig_v = self.bkg_v + ['genZHpt']
-        
+
         self.accepted_sig  = [f'{s}{i}' for i in range(len(self.pt_bins)) for s in ['ttH','ttZ']]
         self.accepted_bkg  = list(bkg)
         self.accepted_data = ['data_obs']
@@ -457,12 +457,12 @@ class MakeDataCard:
     def get_sumw_sumw2(self, df, weights, year):
         ret_x_y = (lambda df: (df[self.nn_name].to_numpy(dtype='float'), df['ZH_M'].to_numpy(dtype='float')))
         sumw = np.array([
-            self.hist2d[year][i_bin]( *ret_x_y(df[df['pt_bin']==i_bin]), 
-                                     weights=weights[df['pt_bin']==i_bin].astype('float'))[0] 
+            self.hist2d[year][i_bin]( *ret_x_y(df[df['pt_bin']==i_bin]),
+                                     weights=weights[df['pt_bin']==i_bin].astype('float'))[0]
             for i_bin in range(1,len(self.pt_bins))
         ], dtype = 'float')
         sumw2 = np.array([
-            self.hist2d[year][i_bin]( *ret_x_y(df[df['pt_bin']==i_bin]), 
+            self.hist2d[year][i_bin]( *ret_x_y(df[df['pt_bin']==i_bin]),
                                      weights=np.power(weights[df['pt_bin']==i_bin],2).astype('float'))[0]
             for i_bin in range(1,len(self.pt_bins))
         ])
@@ -479,13 +479,13 @@ class MakeDataCard:
         self.fill_roofile()
         self.close_roofile()
         self.close_dc()
-        
+
     def get_data(self):
         self.data_dict = {}
         self.sig  = [f'{sig}_{y}'   for sig  in self.sig_base for y in self.years]
         self.bkg  = [f'{bkg}_{y}'   for bkg  in self.bkg_base for y in self.years]
         self.data = [f'{data}_{y}'  for data in ['data_obs'] for y in self.years]
-        
+
         # Varied samples for the jet systematics (see jet_systematics)
         jet_tags = sorted({tag for tag, _ in jet_systematics(self.years)}) if USE_JET_VARIATIONS else []
         affected_mc = [p for p in self.sig_base + self.bkg_base if p in JET_SYST_PROCESSES]
@@ -494,15 +494,15 @@ class MakeDataCard:
                             for y in self.years
                             for tag in jet_tags
                             for ud in ['Up', 'Down']]
-        
+
         all_samples = self.sig + self.bkg + self.data + self.sys_samples
-        
+
         pool = Pool(6)
         results = pool.map(self.worker, all_samples)
         pool.close()
         pool.join()
         pool.clear()
-        
+
         for res in results:
             if res is None: continue
             for key, value in res.items():
@@ -525,7 +525,7 @@ class MakeDataCard:
         if 'TTBar' in process : p_vars = p_vars + ['tt_type']
         if 'tt_B' in process : p_vars = p_vars + ['tt_type']
         if 'data'  in process : p_vars = p_vars + ['tt_type']
-        
+
         return self.updatedict(process.replace(f'_{y}', '', 1), p_vars, y)   # tags may contain the year too
 
     def updatedict(self, p, v, y=''):
@@ -544,13 +544,13 @@ class MakeDataCard:
                 df[f'{name}_up'] = np.where(in_category, up, 1.0)
                 df[f'{name}_down'] = np.where(in_category, down, 1.0)
         df = df[cuts(df, y)]
-        df = df.astype({k:'float32' for k in df if df[k].dtype == 'float64'}) 
+        df = df.astype({k:'float32' for k in df if df[k].dtype == 'float64'})
         df.loc[:,'ZH_pt'] = df['ZH_pt'].clip(pt_bins[0]+1, pt_bins[-1]+1)
         df['pt_bin'] = pd.cut(df['ZH_pt'], bins=pt_bins+[np.inf], labels=[i_bin for i_bin in range(len(pt_bins))])
-        
+
         df = df[self.cut(df)]
         group = df.groupby(by='process')
-        
+
         sys_suffix = ""
         if "Up" in p or "Down" in p:
             base_proc = p.split('_')[0] if not 'tt_B' in p else 'tt_B'
@@ -591,7 +591,7 @@ class MakeDataCard:
             if os.path.exists(roo_name):
                 os.system(f"rm {roo_name}")
             roo_dict[y] = uproot.create(roo_name)
-        self.roo_dict = roo_dict 
+        self.roo_dict = roo_dict
 
     def initialize_datacard(self):
         dc_dict = {y: open(f'{self.dc_dir}/datacard_{self.tag}{y}.txt', 'w') for y in self.years}
@@ -662,7 +662,7 @@ class MakeDataCard:
         jec_mc   = [p for p in all_mc if re.sub(r'\d+$', '', p) in JET_SYST_PROCESSES]
 
         # Nuisance groups, written at the end (useful for stat/exp/theory breakdowns)
-        groups = {'exp': [], 'theo': [], 'sig_rtheo': [], 'antisig_rtheo': []}
+        groups = {'exp': [], 'theo': [], 'sig_rtheo': [], 'antisig_rtheo': [], 'ttbbnorm': []}
 
         def lnN(name, procs, value, optvalue=None, grps=()):
             procs = [p for p in procs if p in all_mc]
@@ -692,10 +692,10 @@ class MakeDataCard:
             if per_year:
                 lnN(lumi_name, all_mc, per_year, grps=('exp',))
         lnN('lep_phasespace', all_mc, LEPTON_PHASESPACE_UNC, grps=('exp',))
-        lnN('tth_ggpdf', tth_sig, 1.036,        grps=('theo', 'sig_rtheo'))
-        lnN('ttz_ggpdf', ttz_sig, 1.035,        grps=('theo', 'sig_rtheo'))
-        lnN('tth_qsc',   tth_sig, 1.058, 0.908, grps=('theo', 'sig_rtheo'))
-        lnN('ttz_qsc',   ttz_sig, 1.081, 0.907, grps=('theo', 'sig_rtheo'))
+        lnN('tth_ggpdf', tth_sig, 1.036,        grps=('sig_rtheo',))
+        lnN('ttz_ggpdf', ttz_sig, 1.035,        grps=('sig_rtheo',))
+        lnN('tth_qsc',   tth_sig, 1.058, 0.908, grps=('sig_rtheo',))
+        lnN('ttz_qsc',   ttz_sig, 1.081, 0.907, grps=('sig_rtheo',))
         if 'recoeft' not in self.tag:
             lnN('tth_ggpdf0', ['ttH0'], 1.036,        grps=('antisig_rtheo',))
             lnN('ttz_ggpdf0', ['ttZ0'], 1.035,        grps=('antisig_rtheo',))
@@ -809,14 +809,15 @@ class MakeDataCard:
 
         # ------------------------------------------------------------------
         self.write2dc(100*'-'+'\n')
-        self.write2dc('# Float tt_B normalization\n') 
+        self.write2dc('# Float tt_B normalization\n')
         self.write2dc('CMS_ttbbnorm rateParam * tt_B 1 [0.0,5.0]\n')
-        groups['theo'].append('CMS_ttbbnorm')
+        #groups['theo'].append('CMS_ttbbnorm')
+        groups['ttbbnorm'].append('CMS_ttbbnorm')
         self.write2dc(100*'-'+'\n')
-        self.write2dc('# MC Stats uncertainties\n') 
-        self.write2dc('* autoMCStats 10 0  1\n') 
+        self.write2dc('# MC Stats uncertainties\n')
+        self.write2dc('* autoMCStats 10 0  1\n')
         self.write2dc(100*'-'+'\n')
-        self.write2dc('# Group definitions \n') 
+        self.write2dc('# Group definitions \n')
         for g, names in groups.items():
             if names:
                 self.write2dc(f'{g} group = {" ".join(names)}\n')
@@ -826,33 +827,33 @@ class MakeDataCard:
         process_line = np.array([self.dc_procs for _ in range(self.dc_bins)]).flatten()
         Systematic.set_dc_processes(self.dc_dict, process_line)
         ShapeSystematic.set_df_histos_histfuncs(self.data_dict, self.histos, sumw_sumw2=self.get_sumw_sumw2)
-        
+
     @staticmethod
     def merge_last_mbin(pt_bin,a):
         a[pt_bin,:,-2] = a[pt_bin,:,-2] + a[pt_bin,:,-1]
         return a[pt_bin,:,:-1]
-        
+
     @staticmethod
-    def take_first_last_mbins(a): 
+    def take_first_last_mbins(a):
         sb = np.stack([a[3:,0],a[3:,-1]], axis=-1)
         return np.append(a[0:3,:], sb).flatten()
-        
+
     def fill_roofile(self):
         for p,v in self.histos.items():
             y = find_year(p)
             process = p.split(f'_{y}')[0]
             if process not in self.accepted_sig + self.accepted_bkg + self.accepted_data: continue
             if p.replace(f'_{y}', '') not in self.accepted_sig + self.accepted_bkg + self.accepted_data:
-                sys     = p.replace(f'{process}_{y}', '') 
+                sys     = p.replace(f'{process}_{y}', '')
             else:
                 sys     = ''
             for pt_bin in range(v['sumw'].shape[0]):
-                if pt_bin == 0: 
+                if pt_bin == 0:
                     if not self.isblind:
                         to_flat = (lambda a: self.take_first_last_mbins(self.merge_last_mbin(pt_bin,a)))
                     else:
                         to_flat = (lambda a: self.merge_last_mbin(pt_bin,a).flatten())
-                else: 
+                else:
                     if not self.isblind:
                         to_flat = (lambda a : self.take_first_last_mbins(a[pt_bin,:,:]))
                     else:
@@ -860,13 +861,13 @@ class MakeDataCard:
                 temp_dict = {'sumw' : to_flat(v['sumw'])}
                 hist_name = f'Zhpt{pt_bin+1}_{process}{sys}'
                 if 'sumw2' in v:
-                    temp_dict['sumw2'] = to_flat(v['sumw2']) 
+                    temp_dict['sumw2'] = to_flat(v['sumw2'])
                 self.roo_dict[y][hist_name] = export1d(temp_dict, hist_name)
-                
+
     def close_roofile(self):
         for roo in self.roo_dict:
             self.roo_dict[roo].close()
-    
+
     def close_dc(self):
         for dc in self.dc_dict:
             self.dc_dict[dc].close()
@@ -886,8 +887,8 @@ if __name__ == '__main__':
         print(f" GENERATING DATACARDS FOR: {nn_name.upper()}"
               f"{'  (tt_B EFT-scaled, declared as signal)' if args.eft_ttbb else ''}")
         print(f"{'='*50}\n")
-        
-        hist2d = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS)
+
+        hist2d = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS, common_binning=True) #False common binning for per-year
         hist2d.save_edges(f'nn_edges_{nn_name}.json')     # for NN_BINS in the EFT scaling
         from plot_nn_edges import plot_edges
         plot_edges(json.load(open(f'nn_edges_{nn_name}.json')), f'plots/nn_edges_{nn_name}.pdf')

@@ -57,8 +57,8 @@ class ParquetDataset:
 
         if len(datasets) == 0:
             raise ValueError(f"No dataset found for sample {sample}.")
-        if len(datasets) > 1:
-            raise ValueError(f"Multiple datasets found for sample {sample}.\nDatasets: {datasets}")
+        #if len(datasets) > 1:
+        #    raise ValueError(f"Multiple datasets found for sample {sample}.\nDatasets: {datasets}")
 
         return datasets
 
@@ -133,7 +133,7 @@ class ParquetDataset:
 
     def get_weight(self, sample, dataset):
         if self.schema == "coffea":
-            weight = self.columns[sample][dataset][self.cat]["weight"].value
+            weight = self.columns[sample][dataset][self.cat]['nominal']["weight"].value # need nominal for latest coffea processing on run3
         elif self.schema == "parquet":
             weight = self.events.weight
         return weight
@@ -150,7 +150,7 @@ class ParquetDataset:
         return list(ndims)[0]
 
     def normalize_genweights(self):
-        '''Since the array `weight` is filled on the fly with the weight associated with the event, 
+        '''Since the array `weight` is filled on the fly with the weight associated with the event,
         it does not take into account the overall scaling by the sum of genweights (`sum_genweights`).
         In order to correct for this, we have to scale by hand the `weight` array dividing by the sum of genweights.'''
 
@@ -167,7 +167,7 @@ class ParquetDataset:
 
     def load_features(self):
         '''Load the features dictionary with common features and sample-specific features.'''
-        
+
         print("Loading features...")
         # Compose the features dictionary with common features and sample-specific features
         for sample in self.samples:
@@ -240,7 +240,7 @@ class ParquetDataset:
 
     def build_arrays_from_accumulator(self):
         '''Build the Momentum4D arrays for the jets, partons, leptons, met and higgs.'''
-        
+
         print("Samples: ", self.samples)
 
         for sample in self.samples:
@@ -249,7 +249,7 @@ class ParquetDataset:
 
             # Accumulate ntuples from different data-taking eras
             # FIXME I think I just need to change what is done here since columns are already in the accumulator
-            cs = accumulate([self.columns[sample][dataset][self.cat] for dataset in datasets])
+            cs = accumulate([self.columns[sample][dataset][self.cat]['nominal'] for dataset in datasets])
             #cs = [self.columns[sample][dataset][self.cat] for dataset in datasets]
 
            # print(cs[0])
@@ -286,23 +286,59 @@ class ParquetDataset:
                     self.zipped_dict[sample][collection] = ak.zip(self.array_dict[sample][collection], with_name='Momentum4D')
                 print(f"Collection: {collection}")
                 print("Fields: ", self.zipped_dict[sample][collection].fields)
-
+                if 'pt' in self.zipped_dict[sample][collection].fields:
+                    print(ak.type(self.zipped_dict[sample][collection].pt))
             for collection in self.zipped_dict[sample].keys():
-                # Pad the matched collections with None if there is no matching
+              # Pad the matched collections with None if there is no matching
                 if collection in self.matched_collections_dict.keys():
-                    matched_collection = self.matched_collections_dict[collection]
-                    masked_arrays = ak.mask(self.zipped_dict[sample][matched_collection], self.zipped_dict[sample][matched_collection].pt==-999, None)
-                    self.zipped_dict[sample][matched_collection] = masked_arrays
-                    # Add the matched flag and the provenance to the matched jets
-                    if collection == "JetGood":
-                        is_matched = ~ak.is_none(masked_arrays, axis=1)
-                        self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], is_matched, "matched")
-                        self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], ak.fill_none(masked_arrays.prov, -1), "prov")
-                    if collection == "FatJetSorted":
-                        is_matched = ~ak.is_none(masked_arrays, axis=1)
-                        self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], is_matched, "matched")
-                        self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], ak.fill_none(masked_arrays.prov, -1), "prov")
-                        
+                 matched_collection = self.matched_collections_dict[collection]
+                 
+                 target_col = self.zipped_dict[sample][matched_collection]
+                 # Create a boolean mask of valid items (True = keep, False = None)
+                 is_valid = target_col.pt != -999 
+                
+                 # 1. Mask the inner fields so PyArrow strictly knows they are nullable
+                 masked_fields = {
+                     field: ak.mask(target_col[field], is_valid) 
+                     for field in target_col.fields
+                 }
+                 
+                 # 2. Re-zip the collection and mask the whole record as before
+                 masked_arrays = ak.mask(ak.zip(masked_fields, with_name='Momentum4D'), is_valid)
+                 self.zipped_dict[sample][matched_collection] = masked_arrays
+                
+                 # Add the matched flag and the provenance to the matched jets
+                 if collection == "JetGood":
+                     is_matched = ~ak.is_none(masked_arrays, axis=1)
+                     self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], is_matched, "matched")
+                     self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], ak.fill_none(masked_arrays.prov, -1), "prov")
+                 
+                 # (Also include your FatJetSorted block if it exists in the accumulator function)
+                 if collection == "FatJetSorted":
+                     is_matched = ~ak.is_none(masked_arrays, axis=1)
+                     self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], is_matched, "matched")
+                     self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], ak.fill_none(masked_arrays.prov, -1), "prov")
+
+            #for collection in self.zipped_dict[sample].keys():
+            #    # Pad the matched collections with None if there is no matching
+            #    if collection in self.matched_collections_dict.keys():
+            #        #dummy_momentum4d = ak.zip({"pt": -999.0,"eta": -999.0,"phi": -999.0,"mass": -999.0,"pdgId": -9999,"prov": -1}, with_name='Momentum4D')
+            #        matched_collection = self.matched_collections_dict[collection]
+            #        masked_arrays = ak.mask(self.zipped_dict[sample][matched_collection], self.zipped_dict[sample][matched_collection].pt==-999, None)
+            #        self.zipped_dict[sample][matched_collection] = masked_arrays
+            #        #filled_arrays = ak.fill_none(masked_arrays, -999.0, axis=-1)
+            #        #self.zipped_dict[sample][matched_collection] = filled_arrays
+
+            #        # Add the matched flag and the provenance to the matched jets
+            #        if collection == "JetGood":
+            #            is_matched = ~ak.is_none(masked_arrays, axis=1)
+            #            self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], is_matched, "matched")
+            #            self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], ak.fill_none(masked_arrays.prov, -1), "prov")
+            #        if collection == "FatJetSorted":
+            #            is_matched = ~ak.is_none(masked_arrays, axis=1)
+            #            self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], is_matched, "matched")
+            #            self.zipped_dict[sample][collection] = ak.with_field(self.zipped_dict[sample][collection], ak.fill_none(masked_arrays.prov, -1), "prov")
+
 
             # Add the remaining keys to the zipped dictionary
             if self.is_mc(sample):
@@ -315,10 +351,25 @@ class ParquetDataset:
             # The Momentum4D arrays are zipped together to form the final dictionary of arrays.
             print("Zipping the collections into a single dictionary...")
             df_out = ak.zip(self.zipped_dict[sample], depth_limit=1)
+            print(df_out.fields)
 
             if len(self.samples) > 1:
                 output_file = self.output_file.replace(".parquet", f"_{sample}.parquet")
             else:
                 output_file = self.output_file
             print(f"Saving the output dataset to file: {output_file}")
+            # In your save_parquet method, right before ak.to_parquet
+            print("\n--- Debugging df_out type ---")
+            print(f"Overall df_out type:\n{ak.type(df_out)}")
+
+            # Iterate through fields of df_out to check individual collection types
+            for field_name in df_out.fields:
+                collection_array = df_out[field_name]
+                print(f"\nType of collection '{field_name}':\n{ak.type(collection_array)}")
+                # If it's a list of records, print the type of the first few elements to spot oddities
+                if isinstance(collection_array.type, ak.types.ArrayType):
+                    print(f"Sample elements of '{field_name}':")
+                    # Print first 5 elements to see if any are scalar or unexpectedly structured
+            print(collection_array[:5])
+
             ak.to_parquet(df_out, output_file)

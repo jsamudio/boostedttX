@@ -21,14 +21,13 @@ import json
 import awkward as ak
 import numpy as np
 
-from parton_matching import hard_partons
 
 GEN_BB_PT_BINS = np.arange(0, 1025, 25)
 EFT_COLUMNS = ("EFTfitCoefficients", "EFTfitCoefficientIndex1", "EFTfitCoefficientIndex2", "WCnames")
 
 
 def gen_bb_pair(events):
-    """(pt, mass, dr) numpy arrays of the extra hard-process bb pair; -1 without exactly two b quarks."""
+    from parton_matching import hard_partons      # configs/common (on the path in the processor)
     partons = hard_partons(events.GenPart, "isFirstCopy", extra_b_as_boson=True)
     b = partons[(abs(partons.pdgId) == 5) & (partons.provenance == 1)]
     two = ak.to_numpy(ak.num(b) == 2)
@@ -74,3 +73,6 @@ def fill_eft_genbb(events, output, dataset):
     per_dataset = output.setdefault("eft_genbb", {}).setdefault(dataset, {})
     key = coefficient_structure(events)
     per_dataset[key] = per_dataset[key] + sums if key in per_dataset else sums
+    totals = output.setdefault("eft_genbb_total", {}).setdefault(dataset, {})
+    total = coefs.sum(axis=0)
+    totals[key] = totals[key] + total if key in totals else total

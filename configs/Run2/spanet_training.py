@@ -30,8 +30,8 @@ the provenance codes
 #                        (genmatcher.match_gen_sig: Zbb, Hbb, Zqq, ...)
 #   extra_b_as_boson   - label hard-process b quarks not from t/W/Z/H with provenance 1 (4F ttbb)
 SAMPLES = {
-    "ttHTobb":           {"subsamples": None},
-    "TTZToBB":           {"subsamples": None},
+    "ttHTobb":           {"subsamples": {"genMatch": "matchedGen_ZHbb_bb"}},
+    "TTZToBB":           {"subsamples": {"genMatch": "matchedGen_ZHbb_bb"}},
     "TTbb_SemiLeptonic": {"subsamples": "ttbar", "extra_b_as_boson": True},
     "TTToSemiLeptonic":  {"subsamples": "ttbar"},
 }

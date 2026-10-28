@@ -31,7 +31,7 @@ ERA_TO_YEAR = {e: ('2016' if (COMBINE_2016 and e.startswith('2016')) else e) for
 ANALYSIS_YEARS = list(dict.fromkeys(ERA_TO_YEAR.values()))          # e.g. ['2016', '2017', '2018']
 
 # Years to process (one datacard per year)
-YEARS = ['2018']           # e.g. ANALYSIS_YEARS for the full Run 2
+YEARS = ['2016', '2017', '2018']           # e.g. ANALYSIS_YEARS for the full Run 2
 
 YEAR_RE = '(?:' + '|'.join(sorted(ANALYSIS_YEARS, key=len, reverse=True)) + ')'
 

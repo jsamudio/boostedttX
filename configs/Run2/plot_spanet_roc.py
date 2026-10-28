@@ -122,8 +122,8 @@ def plot_year(df, year, model, outdir, bins):
         norm = h.sum()
         hep.histplot(h / norm, edges, yerr=np.sqrt(h2) / norm, histtype="step", color=color, lw=3,
                      ls="-" if g["signal"] else "--", label=g["label"], ax=ax)
-    ax.set_xlabel("SPANet discriminant")
-    ax.set_ylabel("Normalized to unit area")
+    ax.set_xlabel("SPANet score")
+    ax.set_ylabel("a.u.")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1.5 * ax.get_ylim()[1])        # headroom for the legend
     ax.legend(loc="upper center", ncol=2, fontsize="small", title=f"SPANet {model}")

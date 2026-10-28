@@ -34,6 +34,7 @@ PT_CHANNELS = {1: (200, 300), 2: (300, 450), 3: (450, np.inf)}
 MASS_BINS = np.arange(50, 205, 5)
 SIGNAL_SCALE = 10
 
+GEN_BB_PT_PLOT_BINS = np.array([0, 50, 100, 150, 200, 300, 400, 600, 1000])
 # stacked backgrounds, bottom to top (process names of the pickles)
 BACKGROUNDS = [
     ("ttX",       ["ttX"],       r"$t\bar{t}t\bar{t}$, $t\bar{t}\gamma$, $t\bar{t}W$", "#b2182b"),
@@ -102,7 +103,18 @@ def hist(df):
     return sumw, sumw2
 
 
-def plot(df, channel, selection, lumi, out):
+def score_label(edges, years, channel, selection):
+    """SPANet score range of the selected bins, e.g. 'SPANet score > 0.74'; per year if they differ."""
+    idx = SELECTIONS[selection]
+    def text(e):
+        low, high = e[min(idx) - 1], e[max(idx)]
+        return f"> {low:.2f}" if high >= 1 else f"{low:.2f} – {high:.2f}"
+    per_year = {y: text(np.asarray(edges[y][f"Zhpt{channel}"], dtype=float)) for y in years}
+    if len(set(per_year.values())) == 1:
+        return f"SPANet score {next(iter(per_year.values()))}"
+    return "SPANet score\n" + "\n".join(f"  {y}: {t}" for y, t in per_year.items())
+
+def plot(df, channel, selection, lumi, out, score_text):
     plt.style.use(hep.style.CMS)
     fig, ax = plt.subplots(figsize=(10, 8))
     stack, labels, colors = [], [], []
@@ -128,10 +140,11 @@ def plot(df, channel, selection, lumi, out):
     low, high = PT_CHANNELS[channel]
     pt_text = (rf"${low} < p_{{T}}^{{Z/H\ cand.}} < {high}$ GeV" if np.isfinite(high)
                else rf"$p_{{T}}^{{Z/H\ cand.}} > {low}$ GeV")
-    ax.text(0.04, 0.95, f"{pt_text}\n{SELECTION_LABEL[selection]}", transform=ax.transAxes,
-            ha="left", va="top", fontsize="small")
+    ax.text(0.04, 0.95, f"{pt_text}\n{score_text}", transform=ax.transAxes,
+            ha="left", va="top", fontsize="x-small", linespacing=1.3)
     ax.set_xlim(MASS_BINS[0], MASS_BINS[-1])
-    ax.set_ylim(0, 1.7 * max(ymax, 1e-9))           # room for the legend and the text
+    n_lines = 2 + score_text.count("\n")
+    ax.set_ylim(0, (1.5 + 0.12 * n_lines) * max(ymax, 1e-9))
     ax.set_xlabel(r"$m_{reg}^{Z/H\ cand.}$ [GeV]")
     ax.set_ylabel(f"Events / {MASS_BINS[1] - MASS_BINS[0]:g} GeV")
     ax.legend(ncol=1, fontsize="x-small", loc="upper right")
@@ -164,8 +177,9 @@ def main():
     for selection in SELECTIONS:
         selected = data[in_bins(data, edges, selection)]
         for channel in PT_CHANNELS:
-            plot(selected[selected["channel"] == channel], channel, selection, lumi,
-                 os.path.join(args.outdir, f"zh_mass_{args.model}_{selection}_Zhpt{channel}.pdf"))
+             plot(selected[selected["channel"] == channel], channel, selection, lumi,
+                 os.path.join(args.outdir, f"zh_mass_{args.model}_{selection}_Zhpt{channel}.pdf"),
+                 score_label(edges, args.years, channel, selection))
 
 
 if __name__ == "__main__":

@@ -67,10 +67,11 @@ class H5Dataset:
 
     def build_labels(self, df, sample):
         '''Build labels for the classification nodes.'''
-        # one 0/1 column per class; several samples can share a class (e.g. tt+C and tt+LF -> ttlf)
-        for label in dict.fromkeys(self.mapping_sample.values()):
-            value = 1 if self.mapping_sample[sample] == label else 0
-            df[label] = ak.values_astype(np.full(len(df), value, dtype=int), int)
+        for s, label in self.mapping_sample.items():
+            if s == sample:
+                df[label] = ak.values_astype(np.ones(len(df), dtype=int), int)
+            else:
+                df[label] = ak.values_astype(np.zeros(len(df), dtype=int), int)
 
         # Define one hot encoded label for multiclassifier
         if self.one_hot_encoding:
@@ -103,9 +104,18 @@ class H5Dataset:
         for input_file in self.input_files:
             print("Reading file: ", input_file)
             df = ak.from_parquet(input_file)
+            # --- DEBUGGING BLOCK START ---
+            if "FatJetSorted" in df.fields:
+                if "bbtag" in df["FatJetSorted"].fields:
+                    print(f"  -> [OK] FatJetSorted.bbtag exists. Type: {ak.type(df['FatJetSorted']['bbtag'])}")
+                else:
+                    print(f"  -> [ERROR] 'bbtag' is MISSING in FatJetSorted in file: {input_file}")
+            else:
+                print(f"  -> [ERROR] 'FatJetSorted' is MISSING entirely in file: {input_file}")
+            # --- DEBUGGING BLOCK END ---
             # For data, save weights of 1 for all events
             if self.has_data & (not "event" in df.fields):
-                df["event"] = ak.zip({"weight": np.ones(len(df), dtype=np.float)})
+                df["event"] = ak.zip({"weight": np.ones(len(df), dtype=float)})
             # Reweigh the events by a factor
             if self.reweigh:
                 df = self.scale_weights(df, self.get_sample_name(input_file))
@@ -114,6 +124,7 @@ class H5Dataset:
             dfs.append(df)
         # Return the concatenated dataframe
         # If shuffle is True, the events are randomly shuffled
+        print(dfs)
         df_concat = ak.concatenate(dfs)
         if self.shuffle:
             df_concat = df_concat[np.random.permutation(len(df_concat))]
@@ -175,11 +186,11 @@ class H5Dataset:
     def create_groups(self):
         '''Create the groups in the h5 file.'''
         for target in self.targets:
-            self.file.create_group(f"{SpecialKey.Targets}/{target}")
+            self.file.create_group(f"{SpecialKey.Targets.value}/{target}")
         for object in self.input_features.keys():
-            self.file.create_group(f"{SpecialKey.Inputs}/{object}")
+            self.file.create_group(f"{SpecialKey.Inputs.value}/{object}")
         for group in self.classification_targets:
-            self.file.create_group(f"{SpecialKey.Classifications}/{group}")
+            self.file.create_group(f"{SpecialKey.Classifications.value}/{group}")
 
     def create_targets(self, df):
         jets = df[self.collection["Jet"]]
@@ -191,7 +202,7 @@ class H5Dataset:
 
         for target in self.targets:
             # no jets to attribute to the H, so we need to define it as just the FatJet
-            
+
             if target == "h":
                 mask = jets.prov == 1 # H->b1b2
                 # We select the local indices of jets matched with the Higgs
@@ -204,9 +215,9 @@ class H5Dataset:
                 index_b2 = indices_prov[:,1]
                 print("index_b2", index_b2)
 
-                self.file.create_dataset(f"{SpecialKey.Targets}/h/b1", np.shape(index_b1), dtype='int64', data=index_b1)
-                self.file.create_dataset(f"{SpecialKey.Targets}/h/b2", np.shape(index_b2), dtype='int64', data=index_b2)
-            
+                self.file.create_dataset(f"{SpecialKey.Targets.value}/h/b1", np.shape(index_b1), dtype='int64', data=index_b1)
+                self.file.create_dataset(f"{SpecialKey.Targets.value}/h/b2", np.shape(index_b2), dtype='int64', data=index_b2)
+
             elif target == "t1":
                 mask = jets.prov == 5 # W->q1q2 from t1
                 indices_prov = ak.fill_none(ak.pad_none(indices[mask], 2), -1)
@@ -218,15 +229,16 @@ class H5Dataset:
                 mask = jets.prov == 2 # t1->Wb
                 index_b_hadr = ak.fill_none(ak.pad_none(indices[mask], 1), -1)[:,0]
 
-                self.file.create_dataset(f"{SpecialKey.Targets}/t1/q1", np.shape(index_q1), dtype='int64', data=index_q1)
-                self.file.create_dataset(f"{SpecialKey.Targets}/t1/q2", np.shape(index_q2), dtype='int64', data=index_q2)
-                self.file.create_dataset(f"{SpecialKey.Targets}/t1/b", np.shape(index_b_hadr), dtype='int64', data=index_b_hadr)
+                self.file.create_dataset(f"{SpecialKey.Targets.value}/t1/q1", np.shape(index_q1), dtype='int64', data=index_q1)
+                self.file.create_dataset(f"{SpecialKey.Targets.value}/t1/q2", np.shape(index_q2), dtype='int64', data=index_q2)
+                self.file.create_dataset(f"{SpecialKey.Targets.value}/t1/b", np.shape(index_b_hadr), dtype='int64', data=index_b_hadr)
 
             elif target == "t2":
                 mask = jets.prov == 3 # t2->b
                 index_b_lep = ak.fill_none(ak.pad_none(indices[mask], 1), -1)[:,0]
 
-                self.file.create_dataset(f"{SpecialKey.Targets}/t2/b", np.shape(index_b_lep), dtype='int64', data=index_b_lep)
+                self.file.create_dataset(f"{SpecialKey.Targets.value}/t2/b", np.shape(index_b_lep), dtype='int64', data=index_b_lep)
+
             else:
                 raise NotImplementedError
 
@@ -234,12 +246,12 @@ class H5Dataset:
         '''Create the classification targets in the h5 file.'''
         for group, targets in self.classification_targets.items():
             for target in targets:
-                if group == SpecialKey.Event:
+                if group == SpecialKey.Event.value:
                     try:
                         values = df[target]
                     except:
                         raise Exception(f"Target {target} not found in the dataframe.")
-                    self.file.create_dataset(f"{SpecialKey.Classifications}/{group}/{target}", np.shape(values), dtype='int64', data=values)
+                    self.file.create_dataset(f"{SpecialKey.Classifications.value}/{group}/{target}", np.shape(values), dtype='int64', data=values)
                     print(group, target, values)
                 else:
                     raise NotImplementedError
@@ -247,8 +259,8 @@ class H5Dataset:
     def create_weights(self, df):
         '''Create the weights in the h5 file.'''
         weights = df.event.weight
-        print("Creating dataset: ", f"{SpecialKey.Weights}/weight")
-        self.file.create_dataset(f"{SpecialKey.Weights}/weight", np.shape(weights), dtype='float32', data=weights)
+        print("Creating dataset: ", f"{SpecialKey.Weights.value}/weight")
+        self.file.create_dataset(f"{SpecialKey.Weights.value}/weight", np.shape(weights), dtype='float32', data=weights)
 
     def create_inputs(self, df):
         '''Create the input arrays in the h5 file.'''
@@ -260,7 +272,7 @@ class H5Dataset:
                     dtype = 'bool'
                 else:
                     dtype = 'float32'
-                dataset_name = f"{SpecialKey.Inputs}/{obj}/{feat}"
+                dataset_name = f"{SpecialKey.Inputs.value}/{obj}/{feat}"
                 print("Creating dataset: ", dataset_name)
                 print("Shape is:", np.shape(val))
                 ds = self.file.create_dataset(dataset_name, np.shape(val), dtype=dtype, data=val)
@@ -333,7 +345,7 @@ class H5Dataset:
 
         df = getattr(self.dataset, dataset_type)
         output_file = self.output_file.replace(".h5", f"_{dataset_type}_{len(df)}.h5")
-        
+
         print("Creating output file: ", output_file)
         self.file = h5py.File(output_file, "w")
         self.create_groups()

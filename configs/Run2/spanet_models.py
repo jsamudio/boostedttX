@@ -26,6 +26,13 @@ _FATJET_XBB = _FATJET_NOXBB + ["bbtag"]
 _FATJET_MULTIWP = _FATJET_NOXBB + ["xbb_wp_L", "xbb_wp_M", "xbb_wp_T"]
 
 SPANET_MODELS = {
+    "refactor_noOverlap_MultiWP": {
+        "path": f"{SPANET_DIR}/refactor_NoOverlap_MultiWP.onnx",
+        "jet_features": ["pt", "eta", "sin_phi", "cos_phi", "btagB"],
+        "fatjet_features": ["pt", "eta", "sin_phi", "cos_phi", "xbb_wp_L", "xbb_wp_M", "xbb_wp_T"],
+        "event_features": ["sphericity", "aplanarity", "centrality", "n_jets", "n_bjets_L", "n_bjets_M", "n_bjets_H"],
+        "count_clean_jets": False,
+        "clean_jets": True},
     "baseline": {
         "path": f"{SPANET_DIR}/run2UL.onnx",
         "jet_features": _JET, "fatjet_features": _FATJET_XBB, "clean_jets": False},
@@ -47,7 +54,7 @@ SPANET_MODELS = {
 }
 
 # Models evaluated / exported / turned into datacards
-ACTIVE_MODELS = ["noOverlap_MultiWP"]
+ACTIVE_MODELS = ["noOverlap_MultiWP", "refactor_noOverlap_MultiWP"]
 
 N_ENCODER_FEATURES = 32
 

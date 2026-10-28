@@ -14,10 +14,13 @@ point of --era, MET >= 20 GeV, 50 < mass < 200 GeV).
 The EFT weight of an event at a WC point c (c_0 = 1 for the SM) is
     w(c) = sum_k EFTfitCoefficients_k * c[EFTfitCoefficientIndex1_k] * c[EFTfitCoefficientIndex2_k]
 
+With --xsec (and --coffea, which holds the SM weight sum of all generated events) the spectra are
+expected events: w(c) * xsec * lumi / (sum of the SM weights of all generated events).
+
     python3 plot_eft_pt.py --wc cbwre --values -2 -1 1 2 \\
         --coffea outputs_eft/nominal/EFT/output_all.coffea \\
         --dumps /cms/data/store/user/jsamudio/eftchunks/2018/ttbbSMEFT_2018/btag_mask/nominal \\
-        --datacard-cuts --era 2018 -o plots/eft_pt
+        --datacard-cuts --era 2018 --xsec 19.261 --lumi 59.8 -o plots/eft_pt
 """
 import argparse
 import json
@@ -76,9 +79,10 @@ def binned_sums(values, coefs, bins):
 
 # ---------------------------------------------------------------- inputs
 def read_accumulator(paths):
-    """Gen bb pT coefficient sums over all generated events: (sums, index1, index2, names)."""
+    """Gen bb pT coefficient sums over all generated events:
+    (sums, index1, index2, names, coefficient sums of all generated events or None)."""
     from coffea.util import load
-    total, structure = None, None
+    total, structure, all_events = None, None, None
     for path in paths:
         out = load(path)
         if "eft_genbb" not in out:
@@ -89,8 +93,13 @@ def read_accumulator(paths):
                     raise SystemExit(f"{dataset}: different EFT coefficient structure than the other datasets")
                 structure = key
                 total = sums if total is None else total + sums
+            for key, tot in out.get("eft_genbb_total", {}).get(dataset, {}).items():
+                all_events = tot if all_events is None else all_events + tot
     meta = json.loads(structure)
-    return total, meta["index1"], meta["index2"], ["SM"] + decode_WCnames(meta["wcnames"])
+    if all_events is None:
+        print("  [WARNING] no 'eft_genbb_total' in the .coffea output (produced before it was added): "
+              "--xsec normalization not possible")
+    return total, meta["index1"], meta["index2"], ["SM"] + decode_WCnames(meta["wcnames"]), all_events
 
 
 def read_dumps(paths, datacard_cuts, era):
@@ -134,9 +143,10 @@ def read_dumps(paths, datacard_cuts, era):
 
 
 # ---------------------------------------------------------------- plot
-def plot(sums, index1, index2, names, wc, values, bins, xlabel, label, out, normalize):
+def plot(sums, index1, index2, names, wc, values, bins, xlabel, label, out, normalize, scale=1.0):
     plt.style.use(hep.style.CMS)
     fig, (ax, rax) = plt.subplots(2, 1, figsize=(10, 10), gridspec_kw={"height_ratios": [3, 1]}, sharex=True)
+    sums = sums * scale
     sm = sums @ point_weights(index1, index2, names, wc, 0.0)
     norm = (lambda h: h / h.sum()) if normalize else (lambda h: h)
     hep.histplot(norm(sm), bins, color="black", lw=2, label="SM", ax=ax)
@@ -148,8 +158,9 @@ def plot(sums, index1, index2, names, wc, values, bins, xlabel, label, out, norm
     rax.axhline(1, color="black", lw=1)
     rax.set_ylabel("EFT / SM")
     rax.set_xlabel(xlabel)
-    ax.set_ylabel("Normalized" if normalize else "Weighted events (a.u.)")
+    ax.set_ylabel("Normalized" if normalize else ("Events / bin" if scale != 1.0 else "Weighted events (a.u.)"))
     ax.set_yscale("log")
+    rax.set_ylim(0,4)
     ax.set_xlim(bins[0], bins[-1])
     ax.legend(title=r"$t\bar{t}+b\bar{b}$ EFT sample, " + label, fontsize="small", title_fontsize="small")
     hep.cms.label("Preliminary", data=False, rlabel="(13 TeV)", ax=ax)
@@ -169,23 +180,34 @@ def main():
     ap.add_argument("--datacard-cuts", action="store_true", help="apply the datacard selection to the dumps")
     ap.add_argument("--era", default="2018", help="era of the Xbb working point for --datacard-cuts")
     ap.add_argument("--normalize", action="store_true", help="compare shapes (each spectrum to unit area)")
+    ap.add_argument("--xsec", type=float, default=None, help="SM cross section [pb] -> expected events (needs --coffea)")
+    ap.add_argument("--lumi", type=float, default=59.8, help="luminosity [fb^-1] for --xsec")
     ap.add_argument("-o", "--outdir", default="plots/eft_pt")
     args = ap.parse_args()
     if not args.coffea and not args.dumps:
         raise SystemExit("Give --coffea and/or --dumps")
+    if args.xsec is not None and not args.coffea:
+        raise SystemExit("--xsec needs --coffea (the SM weight sum of all generated events)")
 
     tag = f"{args.wc}{'_norm' if args.normalize else ''}"
+    scale = 1.0
     if args.coffea:
-        sums, i1, i2, names = read_accumulator(args.coffea)
+        sums, i1, i2, names, all_events = read_accumulator(args.coffea)
+        if args.xsec is not None and all_events is not None:
+            k00 = [k for k, (a, b) in enumerate(zip(i1, i2)) if a == 0 and b == 0][0]
+            scale = args.xsec * args.lumi * 1000 / all_events[k00]
+            print(f"  expected events: xsec {args.xsec} pb x {args.lumi} fb^-1 / SM weight sum "
+                  f"{all_events[k00]:.4g} -> scale {scale:.4g}")
         plot(sums, i1, i2, names, args.wc, args.values, GEN_BB_PT_BINS, VARIABLES["gen_bb_pt"][2],
-             "all generated events", os.path.join(args.outdir, f"gen_bb_pt_inclusive_{tag}.pdf"), args.normalize)
+             "all generated events", os.path.join(args.outdir, f"gen_bb_pt_inclusive_{tag}.pdf"),
+             args.normalize, scale)
     if args.dumps:
         sums, i1, i2, names = read_dumps(args.dumps, args.datacard_cuts, args.era)
         label = "datacard selection" if args.datacard_cuts else "b-tag category"
         for v, s in sums.items():
             _, bins, xlabel = VARIABLES[v]
             plot(s, i1, i2, names, args.wc, args.values, bins, xlabel, label,
-                 os.path.join(args.outdir, f"{v}_selected_{tag}.pdf"), args.normalize)
+                 os.path.join(args.outdir, f"{v}_selected_{tag}.pdf"), args.normalize, scale)
 
 
 if __name__ == "__main__":

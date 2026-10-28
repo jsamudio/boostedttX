@@ -34,14 +34,14 @@ import uproot
 
 # card process -> plot group (regular expressions, first match), stacked bottom to top
 GROUPS = [
-    ("TTBar",     r"^TTBar$",          r"$t\bar{t}$+LF, $t\bar{t}+c\bar{c}$", "#ff9933"),
-    ("tt_B",      r"^tt_B$",           r"$t\bar{t}+b\bar{b}$",                 "#4daf4a"),
-    ("SingleTop", r"^SingleTop$",      "single top",                           "#8c564b"),
-    ("ttX",       r"^ttX$",            r"$t\bar{t}t\bar{t}$, $t\bar{t}\gamma$, $t\bar{t}W$", "#b2182b"),
-    ("VJets",     r"^VJets$",          "V+jets",                               "#66ccee"),
-    ("QCD",       r"^QCD$",            "QCD",                                  "#999999"),
     ("ttH",       r"^ttH\d*$",         r"$t\bar{t}H$",                         "#e600e6"),
     ("ttZ",       r"^ttZ\d*$",         r"$t\bar{t}Z$",                         "#1f3a93"),
+    ("ttX",       r"^ttX$",            r"$t\bar{t}t\bar{t}$, $t\bar{t}\gamma$, $t\bar{t}W$", "#b2182b"),
+    ("VJets",     r"^VJets$",          "V+jets",                               "#66ccee"),
+    ("SingleTop", r"^SingleTop$",      "single top",                           "#8c564b"),
+    ("tt_B",      r"^tt_B$",           r"$t\bar{t}+b\bar{b}$",                 "#4daf4a"),
+    ("TTBar",     r"^TTBar$",          r"$t\bar{t}$+LF, $t\bar{t}+c\bar{c}$", "#ff9933"),
+    #("QCD",       r"^QCD$",            "QCD",                                  "#999999"),
 ]
 # Run 2 channels (makeDatacard.pt_bins = [0, 200, 300, 450])
 CHANNEL_LABELS = {"Zhpt1": r"$200 < p_{T}^{Z/H\ cand.} < 300$",
