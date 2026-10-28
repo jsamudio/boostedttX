@@ -110,7 +110,8 @@ def extra_column_group(sample):
     return None
 
 
-EFT_COLUMNS = ["EFTfitCoefficients", "EFTfitCoefficientIndex1", "EFTfitCoefficientIndex2", "WCnames"]
+EFT_COLUMNS = ["EFTfitCoefficients", "EFTfitCoefficientIndex1", "EFTfitCoefficientIndex2", "WCnames",
+               "gen_bb_pt", "gen_bb_mass", "gen_bb_dr"]
 
 # ---------------------------------------------------------------- pickling (outputToPkl.py)
 # Both gen-matching categories of every signal sample

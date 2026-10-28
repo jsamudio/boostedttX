@@ -17,7 +17,7 @@ from custom_scale_factors import sf_jet_puId_era, set_fatjet_mass, sf_mu, sf_par
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
 from theory_norms import fill_theory_sums
-from eft_genbb import fill_eft_genbb
+from eft_genbb import fill_eft_genbb, gen_bb_pair, is_eft_sample
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
 from dctr import apply_dctr_hdamp, set_default_dctr_columns
@@ -284,6 +284,8 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
             self.events['topptWeight'] = 1
             self.events['topptWeight_Up'] = 1
             self.events['topptWeight_Down'] = 1
+        if is_eft_sample(self.events):
+            self.events['gen_bb_pt'], self.events['gen_bb_mass'], self.events['gen_bb_dr'] = gen_bb_pair(self.events)
 
     def calculate_xbb_sfs(self):
         """Per-event Xbb SF (nominal, up, down): multi-WP method for real (2 gen b) candidates,
