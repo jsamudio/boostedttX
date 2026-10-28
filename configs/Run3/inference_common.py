@@ -100,8 +100,10 @@ BTAG_EFF_PT_BINS = [30, 50, 70, 100, 140, 200, 300, 600, 1000]
 BTAG_EFF_ABSETA_BINS = [0.0, 0.6, 1.2, 1.8, 2.4]
 BTAG_EFF_HISTOGRAMS = {
     "btag_eff": HistConf([
-        Axis(coll="JetGood", field="hadronFlavour", type="intcat", bins=[0, 4, 5], name="flavor",
-             label="Hadron flavour"),
+        # numeric axis (pocket-coffea fills categorical axes only from metadata / custom fields):
+        # bins [0, 4) light, [4, 5) c, [5, 6) b
+        Axis(coll="JetGood", field="hadronFlavour", type="variable", bins=[0, 4, 5, 6], name="flavor",
+             label="Hadron flavour", underflow=False, overflow=False),
         Axis(coll="JetGood", field="pt", type="variable", bins=BTAG_EFF_PT_BINS, name="pt",
              label=r"$p_T$ [GeV]"),
         Axis(coll="JetGood", field="abseta", type="variable", bins=BTAG_EFF_ABSETA_BINS, name="abseta",

@@ -155,7 +155,7 @@ def main():
 
     output = load(args.input)
     sums, axes = group_histograms(output)
-    flavors = list(axes["flavor"])
+    flavors = [int(lo) for lo in axes["flavor"].edges[:-1]]       # bins [0, 4), [4, 5), [5, 6)
     pt_edges, eta_edges = np.asarray(axes["pt"].edges), np.asarray(axes["abseta"].edges)
     if len(axes["level"]) != len(BTAG_SF_WPS) + 1:
         raise ValueError(f"Histogram has {len(axes['level'])} b-tag levels, expected {len(BTAG_SF_WPS) + 1} "
