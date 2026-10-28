@@ -1,0 +1,290 @@
+{
+    "TTToHadronic_hdampUP": {
+        "sample": "TTToHadronic_hdampUP",
+        "json_output": "datasets/TTToHadronic_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto4Q_Par-Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 419.31
+                }
+            }
+        ]
+    },
+    "TTToHadronic_hdampDOWN": {
+        "sample": "TTToHadronic_hdampDOWN",
+        "json_output": "datasets/TTToHadronic_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto4Q_Par-Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 419.31
+                }
+            }
+        ]
+    },
+    "TTToHadronic_TuneCP5up": {
+        "sample": "TTToHadronic_TuneCP5up",
+        "json_output": "datasets/TTToHadronic_TuneCP5up.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto4Q_TuneCP5Up_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 419.31
+                }
+            }
+        ]
+    },
+    "TTToHadronic_TuneCP5down": {
+        "sample": "TTToHadronic_TuneCP5down",
+        "json_output": "datasets/TTToHadronic_TuneCP5down.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto4Q_TuneCP5Down_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 419.31
+                }
+            }
+        ]
+    },
+    "TTToSemiLeptonic_hdampUP": {
+        "sample": "TTToSemiLeptonic_hdampUP",
+        "json_output": "datasets/TTToSemiLeptonic_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTtoLNu2Q_Par-Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 405.4604
+                }
+            }
+        ]
+    },
+    "TTToSemiLeptonic_hdampDOWN": {
+        "sample": "TTToSemiLeptonic_hdampDOWN",
+        "json_output": "datasets/TTToSemiLeptonic_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTtoLNu2Q_Par-Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 405.4604
+                }
+            }
+        ]
+    },
+    "TTToSemiLeptonic_TuneCP5up": {
+        "sample": "TTToSemiLeptonic_TuneCP5up",
+        "json_output": "datasets/TTToSemiLeptonic_TuneCP5up.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTtoLNu2Q_TuneCP5Up_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 405.4604
+                }
+            }
+        ]
+    },
+    "TTToSemiLeptonic_TuneCP5down": {
+        "sample": "TTToSemiLeptonic_TuneCP5down",
+        "json_output": "datasets/TTToSemiLeptonic_TuneCP5down.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTtoLNu2Q_TuneCP5Down_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 405.4604
+                }
+            }
+        ]
+    },
+    "TTTo2L2Nu_hdampUP": {
+        "sample": "TTTo2L2Nu_hdampUP",
+        "json_output": "datasets/TTTo2L2Nu_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto2L2Nu_Par-Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97.9016
+                }
+            }
+        ]
+    },
+    "TTTo2L2Nu_hdampDOWN": {
+        "sample": "TTTo2L2Nu_hdampDOWN",
+        "json_output": "datasets/TTTo2L2Nu_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto2L2Nu_Par-Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97.9016
+                }
+            }
+        ]
+    },
+    "TTTo2L2Nu_TuneCP5up": {
+        "sample": "TTTo2L2Nu_TuneCP5up",
+        "json_output": "datasets/TTTo2L2Nu_TuneCP5up.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto2L2Nu_TuneCP5Up_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97.9016
+                }
+            }
+        ]
+    },
+    "TTTo2L2Nu_TuneCP5down": {
+        "sample": "TTTo2L2Nu_TuneCP5down",
+        "json_output": "datasets/TTTo2L2Nu_TuneCP5down.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto2L2Nu_TuneCP5Down_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97.9016
+                }
+            }
+        ]
+    },
+    "TTbb_Hadronic_TuneCP5up": {
+        "sample": "TTbb_Hadronic_TuneCP5up",
+        "json_output": "datasets/TTbb_Hadronic_TuneCP5up.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBBto4Q_TuneCP5Up_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 19.15297
+                }
+            }
+        ]
+    },
+    "TTbb_Hadronic_TuneCP5down": {
+        "sample": "TTbb_Hadronic_TuneCP5down",
+        "json_output": "datasets/TTbb_Hadronic_TuneCP5down.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBBto4Q_TuneCP5Down_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 19.15297
+                }
+            }
+        ]
+    },
+    "TTbb_SemiLeptonic_TuneCP5up": {
+        "sample": "TTbb_SemiLeptonic_TuneCP5up",
+        "json_output": "datasets/TTbb_SemiLeptonic_TuneCP5up.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBBtoLNu2Q_TuneCP5Up_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 17.36875
+                }
+            }
+        ]
+    },
+    "TTbb_SemiLeptonic_TuneCP5down": {
+        "sample": "TTbb_SemiLeptonic_TuneCP5down",
+        "json_output": "datasets/TTbb_SemiLeptonic_TuneCP5down.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBBtoLNu2Q_TuneCP5Down_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 17.36875
+                }
+            }
+        ]
+    },
+    "TTbb_2L2Nu_TuneCP5up": {
+        "sample": "TTbb_2L2Nu_TuneCP5up",
+        "json_output": "datasets/TTbb_2L2Nu_TuneCP5up.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBBto2L2Nu_TuneCP5Up_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 3.74766
+                }
+            }
+        ]
+    },
+    "TTbb_2L2Nu_TuneCP5down": {
+        "sample": "TTbb_2L2Nu_TuneCP5down",
+        "json_output": "datasets/TTbb_2L2Nu_TuneCP5down.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBBto2L2Nu_TuneCP5Down_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 3.74766
+                }
+            }
+        ]
+    }
+}

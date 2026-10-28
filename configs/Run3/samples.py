@@ -31,6 +31,15 @@ DATASET_JSONS = [
 SIGNAL_SAMPLES = ["ttHTobb", "ttHToNonbb", "TTZToQQ", "TTLL", "TTNuNu"]
 TTBAR_SAMPLES = ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu",
                  "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic"]
+
+# ttbar / ttbb modelling variations (dedicated samples, same cross section as the nominal sample).
+# datasets/<name>.json are built with pocket-coffea build-datasets from
+# datasets/ttbar_variations_definitions.json; they are loaded only when processed (inference_common.py).
+# No hdamp samples exist for the ttbb in 2024 (DCTR reweighting instead, dctr.py).
+TTBAR_VARIATIONS = ["hdampUP", "hdampDOWN", "TuneCP5up", "TuneCP5down"]
+TTBB_VARIATIONS = ["TuneCP5up", "TuneCP5down"]
+TTBAR_VARIATION_SAMPLES = ([f"{s}_{v}" for s in ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"] for v in TTBAR_VARIATIONS]
+                           + [f"{s}_{v}" for s in ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu"] for v in TTBB_VARIATIONS])
 MINOR_SAMPLES = ["WJets", "DYJets", "SingleTop", "TTX", "VV"]
 QCD_SAMPLES = ["QCD"]
 EFT_SAMPLES = ["ttHSMEFT", "ttbbSMEFT"]
@@ -56,6 +65,7 @@ GROUPS = {
     "signal":  {"samples": SIGNAL_SAMPLES},
     "bkg":     {"samples": TTBAR_SAMPLES},
     "minor":   {"samples": MINOR_SAMPLES},
+    "variations": {"samples": TTBAR_VARIATION_SAMPLES},
     "qcd":     {"samples": QCD_SAMPLES},
     "EFT":     {"samples": EFT_SAMPLES},
     "data":    {"samples": DATA_SAMPLES, "is_data": True},
@@ -86,7 +96,7 @@ GENMATCH_SPLIT = ["genMatch", "non_genMatch"]
 
 def subsample_names(sample):
     """Output keys of a sample in the .coffea file, e.g. 'TTToHadronic__tt+LF'."""
-    if sample in TTBAR_SAMPLES:
+    if sample in TTBAR_SAMPLES or sample in TTBAR_VARIATION_SAMPLES:
         return [f"{sample}__{s}" for s in TTBAR_SPLIT]
     if sample in SIGNAL_SAMPLES:
         return [f"{sample}__{s}" for s in GENMATCH_SPLIT]
@@ -98,7 +108,7 @@ def extra_column_group(sample):
     """Which outvars list a sample exports on top of the common columns: 'sig', 'bkg' or None."""
     if sample in SIGNAL_SAMPLES or sample == "ttHSMEFT":
         return "sig"
-    if sample in TTBAR_SAMPLES or sample == "ttbbSMEFT":
+    if sample in TTBAR_SAMPLES or sample in TTBAR_VARIATION_SAMPLES or sample == "ttbbSMEFT":
         return "bkg"
     return None
 

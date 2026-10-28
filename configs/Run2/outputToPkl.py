@@ -32,6 +32,8 @@ from samples import PICKLE_SIGNAL, PICKLE_BACKGROUND
 from spanet_models import ACTIVE_MODELS, score_columns
 
 ERA_SUFFIX = re.compile(rf'_{ERA_RE}$')
+# ttbar / ttbb modelling-variation samples (samples.TTBAR_VARIATION_SAMPLES): nominal cross section
+VARIATION_SUFFIX = re.compile(r'_(hdampUP|hdampDOWN|TuneCP5up|TuneCP5down)$')
 
 SIG = PICKLE_SIGNAL          # (sub)samples exported, see samples.py
 BKG = PICKLE_BACKGROUND
@@ -68,8 +70,8 @@ MODELS = ACTIVE_MODELS       # see spanet_models.py
 
 def get_norm(sample, dataset, genweight_df, era):
     """Per-event normalization: lumi(era) * xsec / sum of sign(genWeight). Fails loudly."""
-    name = ERA_SUFFIX.sub('', dataset)
-    key = name if name in XSEC_DICT else sample.split('__')[0]
+    name = VARIATION_SUFFIX.sub('', ERA_SUFFIX.sub('', dataset))
+    key = name if name in XSEC_DICT else VARIATION_SUFFIX.sub('', sample.split('__')[0])
     if key not in XSEC_DICT:
         raise KeyError(f"No cross section for dataset '{dataset}' (sample '{sample}')")
     if dataset not in genweight_df.index:

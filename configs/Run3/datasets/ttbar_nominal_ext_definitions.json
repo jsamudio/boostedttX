@@ -1,0 +1,55 @@
+{
+    "TTto4Q": {
+        "sample": "TTToHadronic",
+        "json_output": "datasets/TTToHadronic.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+                    "/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2_ext1-v2/NANOAODSIM",
+                    "/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2_ext2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 419.31
+                }
+            }
+        ]
+    },
+    "TTtoLNu2Q": {
+        "sample": "TTToSemiLeptonic",
+        "json_output": "datasets/TTToSemiLeptonic.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+                    "/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2_ext1-v2/NANOAODSIM",
+                    "/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2_ext2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 405.4604
+                }
+            }
+        ]
+    },
+    "TTto2L2Nu": {
+        "sample": "TTTo2L2Nu",
+        "json_output": "datasets/TTTo2L2Nu.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM",
+                    "/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2_ext1-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 97.9016
+                }
+            }
+        ]
+    }
+}

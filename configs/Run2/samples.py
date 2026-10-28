@@ -29,6 +29,15 @@ DATASET_JSONS = [
 SIGNAL_SAMPLES = ["ttHTobb", "ttHToNonbb", "TTZToQQ", "TTZToLLNuNu", "TTZToBB"]
 TTBAR_SAMPLES = ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu",
                  "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic"]
+
+# ttbar / ttbb modelling variations (dedicated samples, same cross section as the nominal sample).
+# datasets/<name>.json are built with pocket-coffea build-datasets from
+# datasets/ttbar_variations_definitions.json; they are loaded only when processed (inference_common.py).
+# No UE tune samples exist for the 4FS ttbb in UL.
+TTBAR_VARIATIONS = ["hdampUP", "hdampDOWN", "TuneCP5up", "TuneCP5down"]
+TTBB_VARIATIONS = ["hdampUP", "hdampDOWN"]
+TTBAR_VARIATION_SAMPLES = ([f"{s}_{v}" for s in ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"] for v in TTBAR_VARIATIONS]
+                           + [f"{s}_{v}" for s in ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu"] for v in TTBB_VARIATIONS])
 MINOR_SAMPLES = ["WJetsToLNu", "DYJetsToLL", "SingleTop", "ttX"]       # add "QCD" here if needed
 EFT_SAMPLES = ["ttHSMEFT", "ttZSMEFT", "ttbbSMEFT"]
 DATA_SAMPLES = ["DATA_EGamma", "DATA_Muon"]
@@ -47,6 +56,7 @@ GROUPS = {
     "signal": {"samples": SIGNAL_SAMPLES},
     "bkg":    {"samples": TTBAR_SAMPLES},
     "minor":  {"samples": MINOR_SAMPLES},
+    "variations": {"samples": TTBAR_VARIATION_SAMPLES},
     "EFT":    {"samples": EFT_SAMPLES,
                "dump_dir": "/cms/data/store/user/jsamudio/eftchunks/{era}/"},
     "data":   {"samples": DATA_SAMPLES, "is_data": True},
@@ -73,7 +83,7 @@ GENMATCH_SPLIT = ["genMatch", "non_genMatch"]
 
 def subsample_split(sample):
     """Name of the subsample split used for a sample: 'ttbar', 'genmatch' or None."""
-    if sample in TTBAR_SAMPLES:
+    if sample in TTBAR_SAMPLES or sample in TTBAR_VARIATION_SAMPLES:
         return "ttbar"
     if sample in SIGNAL_SAMPLES:
         return "genmatch"
@@ -95,7 +105,7 @@ def extra_column_group(sample):
     """Which outvars list a sample exports on top of the common columns: 'sig', 'bkg' or None."""
     if sample in SIGNAL_SAMPLES or sample in ("ttHSMEFT", "ttZSMEFT"):
         return "sig"
-    if sample in TTBAR_SAMPLES or sample == "ttbbSMEFT":
+    if sample in TTBAR_SAMPLES or sample in TTBAR_VARIATION_SAMPLES or sample == "ttbbSMEFT":
         return "bkg"
     return None
 

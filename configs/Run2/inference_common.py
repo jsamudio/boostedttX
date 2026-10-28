@@ -188,9 +188,22 @@ def load_parameters(eras):
     return parameters, [shape_calibrator]
 
 
+def dataset_jsons(sample_list):
+    """Dataset files: the nominal ones, and those of the variation samples that are processed
+    (built from datasets/ttbar_variations_definitions.json, so they may not exist yet)."""
+    names = list(samples.DATASET_JSONS)
+    for name in samples.TTBAR_VARIATION_SAMPLES:
+        if name in sample_list:
+            if not os.path.exists(f"{LOCALDIR}/datasets/{name}.json"):
+                raise FileNotFoundError(f"datasets/{name}.json not built: pocket-coffea build-datasets "
+                                        f"--cfg datasets/ttbar_variations_definitions.json")
+            names.append(name)
+    return [f"{LOCALDIR}/datasets/{name}.json" for name in names]
+
+
 def build_subsamples():
     subsamples = {}
-    for sample in samples.TTBAR_SAMPLES:
+    for sample in samples.TTBAR_SAMPLES + samples.TTBAR_VARIATION_SAMPLES:
         subsamples[sample] = {name: [get_genTtbarId_100_eq(ids)] for name, ids in samples.TTBAR_SPLIT.items()}
     for sample in samples.SIGNAL_SAMPLES:
         subsamples[sample] = {"genMatch": [genMatch], "non_genMatch": [non_genMatch]}
@@ -339,7 +352,7 @@ def build_config(group, eras=None, sample_list=None):
     return Configurator(
         parameters=parameters,
         datasets={
-            "jsons": [f"{LOCALDIR}/datasets/{name}.json" for name in samples.DATASET_JSONS],
+            "jsons": dataset_jsons(sample_list),
             "filter": {
                 "samples": sample_list,
                 "samples_exclude": [],
