@@ -13,7 +13,8 @@ def match_gen_lep(events):
     gen_pt = events.GenPart.pt
     #islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & ((abs(gen_id[gen_mom[gen_mom]]) == 6) | (abs(gen_id[gen_mom[gen_mom]]) == 24)) &(abs(gen_id[gen_mom]) ==24))
     islep = (((abs(gen_id) == 11) | (abs(gen_id) == 13)) & (abs(events.GenPart[gen_mom].distinctParent.pdgId) == 6) &(abs(gen_id[gen_mom]) ==24))
-    lep_match_dr = deltaR(events.LeptonGood, events.GenPart[islep])
+    # flatten per event (leptons x gen leptons): deltaR flattens over events, valid for one object only
+    lep_match_dr = ak.flatten(events.LeptonGood.metric_table(events.GenPart[islep]), axis=2)
     events["matchedGenLep"] = (ak.sum(lep_match_dr <= 0.1, axis=1) > 0)
 
 def match_gen_tt(events, sample):
