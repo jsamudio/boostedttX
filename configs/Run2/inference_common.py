@@ -326,7 +326,6 @@ def build_config(group, eras=None, sample_list=None):
     workflow_options = {
         "parton_jet_min_dR": 0.3,
         "parton_jet_min_dR_postfsr": 1.0,
-        "pnet_mass_json": f"{LOCALDIR}/pnet_mass_jerc.json",
         "sf_dir": LOCALDIR,
         "spanet_models": spanet_models.active_models() if selection == "analysis" else {},
         "xbb_wp_cuts": {era: xbb_wp_cuts(era) for era in ERAS},

@@ -109,7 +109,7 @@ Shape variations are selected per job with `PC_JEC_VARIATION` (`inference_common
 together, with FlavorQCD replaced by the pure-flavour sources on AK4 jets and FlavorQCD on AK8 jets;
 checked against the JME files), `JER` (AK4 in 6 JME (|eta|, pT) regions, AK8 separately,
 `jet_variation_splits.py`) and `JMSJMR`
-(AK8 mass scale/resolution, declared by `fatjet_mass_variations.py`, applied in the processor). MET filters and the golden JSON are applied with the
+(AK8 mass scale/resolution, 2% / 3%, declared by `../common/fatjet_mass_variations.py`, applied in the processor). MET filters and the golden JSON are applied with the
 standard `eventFlags` / `goldenJson` skim cuts; JEC/JER and type-1 MET come from the default
 calibrator sequence.
 
@@ -133,8 +133,9 @@ calibrator sequence.
   recomputed from `RawMET` with the same corrected AK4 jets (`Jet`, `CorrT1METJet`) and the L1 of the
   same payload, for every jet variation, by `../common/met_calibration.py` (replaces pocket-coffea's
   `METCalibrator`, which uses no L1 for CHS jets and returns raw MET in data).
-* Fatjet mass: every fatjet mass is the ParticleNet regressed mass, JMS/JMR-corrected in MC and as-is
-  in data (`custom_scale_factors.set_fatjet_mass`): `FatJet.mass` and `FatJet.particleNet_mass` both
+* Fatjet mass: every fatjet mass is the ParticleNet regressed mass, as-is in data and in the nominal
+  MC (JMAR: no dedicated JMS/JMR correction for DNN-regressed masses; JMS 2% / JMR 3% as the `JMSJMR`
+  variations, `../common/fatjet_mass_variations.py`) (`custom_scale_factors.set_fatjet_mass`): `FatJet.mass` and `FatJet.particleNet_mass` both
   carry it, so the FatJetGood mass window, `ZH_M`, the fatjet mass columns, the ZH candidate
   4-vector and the Xbb SF binning all use the same value.
 * Triggers (`custom_cut_functions.hlt_selection`): MC uses the OR of the e/gamma and muon paths;

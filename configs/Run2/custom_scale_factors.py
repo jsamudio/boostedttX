@@ -1,11 +1,11 @@
 import re
-import zlib
 import numpy as np
 import awkward as ak
 from pocket_coffea.lib.correction_cache import load_correction_set
-from pocket_coffea.lib.deltaR_matching import object_matching
 from pocket_coffea.lib.scale_factors import sf_jet_puId
 from omegaconf import OmegaConf
+# JMS/JMR of the regressed fatjet mass and the per-chunk RNG are shared with Run 3 (configs/common)
+from fatjet_mass_variations import apply_jms_jmr, chunk_rng  # noqa: F401
 
 
 def _load_correction(file, name):
@@ -25,13 +25,6 @@ def sf_jet_puId_era(params, jets, year, njets):
     era_params = OmegaConf.create({"object_preselection": {"Jet": {"puId": puid}},
                                    "jet_scale_factors": {"jet_puId": {year: era_cfg}}})
     return sf_jet_puId(era_params, jets, year, njets)
-
-def chunk_rng(events):
-    """Random generator seeded by the chunk (file + entry range): reproducible between runs
-    and identical for every shape variation of the same chunk."""
-    md = events.metadata
-    key = f"{md.get('filename', '')}:{md.get('entrystart', 0)}:{md.get('entrystop', 0)}"
-    return np.random.default_rng(zlib.crc32(key.encode()))
 
 def btag_jes_systematic(variation):
     """BTV shape-SF systematic for an AK4 JES shape variation of the jet calibrator, e.g.
@@ -90,50 +83,11 @@ def sf_mu_trig(events, file, **kw):
 
 def set_fatjet_mass(fatjets, pnet_mass):
     """Fatjet mass convention of the analysis: every fatjet mass is the ParticleNet regressed mass,
-    with JMS/JMR applied in MC (apply_jms_jmr) and as-is in data. Both `mass` (FatJetGood mass
+    as-is in data and in the nominal MC, with the JMS/JMR variations applied in MC (apply_jms_jmr). Both `mass` (FatJetGood mass
     window, fatjet mass columns, 4-vectors, Xbb SF binning) and `particleNet_mass` (ZH_M,
     outZH_max_ak8pnetMass, mAK8 histogram) carry it, so all of them see the same value."""
     fatjets = ak.with_field(fatjets, pnet_mass, "mass")
     return ak.with_field(fatjets, pnet_mass, "particleNet_mass")
-
-
-def apply_jms_jmr(events, fatjets, jms_sf, jmr_sf, sig_mc, rng=None):
-    """
-    Applies JMS and JMR corrections to the ParticleNet regressed mass.
-    rng: numpy Generator for the stochastic smearing (see chunk_rng); global numpy RNG if None.
-    """
-    # 1. Apply Jet Mass Scale (JMS)
-    mass_jms = fatjets.particleNet_mass * jms_sf
-    
-    # 2. Match to GenJetAK8 (Requirement: dR < R/2)
-    matched_genjets, matched_fatjets, deltaR = object_matching(
-        events.GenJetAK8, fatjets, dr_min=0.4
-    )
-    
-    # Create a mask for valid matches
-    has_match = ~ak.is_none(matched_genjets, axis=1)
-    gen_mass = ak.fill_none(matched_genjets.mass, 0.0)
-    
-    # 3. Calculate Deterministic Smearing (Matched)
-    mass_deterministic = gen_mass + jmr_sf * (mass_jms - gen_mass)
-    
-    # 4. Calculate Stochastic Smearing (Unmatched)
-    # Generate random numbers from a standard normal distribution N(0,1)
-    n_fatjets = int(ak.sum(ak.num(fatjets)))
-    gauss = rng.standard_normal(n_fatjets) if rng is not None else np.random.normal(0, 1, n_fatjets)
-    random_gauss = ak.unflatten(gauss, ak.num(fatjets))
-    
-    # Prevent negative arguments in the square root
-    smear_factor = np.sqrt(np.maximum(jmr_sf**2 - 1.0, 0.0))
-    mass_stochastic = mass_jms * (1.0 + random_gauss * sig_mc * smear_factor)
-    
-    # 5. Combine using the match mask
-    mass_corr = ak.where(has_match, mass_deterministic, mass_stochastic)
-    
-    # 6. Safety check: prevent negative masses from extreme smearing
-    mass_corr = ak.where(mass_corr < 0, 0.0, mass_corr)
-    
-    return mass_corr
 
 
 def sf_scaleweights(events):

@@ -12,7 +12,7 @@ Same structure as `configs/Run2`, with the Run 3 object definitions. The previou
 | JECs | pocket-coffea defaults: `Summer24Prompt24_V5`, JER `Summer24Prompt24_JRV2`, reapplied to data and MC (AK4 PUPPI, CorrT1METJet, AK8) |
 | AK4 b tagging | UParTAK4, medium WP from pocket-coffea's btagging parameters (`object_preselection.btag.wp`); fixed-WP SFs over L/M/T (multi-WP method 1a) |
 | AK8 tagger | GloParT XbbVsQCD = Xbb / (Xbb + QCD); the ZH candidate is the leading fatjet in it |
-| Fatjet mass | GloParT 2-prong regressed mass (`globalParT3_massCorrX2p` x raw mass), in data and MC, for the mass window, `ZH_M`, the columns and 4-vectors (`custom_scale_factors.set_fatjet_mass`) |
+| Fatjet mass | GloParT 2-prong regressed mass (`globalParT3_massCorrX2p` x raw mass), in data and MC, for the mass window, `ZH_M`, the columns and 4-vectors (`custom_scale_factors.set_fatjet_mass`); no nominal JMS/JMR (JMAR, DNN-regressed masses), JMS 2% / JMR 3% as the `JMSJMR` variations (`--jec-variations JMSJMR`, `../common/fatjet_mass_variations.py`) |
 | Triggers | Ele30_WPTight_Gsf, Ele115_CaloIdVT_GsfTrkIdT / IsoMu24, Mu50, HighPtTkMu100, CascadeMu100; per primary dataset in data (Muon PD: muon paths; EGamma PD: e/gamma paths and no muon path) |
 | Leptons | electrons MVA noIso WP90, muons medium ID, mini-isolation (`params/object_preselection.yaml`) |
 

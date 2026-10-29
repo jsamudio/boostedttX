@@ -17,6 +17,7 @@ from get_controlvars import get_controlvars
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
 from dctr import apply_dctr_hdamp, set_default_dctr_columns
+from fatjet_mass_variations import apply_jms_jmr, jms_jmr_sfs, chunk_rng
 from samples import btag_eff_group
 
 vector.register_awkward()
@@ -94,8 +95,15 @@ class ZHbbRun3Processor(BaseProcessorABC):
     # ------------------------------------------------------------------ objects
     # (MET filters and the golden JSON are standard skim cuts in the config: eventFlags, goldenJson)
     def apply_object_preselection(self, variation):
-        # FatJet.mass = GloParT 2-prong regressed mass, in data and MC
-        self.events['FatJet'] = set_fatjet_mass(self.events.FatJet)
+        # FatJet.mass = GloParT 2-prong regressed mass, in data and MC. JMAR (DNN-regressed masses):
+        # no nominal JMS/JMR correction; the JMS/JMR variations (2% / 3%, PC_JEC_VARIATION=JMSJMR)
+        # in MC, seeded per chunk so every shape variation sees the same random numbers.
+        fatjets = set_fatjet_mass(self.events.FatJet)
+        if self._isMC:
+            jms_sf, jmr_sf = jms_jmr_sfs(variation)
+            fatjets = ak.with_field(fatjets, apply_jms_jmr(self.events, fatjets, jms_sf, jmr_sf,
+                                                           rng=chunk_rng(self.events), mass=fatjets.mass), "mass")
+        self.events['FatJet'] = fatjets
 
         electron_etaSC = self.events.Electron.eta + self.events.Electron.deltaEtaSC
         self.events["Electron"] = ak.with_field(self.events.Electron, electron_etaSC, "etaSC")

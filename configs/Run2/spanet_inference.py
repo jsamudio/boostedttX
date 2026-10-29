@@ -13,6 +13,7 @@ from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
 from weight_handler import calc_weight
 from pocket_coffea.lib.scale_factors import sf_ele_reco, sf_ele_id, sf_btag, sf_pileup_reweight, sf_L1prefiring
+from fatjet_mass_variations import jms_jmr_sfs
 from custom_scale_factors import sf_jet_puId_era, set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr, sf_scaleweights, pdfweight_columns, apply_jms_jmr, sf_ele_trig, sf_mu_trig, chunk_rng, btag_jes_systematic, sf_btag_jes
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
@@ -23,9 +24,6 @@ from event_variables import event_variables
 from dctr import apply_dctr_hdamp, set_default_dctr_columns
 
 sig = ['ttHTobb', 'ttHToNonbb', 'TTZToBB', 'TTZToQQ', 'TTZToLLNuNu', 'ttHSMEFT', 'ttZSMEFT']
-
-# Map PocketCoffea year strings to the correctionlib era keys of the PNet mass JSON
-PNET_MASS_ERA = {"2016_PreVFP": "2016APV", "2016_PostVFP": "2016", "2017": "2017", "2018": "2018"}
 
 # Legacy process labels -> keys of the Xbb efficiency maps.
 # 'old_ttZbb' events are ordinary ttZ real-bb candidates (TTZToQQ events with Z->bb, removed
@@ -79,7 +77,6 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
           ZH candidate variables, control variables, SPANet inference
 
     Workflow options:
-      pnet_mass_json      - JMS/JMR correctionlib file
       sf_dir              - directory with the Xbb SF, efficiency-map and trigger SF files
       spanet_models       - {name: {path, jet_features, fatjet_features, clean_jets}} (spanet_models.py)
       xbb_wp_cuts         - {era: {L, M, T}} XbbVsQCD thresholds (analysis_years.py)
@@ -92,7 +89,6 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         super().__init__(cfg)
         self.dr_min = self.workflow_options["parton_jet_min_dR"]
         self.dr_min_postfsr = self.workflow_options.get("parton_jet_min_dR_postfsr", 1.)
-        self.pnet_mass_json = self.workflow_options["pnet_mass_json"]
         self.sf_dir = self.workflow_options["sf_dir"]
         self.xbb_wp = self.workflow_options["xbb_wp_cuts"]
         self.btag_calib = self.workflow_options.get("btag_calib", True)
@@ -122,20 +118,15 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
     # (MET filters and the golden JSON are standard skim cuts in the config: eventFlags, goldenJson)
     def apply_object_preselection(self, variation):
         if self._isMC:
-            syst_jms = {"JMSUp": "up", "JMSDown": "down"}.get(variation, "nominal")
-            syst_jmr = {"JMRUp": "up", "JMRDown": "down"}.get(variation, "nominal")
-            pnet_era = PNET_MASS_ERA.get(self._year, self._year)
-            pnet_mass_cset = load_correction_set(self.pnet_mass_json)
-            jms_sf = pnet_mass_cset["FatJet_PNet_JMS"].evaluate(pnet_era, syst_jms)
-            jmr_sf = pnet_mass_cset["FatJet_PNet_JMR"].evaluate(pnet_era, syst_jmr)
-            # The JMAR team used a 10% baseline for the MC resolution in their derivations
-            sigma_mc = 0.10
-            # Corrections applied to the raw FatJet collection before cuts. The stochastic
-            # smearing is seeded per chunk, so every shape variation sees the same random numbers.
-            corrected_mass = apply_jms_jmr(self.events, self.events.FatJet, jms_sf, jmr_sf, sigma_mc,
+            # JMAR (DNN-regressed masses): no nominal JMS/JMR correction, 2% / 3% uncertainties
+            # (common/fatjet_mass_variations.py). Applied to the raw FatJet collection before cuts;
+            # the stochastic smearing is seeded per chunk, so every shape variation sees the same
+            # random numbers.
+            jms_sf, jmr_sf = jms_jmr_sfs(variation)
+            corrected_mass = apply_jms_jmr(self.events, self.events.FatJet, jms_sf, jmr_sf,
                                            rng=chunk_rng(self.events))
         else:
-            # Data: the regressed ParticleNet mass without JMS/JMR (MC-only corrections)
+            # Data: the regressed ParticleNet mass (JMS/JMR are MC-only variations)
             corrected_mass = self.events.FatJet.particleNet_mass
         self.events['FatJet'] = set_fatjet_mass(self.events.FatJet, corrected_mass)
 

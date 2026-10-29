@@ -33,7 +33,7 @@ SECTIONS = {
     "Luminosity": ["lumi", "picobarns"],
 }
 # Workflow options that point to the analysis's own correction files
-OWN_FILES = ["pnet_mass_json", "sf_dir"]
+OWN_FILES = ["sf_dir"]
 
 
 def for_era(node, era):

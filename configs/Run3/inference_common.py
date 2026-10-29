@@ -11,7 +11,9 @@ Environment overrides:
     PC_ERAS=2024                 eras to process (default: DEFAULT_ERAS below)
     PC_SAMPLES=ttHTobb,TTLL      only these samples of the group (quick tests)
     PC_SHAPE_CALIBRATOR=...      shape calibrator to run (default: jet_calibration)
-    PC_JEC_VARIATION=JES_Total   jet variation to run on top of nominal (default: nominal only)
+    PC_JEC_VARIATION=JES_Total   jet variation to run on top of nominal (default: nominal only);
+                                 JMSJMR: fatjet mass scale/resolution -> JMSUp/Down, JMRUp/Down
+                                 (../common/fatjet_mass_variations.py)
     PC_DCTR=1                    DCTR hdamp weights dctr_hdamp_up/down for DCTR_HDAMP['samples'] (dctr.py)
 
 Run 3 object definitions: PUPPI MET (pocket-coffea's default MET calibrator: type-1 PUPPI MET
@@ -29,6 +31,7 @@ from pocket_coffea.lib.hist_manager import Axis, HistConf
 from pocket_coffea.lib.weights.common.common import common_weights
 from pocket_coffea.parameters import defaults
 from pocket_coffea.parameters.cuts import passthrough
+from pocket_coffea.lib.calibrators.common.common import default_calibrators_sequence
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))  # configs/common
 import analysis_years
@@ -51,6 +54,7 @@ from spanet_inference import ZHbbRun3Processor
 from spanet_training_workflow import ZHbbRun3TrainingProcessor
 from xbb_wp_workflow import ZHbbRun3XbbWPProcessor
 from btag_eff_workflow import ZHbbRun3BtagEffProcessor
+from fatjet_mass_variations import FatJetMassVariations
 
 for _module in (spanet_inference, custom_cut_functions, analysis_years, samples, spanet_models,
                 spanet_training, spanet_training_workflow, parton_matching, event_variables, xbb_wp_workflow, dctr,
@@ -58,6 +62,10 @@ for _module in (spanet_inference, custom_cut_functions, analysis_years, samples,
     cloudpickle.register_pickle_by_value(_module)
 
 LOCALDIR = os.path.dirname(os.path.abspath(__file__))
+
+# pocket-coffea's default calibrator sequence (JECs, electron scale, muons, PUPPI MET), plus the
+# JMS/JMR variations of the regressed fatjet mass (declared only; applied in the processor)
+CALIBRATORS = list(default_calibrators_sequence) + [FatJetMassVariations]
 
 # Eras processed when PC_ERAS is not set
 DEFAULT_ERAS = ['2024']
@@ -193,6 +201,8 @@ def load_parameters(eras):
 
     shape_calibrator = os.environ.get("PC_SHAPE_CALIBRATOR") or "jet_calibration"
     jec_var = os.environ.get("PC_JEC_VARIATION")
+    if jec_var == "JMSJMR":
+        shape_calibrator, jec_var = FatJetMassVariations.name, None
     jet_variations = [jec_var] if (shape_calibrator == "jet_calibration" and jec_var
                                    and jec_var.lower() != "nominal") else []
     for era in eras:
@@ -404,6 +414,7 @@ def build_config(group, eras=None, sample_list=None):
         skim=skim,
         preselections=preselections,
         categories=categories,
+        calibrators=CALIBRATORS,
         weights_classes=common_weights,
         weights={"common": {"inclusive": weights}},
         variations={

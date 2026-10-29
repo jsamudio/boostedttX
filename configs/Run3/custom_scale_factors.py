@@ -146,8 +146,9 @@ def gloparT_regressed_mass(fatjets):
 
 def set_fatjet_mass(fatjets):
     """Fatjet mass convention of the analysis: FatJet.mass is the GloParT 2-prong regressed mass
-    (data and MC; no JMS/JMR for it yet), used by the FatJetGood mass window, ZH_M, the fatjet
-    mass columns and 4-vectors. The JEC-corrected jet mass is kept as FatJet.mass_jec."""
+    (data and MC; the JMS/JMR variations are applied on top in the processor), used by the FatJetGood
+    mass window, ZH_M, the fatjet mass columns and 4-vectors. The JEC-corrected jet mass is kept as
+    FatJet.mass_jec."""
     if "mass_jec" not in fatjets.fields:
         fatjets = ak.with_field(fatjets, fatjets.mass, "mass_jec")
     return ak.with_field(fatjets, gloparT_regressed_mass(fatjets), "mass")

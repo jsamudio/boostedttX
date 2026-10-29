@@ -9,6 +9,7 @@ pocket-coffea, 0.9.x with the calibrator system).
 | `pbs_tools.py` | job array + merge job submission, status, resubmission, VOMS proxy refresh (stdlib only, runs on the host) |
 | `run_options_pbs.yaml` | template run options (queue, cores, memory, image, binds, splitting) |
 | `met_calibration.py` | type-1 PF MET for Run 2 UL, consistent in data and MC (replaces pocket-coffea's `METCalibrator`) |
+| `fatjet_mass_variations.py` | JMS/JMR of the DNN-regressed fatjet mass (JMAR: no nominal correction, 2% / 3% variations), the `JMSJMR` calibrator that declares them, per-chunk RNG |
 
 ## Running an analysis on PBS
 
