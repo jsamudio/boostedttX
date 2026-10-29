@@ -258,9 +258,16 @@ def build_xbbwp_columns(category):
 
 
 def dataset_jsons(sample_list):
-    """Dataset files: the nominal ones, and those of the variation samples that are processed
-    (built from datasets/ttbar_variations_definitions.json, so they may not exist yet)."""
+    """Dataset files: the nominal ones, the pending ones (samples.PENDING_DATASET_JSONS) that exist, and
+    those of the variation samples that are processed (built from datasets/ttbar_variations_definitions.json,
+    so they may not exist yet)."""
     names = list(samples.DATASET_JSONS)
+    for name, sample in samples.PENDING_DATASET_JSONS.items():
+        if os.path.exists(f"{LOCALDIR}/datasets/{name}.json"):
+            names.append(name)
+        elif sample in sample_list:
+            raise FileNotFoundError(f"datasets/{name}.json (part of sample {sample}) not built: transfer the "
+                                    f"dataset, then pocket-coffea build-datasets --cfg datasets/<its definitions>.json")
     for name in samples.TTBAR_VARIATION_SAMPLES:
         if name in sample_list:
             if not os.path.exists(f"{LOCALDIR}/datasets/{name}.json"):

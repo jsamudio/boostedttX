@@ -26,6 +26,10 @@ DATASET_JSONS = [
     "DATA_EGamma", "DATA_Muon",
     "ttHSMEFT", "ttbbSMEFT",
 ]
+# Dataset files built later (after a Rucio transfer) -> the sample they belong to. A missing file is
+# skipped, unless its sample is processed (then inference_common.dataset_jsons raises).
+#   TTWToLNu: ttW (W -> l nu) for the TTX sample, datasets/ttw_lnu_definitions.json
+PENDING_DATASET_JSONS = {"TTWToLNu": "TTX"}
 
 # ---------------------------------------------------------------- sample groups
 # ttZ: there is no dedicated Z->bb sample in Run 3, so Z->bb comes from TTZToQQ (kept as signal);

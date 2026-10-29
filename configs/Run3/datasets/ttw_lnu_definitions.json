@@ -1,0 +1,18 @@
+{
+    "TTWToLNu": {
+        "sample": "TTX",
+        "json_output": "datasets/TTWToLNu.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTLNu-1Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-mg35x_150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 0.2261
+                }
+            }
+        ]
+    }
+}
