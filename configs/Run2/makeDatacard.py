@@ -570,6 +570,7 @@ class MakeDataCard:
                 in_category = (df[flag] == True).to_numpy()
                 df[f'{name}_up'] = np.where(in_category, up, 1.0)
                 df[f'{name}_down'] = np.where(in_category, down, 1.0)
+        df = df.copy()          # de-fragment after the per-column clipping (PerformanceWarning)
         df = df[cuts(df, y)]
         if self.derive is not None:
             df = self.derive(df)
