@@ -9,6 +9,8 @@
 #   python makeDatacard.py               # tt_B is a normal background
 #   python makeDatacard.py --eft-ttbb    # tt_B declared as a signal so the EFT
 #                                         # interferenceModel can scale it
+#   python makeDatacard.py --ttlf-cut 0.2 [--ttlf-cr]
+#                                         # two-step categorization (see TTLF_CUT below)
 # The --eft-ttbb cards get "eftTTB_" in their file names, so both versions can coexist.
 
 import argparse
@@ -20,7 +22,7 @@ import re
 import uproot
 import os
 import sys
-from datacard_shapes import DataCardShapes, getZhbbWeight
+from datacard_shapes import DataCardShapes, getZhbbWeight, sig_vs_ttbb
 from TH1 import export1d
 from analysis_years import (YEARS, YEAR_RE, find_year, PICKLE_DIR, bbvl_wp,
                             LUMI_UNCERTAINTIES, jes_nuisances, JER_REGIONS)
@@ -36,6 +38,15 @@ isblind = True
 # =====================================================================
 # Default for the tt_B switch (overridden by --eft-ttbb on the command line)
 EFT_SCALE_TTBB = False
+
+# Two-step categorization (default off; --ttlf-cut on the command line). Per reco pT channel:
+#   signal region  (SR): ttlf_score < cut, binned in s / (s + ttbb) (column sigvsttbb_<model>,
+#                        signal-quantile edges from the SR events) x mass
+#   control region (CR): ttlf_score >= cut, one bin of the disc x mass; written only with
+#                        --ttlf-cr, as separate cards, so that it can be combined (combineCards.py
+#                        SR=... CR=...), masked or unblinded on its own
+# The cards get "ttlf<cut>SR_" / "ttlf<cut>CR_" in their names; the default cards are unchanged.
+TTLF_CUT = None
 
 # Backgrounds in the card. Names must match the 'process' column / pickle file names.
 # Add 'QCD' only if a QCD pickle is produced (the pickling script does not export it yet).
@@ -397,7 +408,7 @@ class MakeDataCard:
     dc_dir = './datacards'
 
     def __init__(self, nn_name, hist2d, sig=['ttZ', 'ttH'], bkg=None, years=None, isblind=True,
-                 eft_ttbb=EFT_SCALE_TTBB):
+                 eft_ttbb=EFT_SCALE_TTBB, model=None, ttlf_cut=TTLF_CUT, region=None):
         years = list(YEARS) if years is None else list(years)
         bkg = list(BACKGROUNDS) if bkg is None else list(bkg)
         self.nn_name = nn_name
@@ -414,6 +425,22 @@ class MakeDataCard:
         self.isblind = isblind
         self.dc_bins = len(self.pt_bins[1:])
         self.cut = lambda x : x[self.nn_name] >= 0.0
+
+        # Two-step categorization (TTLF_CUT): region 'sr' (nn_name = sigvsttbb_<model>, derived
+        # from the scores when reading) or 'cr' (nn_name = the disc)
+        self.derive = None
+        score_cols = []
+        if ttlf_cut is not None:
+            if region not in ('sr', 'cr') or model is None:
+                raise ValueError("ttlf_cut needs region 'sr' or 'cr' and the SPANet model")
+            ttlf = f'ttlf_score_{model}'
+            score_cols = [f'sig_score_{model}', f'ttbb_score_{model}', ttlf]
+            if region == 'sr':
+                self.derive = lambda df: df.assign(**{self.nn_name: sig_vs_ttbb(df, model)})
+                self.cut = lambda x: (x[ttlf] < ttlf_cut) & (x[self.nn_name] >= 0.0)
+            else:
+                self.cut = lambda x: (x[ttlf] >= ttlf_cut) & (x[self.nn_name] >= 0.0)
+            self.tag += f"ttlf{ttlf_cut:g}{region.upper()}_".replace('.', 'p')
 
         # Nominal weights and the up/down columns used for the weight systematics.
         # Missing columns are dropped silently by DataFrame.filter; systematics whose
@@ -438,7 +465,7 @@ class MakeDataCard:
         self.weight_sys = weight_sys
         self.bkg_v = weights + weight_sys + pdf_cols + [self.nn_name, 'ZH_M', 'ZH_pt', 'process', 'sample',
                                                         'n_ak4jets', 'ZH_bbvLscore', 'n_b_outZH', 'MET_pt',
-                                                        'era', 'year', 'tt_2b', 'tt_C']
+                                                        'era', 'year', 'tt_2b', 'tt_C'] + score_cols
         self.sig_v = self.bkg_v + ['genZHpt']
 
         self.accepted_sig  = [f'{s}{i}' for i in range(len(self.pt_bins)) for s in ['ttH','ttZ']]
@@ -544,6 +571,8 @@ class MakeDataCard:
                 df[f'{name}_up'] = np.where(in_category, up, 1.0)
                 df[f'{name}_down'] = np.where(in_category, down, 1.0)
         df = df[cuts(df, y)]
+        if self.derive is not None:
+            df = self.derive(df)
         df = df.astype({k:'float32' for k in df if df[k].dtype == 'float64'})
         df.loc[:,'ZH_pt'] = df['ZH_pt'].clip(pt_bins[0]+1, pt_bins[-1]+1)
         df['pt_bin'] = pd.cut(df['ZH_pt'], bins=pt_bins+[np.inf], labels=[i_bin for i_bin in range(len(pt_bins))])
@@ -877,6 +906,11 @@ if __name__ == '__main__':
     parser.add_argument('--eft-ttbb', action='store_true', default=EFT_SCALE_TTBB,
                         help='Declare tt_B as a signal so the EFT interferenceModel can scale it '
                              '(cards get "eftTTB_" in their names)')
+    parser.add_argument('--ttlf-cut', type=float, default=TTLF_CUT,
+                        help='two-step categorization: SR = ttlf score < cut binned in s/(s+ttbb) '
+                             '(cards get "ttlf<cut>SR_" in their names); default cards unchanged')
+    parser.add_argument('--ttlf-cr', action='store_true',
+                        help='with --ttlf-cut: also write the tt+LF/C control-region cards (ttlf >= cut)')
     args = parser.parse_args()
 
     from spanet_models import ACTIVE_MODELS     # one datacard per active SPANet model
@@ -888,10 +922,29 @@ if __name__ == '__main__':
               f"{'  (tt_B EFT-scaled, declared as signal)' if args.eft_ttbb else ''}")
         print(f"{'='*50}\n")
 
-        hist2d = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS, common_binning=True) #False common binning for per-year
-        hist2d.save_edges(f'nn_edges_{nn_name}.json')     # for NN_BINS in the EFT scaling
         from plot_nn_edges import plot_edges
-        plot_edges(json.load(open(f'nn_edges_{nn_name}.json')), f'plots/nn_edges_{nn_name}.pdf')
-        dc_maker = MakeDataCard(nn_name=nn_name, hist2d=hist2d, isblind=isblind, years=YEARS,
-                                eft_ttbb=args.eft_ttbb)
-        dc_maker.makeDC()
+        if args.ttlf_cut is None:
+            hist2d = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS, common_binning=True) #False common binning for per-year
+            hist2d.save_edges(f'nn_edges_{nn_name}.json')     # for NN_BINS in the EFT scaling
+            plot_edges(json.load(open(f'nn_edges_{nn_name}.json')), f'plots/nn_edges_{nn_name}.pdf')
+            dc_maker = MakeDataCard(nn_name=nn_name, hist2d=hist2d, isblind=isblind, years=YEARS,
+                                    eft_ttbb=args.eft_ttbb)
+            dc_maker.makeDC()
+            continue
+
+        # Two-step categorization: SR in s/(s+ttbb), optional tt+LF/C CR in one disc bin
+        cut, ttlf = args.ttlf_cut, f'ttlf_score_{model}'
+        suffix = f"ttlf{cut:g}".replace('.', 'p')
+        sr_nn = f'sigvsttbb_{model}'
+        hist2d = DataCardShapes(pt_bins, mass_bins, nn=sr_nn, isblind=isblind, years=YEARS, common_binning=True,
+                                derive=lambda df, m=model: df.assign(**{f'sigvsttbb_{m}': sig_vs_ttbb(df, m)}),
+                                selection=lambda df, c=ttlf: df[c] < cut)
+        hist2d.save_edges(f'nn_edges_{sr_nn}_{suffix}.json')
+        plot_edges(json.load(open(f'nn_edges_{sr_nn}_{suffix}.json')), f'plots/nn_edges_{sr_nn}_{suffix}.pdf')
+        MakeDataCard(nn_name=sr_nn, hist2d=hist2d, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,
+                     model=model, ttlf_cut=cut, region='sr').makeDC()
+        if args.ttlf_cr:
+            one_bin = {y: {f'Zhpt{i}': [0.0, 1.0] for i in range(1, len(pt_bins))} for y in YEARS}
+            hist2d_cr = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS, edges=one_bin)
+            MakeDataCard(nn_name=nn_name, hist2d=hist2d_cr, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,
+                         model=model, ttlf_cut=cut, region='cr').makeDC()
