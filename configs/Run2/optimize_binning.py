@@ -10,6 +10,14 @@ Figure of merit (statistics + MC statistics), summed over all (NN, mass) bins of
         V = sum of w^2 of all MC in the bin  (penalizes bins with poor MC statistics)
     FOM = I_ttZ + I_ttH,   sigma(mu_X) ~ 1 / sqrt(I_X)
 
+--fom fisher: the measured processes (--pois, e.g. ttZ ttH tt_B) are fitted together. Fisher matrix
+    F_ab = sum_bins S_a S_b / (T + V), summed over channels and regions, and I_X = 1 / (F^-1)_XX
+    (precision of mu_X with the other POIs free), so bins that mix the POIs are penalized.
+    tt_B as a POI: all tt+B events. The default (--fom diag --pois ttZ ttH) is the FOM above.
+    With fisher, schemes are ranked by FOM = mean_X I_X / I_X(reference), and the bin merging uses
+    each POI's information relative to its fine-binned value (otherwise tt_B, with by far the
+    largest yield, dominates).
+
 Tools (all print a table; validate the final choice with the full Combine fit):
     binning : greedy merging of a fine NN binning per channel, with an MC-statistics constraint
     disc    : tune disc = s / (s + a*ttbb + b*ttlf) per channel (a = b = 1 is the current disc)
@@ -23,6 +31,9 @@ Usage:
     python3 optimize_binning.py disc    --year 2018 --model overlapRemoval_MultiWP
     python3 optimize_binning.py xbb     --year 2018 --model overlapRemoval_MultiWP --thresholds 0.80 0.85 0.9172 0.9734
     python3 optimize_binning.py ttlf    --model noOverlap_MultiWP --cuts 0.05 0.1 0.2 0.3 0.5   # Run 2 integrated
+
+For the EFT-motivated two-step categorization (isolate tt+LF/C, then separate tt+B from Z/H):
+    python3 optimize_binning.py ttlf --model noOverlap_MultiWP --fom fisher --pois ttZ ttH tt_B
 
 --year run2 uses all years of analysis_years.YEARS together (scale 1); it is the default of the ttlf mode.
 
@@ -41,6 +52,15 @@ MASS_EDGES = {'Zhpt1': [50, 80, 105, 200], 'Zhpt2': [50, 80, 105, 145, 200],
               'Zhpt3': [50, 80, 105, 145, 200]}
 SIGNALS = ['ttZ', 'ttH']
 BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets']
+
+# Measured processes and figure of merit (set from the command line, see configure)
+POIS = list(SIGNALS)
+FOM = 'diag'
+
+
+def configure(pois, fom):
+    global POIS, FOM
+    POIS, FOM = list(pois), fom
 
 
 # ----------------------------------------------------------------------------- data
@@ -85,6 +105,8 @@ def load_events(year, model, xbb=None, scale=1.0, pickle_dir=None):
             out['label'] = np.where(df['genZHpt'].to_numpy() >= 200, proc, 'bkg')
         else:
             out['label'] = 'bkg'
+        # process measured in the fit (POI), or 'bkg'
+        out['poi'] = out['label'] if proc in SIGNALS else (proc if proc in POIS else 'bkg')
         frames.append(out)
     if not frames:
         raise FileNotFoundError(f"No pickles for {year} in {pickle_dir.format(year=year)}")
@@ -111,12 +133,12 @@ def fine_edges(x, w, n):
 
 
 def cell_grid(d, ev, nn_edges, m_edges):
-    """Per (fine NN bin, mass bin): S_ttZ, S_ttH, total T, MC variance V."""
+    """Per (fine NN bin, mass bin): S_X of every POI, total T, MC variance V."""
     h = lambda wts: np.histogram2d(d, ev['M'], bins=[nn_edges, m_edges], weights=wts)[0]
     w = ev['w'].to_numpy()
-    return {'ttZ': h(np.where(ev['label'] == 'ttZ', w, 0.0)),
-            'ttH': h(np.where(ev['label'] == 'ttH', w, 0.0)),
-            'T': h(w), 'V': h(w ** 2)}
+    cells = {X: h(np.where(ev['poi'] == X, w, 0.0)) for X in POIS}
+    cells.update({'T': h(w), 'V': h(w ** 2)})
+    return cells
 
 
 def grouped(cells, bounds):
@@ -128,17 +150,34 @@ def grouped(cells, bounds):
     return out
 
 
-def information(g):
+def fisher(g):
+    """Fisher matrix of the POI signal strengths (diagonal only for --fom diag)."""
     T, V = g['T'], g['V']
     den = np.where(T + V > 0, T + V, 1.0)
-    return {X: float(np.sum(np.where(T > 0, g[X] ** 2 / den, 0.0))) for X in SIGNALS}
+    F = np.array([[float(np.sum(np.where(T > 0, g[a] * g[b] / den, 0.0))) for b in POIS] for a in POIS])
+    return F if FOM == 'fisher' else np.diag(np.diag(F))
+
+
+def marginal(F):
+    """I_X = 1 / (F^-1)_XX, as the Schur complement F_XX - F_Xr F_rr^+ F_rX (r = the other POIs),
+    which stays finite when F is singular (0 for a POI that cannot be separated from the others)."""
+    out = {}
+    for i, X in enumerate(POIS):
+        r = [j for j in range(len(POIS)) if j != i]
+        v = F[i, i] - (F[i, r] @ np.linalg.pinv(F[np.ix_(r, r)]) @ F[r, i] if r else 0.0)
+        out[X] = float(max(v, 0.0))
+    return out
+
+
+def information(g):
+    return marginal(fisher(g))
 
 
 def violations(g, max_rel):
     """Per NN group: True if any of its mass cells has no background with signal present,
     or a relative MC uncertainty of the total prediction above max_rel."""
     T, V = g['T'], g['V']
-    S = g['ttZ'] + g['ttH']
+    S = sum(g[X] for X in POIS)
     B = T - S
     bad = ((S > 0) & (B <= 0)) | ((T > 0) & (np.sqrt(V) > max_rel * T)) | ((T <= 0) & (S > 0))
     return bad.any(axis=1)
@@ -146,9 +185,12 @@ def violations(g, max_rel):
 
 def optimize_edges(cells, edges, max_rel=0.3, max_bins=8):
     """Greedy merge of fine NN bins: first fix MC-statistics violations, then merge the
-    pair costing the least information until at most max_bins NN bins remain."""
+    pair costing the least information until at most max_bins NN bins remain.
+    --fom fisher: the information of each POI is taken relative to its fine-binned value, so that a
+    POI with a large yield (tt_B) does not dominate the merging."""
     bounds = np.arange(len(edges))
-    fom = lambda b: sum(information(grouped(cells, b)).values())
+    ref = information(cells) if FOM == 'fisher' else {X: 1.0 for X in POIS}
+    fom = lambda b: sum(v / ref[X] for X, v in information(grouped(cells, b)).items() if ref[X] > 0)
     while len(bounds) > 2:
         bad = violations(grouped(cells, bounds), max_rel)
         if bad.any():
@@ -167,25 +209,21 @@ def optimize_edges(cells, edges, max_rel=0.3, max_bins=8):
 def evaluate(ev, a=1.0, b=1.0, n_fine=40, max_rel=0.3, max_bins=8, verbose=False):
     """Optimized binning and information per channel for a given disc definition.
     a, b: scalars, or dicts per channel name."""
-    res, tot = {}, {X: 0.0 for X in SIGNALS}
+    res, F = {}, np.zeros((len(POIS), len(POIS)))
     for i, ch in enumerate(CHANNELS):
         sub = ev[ev['ch'] == i]
         if sub.empty:
             continue
         ai = a[ch] if isinstance(a, dict) else a
         bi = b[ch] if isinstance(b, dict) else b
-        d = disc(sub, ai, bi)
-        meas = sub['label'].isin(SIGNALS).to_numpy()
-        fe = fine_edges(d[meas], sub['w'].to_numpy()[meas], n_fine)
-        cells = cell_grid(d, sub, fe, MASS_EDGES[ch])
-        edges, info, still_bad = optimize_edges(cells, fe, max_rel, max_bins)
-        res[ch] = {'edges': [float(e) for e in edges], 'info': info, 'mc_ok': not still_bad}
-        for X in SIGNALS:
-            tot[X] += info[X]
+        edges, Fch, mc_ok = channel_info(sub, disc(sub, ai, bi), ch, n_fine, max_rel, max_bins)
+        info = marginal(Fch)
+        res[ch] = {'edges': [float(e) for e in edges], 'info': info, 'mc_ok': mc_ok}
+        F += Fch
         if verbose:
-            print(f"  {ch}: {len(edges) - 1} NN bins, I_ttZ={info['ttZ']:.3f}, I_ttH={info['ttH']:.3f}"
-                  f"{'' if not still_bad else '  (MC constraint not met)'}\n      edges {np.round(edges, 4).tolist()}")
-    return res, tot
+            print(f"  {ch}: {len(edges) - 1} NN bins, {info_line(info)}"
+                  f"{'' if mc_ok else '  (MC constraint not met)'}\n      edges {np.round(edges, 4).tolist()}")
+    return res, marginal(F)
 
 
 def evaluate_equal_bins(ev, a=1.0, b=1.0, n_fine=40, max_rel=0.3, max_bins=8, verbose=False):
@@ -210,21 +248,23 @@ def sig_vs_ttbb(ev):
 
 
 def channel_info(sub, d, ch, n_fine, max_rel, max_bins):
-    """Optimized NN binning of score d in one channel: (edges, information, MC constraint met)."""
-    meas = sub['label'].isin(SIGNALS).to_numpy()
+    """Optimized NN binning of score d in one channel: (edges, Fisher matrix, MC constraint met).
+    The fine edges have equal POI weight per bin; the merging maximizes the channel's sum of I_X."""
+    meas = sub['poi'].isin(POIS).to_numpy()
     if not meas.any():
-        return [0.0, 1.0], {X: 0.0 for X in SIGNALS}, True
+        return [0.0, 1.0], np.zeros((len(POIS), len(POIS))), True
     fe = fine_edges(d[meas], sub['w'].to_numpy()[meas], n_fine)
     cells = cell_grid(d, sub, fe, MASS_EDGES[ch])
-    edges, info, still_bad = optimize_edges(cells, fe, max_rel, max_bins)
-    return edges, info, not still_bad
+    edges, _, still_bad = optimize_edges(cells, fe, max_rel, max_bins)
+    bounds = np.searchsorted(fe, edges)
+    return edges, fisher(grouped(cells, bounds)), not still_bad
 
 
 def evaluate_ttlf_cut(ev, cut, fail_bins=1, n_fine=40, max_rel=0.3, max_bins=8, verbose=False):
     """Two-step categorization per channel: events with ttlf < cut are binned in s / (s + ttbb)
     (up to max_bins), events with ttlf >= cut are kept as fail_bins bins of the current disc
     (0 = dropped). Every region keeps the mass binning."""
-    tot = {X: 0.0 for X in SIGNALS}
+    F = np.zeros((len(POIS), len(POIS)))
     for i, ch in enumerate(CHANNELS):
         sub = ev[ev['ch'] == i]
         if sub.empty:
@@ -235,13 +275,12 @@ def evaluate_ttlf_cut(ev, cut, fail_bins=1, n_fine=40, max_rel=0.3, max_bins=8, 
             r = sub[mask]
             if r.empty or nb == 0:
                 continue
-            edges, info, mc_ok = channel_info(r, score(r), ch, n_fine, max_rel, nb)
-            for X in SIGNALS:
-                tot[X] += info[X]
+            edges, Fr, mc_ok = channel_info(r, score(r), ch, n_fine, max_rel, nb)
+            F += Fr
             if verbose:
-                print(f"  {ch} {region}: {len(edges) - 1} NN bins, I_ttZ={info['ttZ']:.3f}, I_ttH={info['ttH']:.3f}"
+                print(f"  {ch} {region}: {len(edges) - 1} NN bins, {info_line(marginal(Fr))}"
                       f"{'' if mc_ok else '  (MC constraint not met)'}\n      edges {np.round(edges, 4).tolist()}")
-    return tot
+    return marginal(F)
 
 
 def ttlf_cut_efficiencies(ev, cut):
@@ -250,6 +289,10 @@ def ttlf_cut_efficiencies(ev, cut):
     frac = lambda m: ev.loc[m & passed, 'w'].sum() / ev.loc[m, 'w'].sum() if ev.loc[m, 'w'].sum() > 0 else np.nan
     return {'sig': frac(ev['label'].isin(SIGNALS)), 'tt_B': frac(ev['proc'] == 'tt_B'),
             'TTBar': frac(ev['proc'] == 'TTBar'), 'bkg': frac(ev['label'] == 'bkg')}
+
+
+def info_line(info):
+    return ", ".join(f"I_{X}={v:.3f}" for X, v in info.items())
 
 
 def sigma_line(tot):
@@ -276,18 +319,24 @@ def main():
                     help='ttlf mode: tt+LF/C score thresholds (1.0 = no cut, s/(s+ttbb) on all events)')
     ap.add_argument('--fail-bins', type=int, default=1,
                     help='ttlf mode: disc bins kept for events failing the cut (0 = dropped)')
+    ap.add_argument('--pois', nargs='+', default=SIGNALS, choices=SIGNALS + ['tt_B'],
+                    help='measured processes (signal strengths) of the FOM')
+    ap.add_argument('--fom', choices=['diag', 'fisher'], default='diag',
+                    help='diag: sum of per-POI information (others = background); '
+                         'fisher: POIs fitted together (correlations included)')
     args = ap.parse_args()
     if args.year is None:
         args.year = 'run2' if args.mode == 'ttlf' else '2018'
     if args.scale is None:
         args.scale = 1.0 if args.year == 'run2' else 2.31
-    print(f"Year(s): {args.year}, luminosity scale {args.scale}")
+    configure(args.pois, args.fom)
+    print(f"Year(s): {args.year}, luminosity scale {args.scale}, POIs {POIS}, FOM {FOM}")
     kw = dict(n_fine=args.n_fine, max_rel=args.max_rel, max_bins=args.max_bins)
 
     if args.mode == 'binning':
         ev = load_events(args.year, args.model, scale=args.scale)
         res, tot = evaluate_equal_bins(ev, verbose=True, **kw)
-        print(f"\nTotal: I_ttZ={tot['ttZ']:.3f}  I_ttH={tot['ttH']:.3f}   {sigma_line(tot)}")
+        print(f"\nTotal: {info_line(tot)}   {sigma_line(tot)}")
         if args.out:
             with open(args.out, 'w') as f:
                 json.dump({args.year: {ch: r['edges'] for ch, r in res.items()}}, f, indent=1)
@@ -311,26 +360,29 @@ def main():
         print(f"with per-channel best weights: FOM={sum(tot.values()):.3f}   {sigma_line(tot)}")
 
     elif args.mode == 'xbb':
-        print(f"{'Xbb cut':>8} {'I_ttZ':>8} {'I_ttH':>8} {'FOM':>8}   estimated precision")
+        print(f"{'Xbb cut':>8}  information, FOM, estimated precision")
         for thr in args.thresholds:
             ev = load_events(args.year, args.model, xbb=thr, scale=args.scale)
             _, tot = evaluate(ev, **kw)
-            print(f"{thr:8.4f} {tot['ttZ']:8.3f} {tot['ttH']:8.3f} {sum(tot.values()):8.3f}   {sigma_line(tot)}")
+            print(f"{thr:8.4f} {info_line(tot)}  FOM={sum(tot.values()):8.3f}   {sigma_line(tot)}")
 
     elif args.mode == 'ttlf':
         ev = load_events(args.year, args.model, scale=args.scale)
         ref_kw = dict(kw, max_bins=args.max_bins + args.fail_bins)
         _, ref = evaluate(ev, **ref_kw)
-        print(f"reference disc, {ref_kw['max_bins']} NN bins: FOM={sum(ref.values()):.3f}   {sigma_line(ref)}")
-        print(f"{'ttlf <':>7} {'eff sig':>8} {'tt+B':>6} {'tt+LF/C':>8} {'all bkg':>8} "
-              f"{'I_ttZ':>7} {'I_ttH':>7} {'FOM':>7}   estimated precision")
+        # fisher: mean information relative to the reference (1 = as good as the current disc)
+        score = ((lambda t: np.mean([t[X] / ref[X] for X in POIS if ref[X] > 0])) if FOM == 'fisher'
+                 else (lambda t: sum(t.values())))
+        print(f"reference disc, {ref_kw['max_bins']} NN bins: {info_line(ref)}, FOM={score(ref):.3f}\n"
+              f"    {sigma_line(ref)}")
+        print(f"{'ttlf <':>7} {'eff sig':>8} {'tt+B':>6} {'tt+LF/C':>8} {'all bkg':>8}   information, FOM, precision")
         results = {}
         for cut in args.cuts:
             eff = ttlf_cut_efficiencies(ev, cut)
             tot = evaluate_ttlf_cut(ev, cut, args.fail_bins, **kw)
-            results[cut] = sum(tot.values())
-            print(f"{cut:7.3f} {eff['sig']:8.3f} {eff['tt_B']:6.3f} {eff['TTBar']:8.3f} {eff['bkg']:8.3f} "
-                  f"{tot['ttZ']:7.3f} {tot['ttH']:7.3f} {sum(tot.values()):7.3f}   {sigma_line(tot)}")
+            results[cut] = score(tot)
+            print(f"{cut:7.3f} {eff['sig']:8.3f} {eff['tt_B']:6.3f} {eff['TTBar']:8.3f} {eff['bkg']:8.3f}   "
+                  f"{info_line(tot)}, FOM={results[cut]:.3f}\n{'':42}{sigma_line(tot)}")
         best = max(results, key=results.get)
         print(f"\nBest cut ttlf < {best}: binning per channel")
         evaluate_ttlf_cut(ev, best, args.fail_bins, verbose=True, **kw)
