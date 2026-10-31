@@ -37,6 +37,16 @@ def sig_vs_ttbb(df_, model):
     return np.where(den > 0, s / np.where(den > 0, den, 1.0), 0.0)
 
 
+SPANET_CATEGORIES = ['ZH', 'TTB', 'LF']      # order of the scores in spanet_category
+
+
+def spanet_category(df_, model):
+    """Highest SPANet score of a model, for the argmax categorization of makeDatacard.py (--argmax):
+    0 = Z/H (sig = ttH + ttZ), 1 = tt+B (ttbb), 2 = tt+LF/C (ttlf); ties go to the lower index."""
+    scores = [df_[f'{c}_score_{model}'].to_numpy(dtype=float) for c in ('sig', 'ttbb', 'ttlf')]
+    return np.argmax(np.column_stack(scores), axis=1)
+
+
 def weighted_quantile(values, quantiles, sample_weight=None,
                       values_sorted=False, old_style=False):
     """ Very close to numpy.percentile, but supports weights.
@@ -76,13 +86,15 @@ class DataCardShapes():
     derive:    optional callable df -> df adding the NN column (when it is not in the pickles)
     selection: optional callable df -> mask; only these signal events set the quantile edges
     edges:     optional {year: {'Zhpt1': [...], ...}} fixed edges (as edges_file, without a file)
+    ref_samples: processes whose weighted quantiles set the edges (default ttZ + ttH); the
+               gen-matching requirement (matchedGen_ZHbb_bb) is applied to ttZ / ttH only
     '''
     ref_samples = ['ttZ', 'ttH']
     quantiles = [0.0, .05, .25, .35, .50, .70, 1.0]
 
     def __init__(self, recopt_bins, recosdM_bins, n_NN_bins=10, nn='nnscore', isblind=True,
                  years=None, common_binning=True, file_dir=PICKLE_DIR, edges_file=None,
-                 derive=None, selection=None, edges=None):
+                 derive=None, selection=None, edges=None, ref_samples=None):
         # edges_file: JSON {year: {'Zhpt1': [...], ...}} from optimize_binning.py; replaces the
         # quantile edges (the first year in the file is used when a year is missing)
         self.fixed_edges = edges
@@ -91,6 +103,8 @@ class DataCardShapes():
                 self.fixed_edges = json.load(f)
         self.derive = derive
         self.selection = selection
+        if ref_samples is not None:
+            self.ref_samples = list(ref_samples)
         self.years = list(years) if years is not None else list(YEARS)
         self.pt_bins = recopt_bins + [500]
         self.sdM_bins = recosdM_bins
@@ -109,7 +123,9 @@ class DataCardShapes():
             df = self.derive(df)
         if self.selection is not None:
             df = df[self.selection(df)]
-        df = df[(df[self.nn] >= 0.0) & (df['matchedGen_ZHbb_bb'] == True)].copy()
+        if set(self.ref_samples) <= {'ttZ', 'ttH'}:
+            df = df[df['matchedGen_ZHbb_bb'] == True]
+        df = df[df[self.nn] >= 0.0].copy()
         df['ZH_pt'] = df['ZH_pt'].clip(self.pt_bins[0] + 1, self.pt_bins[-1] - 1)
         df['pt_bin'] = pd.cut(df['ZH_pt'], bins=self.pt_bins,
                               labels=[f'Zhpt{i}' for i in range(len(self.pt_bins) - 1)])

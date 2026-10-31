@@ -11,6 +11,8 @@
 #                                         # interferenceModel can scale it
 #   python makeDatacard.py --ttlf-cut 0.2 [--ttlf-cr]
 #                                         # two-step categorization (see TTLF_CUT below)
+#   python makeDatacard.py --argmax [--argmax-lf]
+#                                         # categories by the highest SPANet score (see ARGMAX below)
 # The --eft-ttbb cards get "eftTTB_" in their file names, so both versions can coexist.
 
 import argparse
@@ -22,7 +24,7 @@ import re
 import uproot
 import os
 import sys
-from datacard_shapes import DataCardShapes, getZhbbWeight, sig_vs_ttbb
+from datacard_shapes import DataCardShapes, getZhbbWeight, sig_vs_ttbb, spanet_category, SPANET_CATEGORIES
 from TH1 import export1d
 from analysis_years import (YEARS, YEAR_RE, find_year, PICKLE_DIR, bbvl_wp,
                             LUMI_UNCERTAINTIES, jes_nuisances, JER_REGIONS)
@@ -47,6 +49,14 @@ EFT_SCALE_TTBB = False
 #                        SR=... CR=...), masked or unblinded on its own
 # The cards get "ttlf<cut>SR_" / "ttlf<cut>CR_" in their names; the default cards are unchanged.
 TTLF_CUT = None
+
+# Categories by the highest SPANet score (default off; --argmax on the command line). Per reco pT channel:
+#   ZH  (highest = sig):  binned in the disc (column disc_<model>), signal-quantile edges from the ZH events
+#   TTB (highest = ttbb): binned in the ttbb score (column ttbb_score_<model>), tt+B-quantile edges
+#   LF  (highest = ttlf): one bin of the disc x mass; written only with --argmax-lf (control region)
+# Separate cards per category ("argmaxZH_" / "argmaxTTB_" / "argmaxLF_" in the names), combined with
+# combineCards.py ZH=... TTB=... [LF=...]; the default cards are unchanged.
+ARGMAX = False
 
 # Backgrounds in the card. Names must match the 'process' column / pickle file names.
 # Add 'QCD' only if a QCD pickle is produced (the pickling script does not export it yet).
@@ -408,7 +418,7 @@ class MakeDataCard:
     dc_dir = './datacards'
 
     def __init__(self, nn_name, hist2d, sig=['ttZ', 'ttH'], bkg=None, years=None, isblind=True,
-                 eft_ttbb=EFT_SCALE_TTBB, model=None, ttlf_cut=TTLF_CUT, region=None):
+                 eft_ttbb=EFT_SCALE_TTBB, model=None, ttlf_cut=TTLF_CUT, region=None, category=None):
         years = list(YEARS) if years is None else list(years)
         bkg = list(BACKGROUNDS) if bkg is None else list(bkg)
         self.nn_name = nn_name
@@ -442,6 +452,15 @@ class MakeDataCard:
                 self.cut = lambda x: (x[ttlf] >= ttlf_cut) & (x[self.nn_name] >= 0.0)
             self.tag += f"ttlf{ttlf_cut:g}{region.upper()}_".replace('.', 'p')
 
+        # Argmax categorization (ARGMAX): category 'ZH', 'TTB' or 'LF' of spanet_category
+        if category is not None:
+            if category not in SPANET_CATEGORIES or model is None:
+                raise ValueError(f"category must be one of {SPANET_CATEGORIES}, with the SPANet model")
+            k = SPANET_CATEGORIES.index(category)
+            score_cols = [f'sig_score_{model}', f'ttbb_score_{model}', f'ttlf_score_{model}']
+            self.cut = lambda x: (spanet_category(x, model) == k) & (x[self.nn_name] >= 0.0)
+            self.tag += f"argmax{category}_"
+
         # Nominal weights and the up/down columns used for the weight systematics.
         # Missing columns are dropped silently by DataFrame.filter; systematics whose
         # columns are missing for a process are skipped for that process.
@@ -465,7 +484,8 @@ class MakeDataCard:
         self.weight_sys = weight_sys
         self.bkg_v = weights + weight_sys + pdf_cols + [self.nn_name, 'ZH_M', 'ZH_pt', 'process', 'sample',
                                                         'n_ak4jets', 'ZH_bbvLscore', 'n_b_outZH', 'MET_pt',
-                                                        'era', 'year', 'tt_2b', 'tt_C'] + score_cols
+                                                        'era', 'year', 'tt_2b', 'tt_C']
+        self.bkg_v += [c for c in score_cols if c not in self.bkg_v]      # nn_name may be a score column
         self.sig_v = self.bkg_v + ['genZHpt']
 
         self.accepted_sig  = [f'{s}{i}' for i in range(len(self.pt_bins)) for s in ['ttH','ttZ']]
@@ -902,6 +922,26 @@ class MakeDataCard:
         for dc in self.dc_dict:
             self.dc_dict[dc].close()
 
+def make_argmax_cards(model, disc_name, args, plot_edges):
+    """Cards of the argmax categorization (ARGMAX): ZH in the disc, TTB in the ttbb score, LF (with
+    --argmax-lf) in one disc bin. Edges: weighted quantiles of the category's own events, ttZ + ttH
+    (gen-matched) for ZH and tt_B for TTB; saved as nn_edges_<nn>_argmax<category>.json."""
+    in_category = lambda k: (lambda df: spanet_category(df, model) == SPANET_CATEGORIES.index(k))
+    for category, nn, ref in (('ZH', disc_name, None), ('TTB', f'ttbb_score_{model}', ['tt_B'])):
+        hist2d = DataCardShapes(pt_bins, mass_bins, nn=nn, isblind=isblind, years=YEARS, common_binning=True,
+                                selection=in_category(category), ref_samples=ref)
+        path = f'nn_edges_{nn}_argmax{category}.json'
+        hist2d.save_edges(path)
+        plot_edges(json.load(open(path)), f'plots/{path[:-5]}.pdf')
+        MakeDataCard(nn_name=nn, hist2d=hist2d, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,
+                     model=model, category=category).makeDC()
+    if args.argmax_lf:
+        one_bin = {y: {f'Zhpt{i}': [0.0, 1.0] for i in range(1, len(pt_bins))} for y in YEARS}
+        hist2d = DataCardShapes(pt_bins, mass_bins, nn=disc_name, isblind=isblind, years=YEARS, edges=one_bin)
+        MakeDataCard(nn_name=disc_name, hist2d=hist2d, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,
+                     model=model, category='LF').makeDC()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Build the datacards.')
     parser.add_argument('--eft-ttbb', action='store_true', default=EFT_SCALE_TTBB,
@@ -912,7 +952,14 @@ if __name__ == '__main__':
                              '(cards get "ttlf<cut>SR_" in their names); default cards unchanged')
     parser.add_argument('--ttlf-cr', action='store_true',
                         help='with --ttlf-cut: also write the tt+LF/C control-region cards (ttlf >= cut)')
+    parser.add_argument('--argmax', action='store_true', default=ARGMAX,
+                        help='categories by the highest SPANet score: ZH cards in the disc, TTB cards in the '
+                             'ttbb score (cards get "argmaxZH_" / "argmaxTTB_" in their names)')
+    parser.add_argument('--argmax-lf', action='store_true',
+                        help='with --argmax: also write the tt+LF/C category cards (one disc bin)')
     args = parser.parse_args()
+    if args.argmax and args.ttlf_cut is not None:
+        parser.error('--argmax and --ttlf-cut are alternative categorizations')
 
     from spanet_models import ACTIVE_MODELS     # one datacard per active SPANet model
 
@@ -924,6 +971,10 @@ if __name__ == '__main__':
         print(f"{'='*50}\n")
 
         from plot_nn_edges import plot_edges
+        if args.argmax:
+            make_argmax_cards(model, nn_name, args, plot_edges)
+            continue
+
         if args.ttlf_cut is None:
             hist2d = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS, common_binning=True) #False common binning for per-year
             hist2d.save_edges(f'nn_edges_{nn_name}.json')     # for NN_BINS in the EFT scaling

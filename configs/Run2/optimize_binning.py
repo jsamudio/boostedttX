@@ -25,6 +25,10 @@ Tools (all print a table; validate the final choice with the full Combine fit):
     ttlf    : two-step categorization: cut on the tt+LF/C score (ttlf < cut), bin the passing events
               in s / (s + ttbb); the failing events are kept as --fail-bins bins of the disc (0 = dropped).
               Compared with the current disc binned in the same total number of NN bins per channel.
+    argmax  : categories by the highest score (Z/H, tt+B, tt+LF/C), as in the ttH(bb) analyses:
+              Z/H events binned in the disc (up to --max-bins), tt+B events in the ttbb score
+              (--ttb-bins), tt+LF/C events in --lf-bins disc bins (0 = dropped).
+              Compared with the current disc binned in the same total number of NN bins per channel.
 
 Usage:
     python3 optimize_binning.py binning --year 2018 --model overlapRemoval_MultiWP --out nn_edges_opt.json
@@ -34,8 +38,10 @@ Usage:
 
 For the EFT-motivated two-step categorization (isolate tt+LF/C, then separate tt+B from Z/H):
     python3 optimize_binning.py ttlf --model noOverlap_MultiWP --fom fisher --pois ttZ ttH tt_B
+    python3 optimize_binning.py argmax --model noOverlap_MultiWP --fom fisher --pois ttZ ttH tt_B
 
---year run2 uses all years of analysis_years.YEARS together (scale 1); it is the default of the ttlf mode.
+--year run2 uses all years of analysis_years.YEARS together (scale 1); it is the default of the ttlf
+and argmax modes.
 
 Caveat: if the network was trained on the same MC events, optimize on the held-out events only
 (otherwise the binning is tuned on overtrained scores).
@@ -283,6 +289,51 @@ def evaluate_ttlf_cut(ev, cut, fail_bins=1, n_fine=40, max_rel=0.3, max_bins=8, 
     return marginal(F)
 
 
+CATEGORIES = ['ZH', 'TTB', 'LF']           # order of the scores in argmax_category
+
+
+def argmax_category(ev):
+    """Index of the highest score: 0 = Z/H (s), 1 = tt+B (ttbb), 2 = tt+LF/C (ttlf); ties go to the lower index."""
+    return np.argmax(np.column_stack([ev['s'], ev['ttbb'], ev['ttlf']]), axis=1)
+
+
+def evaluate_argmax(ev, ttb_bins=4, lf_bins=1, n_fine=40, max_rel=0.3, max_bins=8, verbose=False):
+    """Categories by the highest score, per channel: Z/H binned in the disc (up to max_bins),
+    tt+B in the ttbb score (up to ttb_bins), tt+LF/C in lf_bins bins of the disc (0 = dropped).
+    Every category keeps the mass binning."""
+    F = np.zeros((len(POIS), len(POIS)))
+    ttbb_score = lambda r: r['ttbb'].to_numpy()
+    plan = {'ZH': (max_bins, disc), 'TTB': (ttb_bins, ttbb_score), 'LF': (lf_bins, disc)}
+    for i, ch in enumerate(CHANNELS):
+        sub = ev[ev['ch'] == i]
+        if sub.empty:
+            continue
+        cat = argmax_category(sub)
+        for k, name in enumerate(CATEGORIES):
+            nb, score = plan[name]
+            r = sub[cat == k]
+            if r.empty or nb == 0:
+                continue
+            edges, Fr, mc_ok = channel_info(r, score(r), ch, n_fine, max_rel, nb)
+            F += Fr
+            if verbose:
+                print(f"  {ch} {name}: {len(edges) - 1} NN bins, {info_line(marginal(Fr))}"
+                      f"{'' if mc_ok else '  (MC constraint not met)'}\n      edges {np.round(edges, 4).tolist()}")
+    return marginal(F)
+
+
+def argmax_fractions(ev):
+    """Fraction of each process's weighted yield in each argmax category."""
+    cat = argmax_category(ev)
+    groups = {'sig': ev['label'].isin(SIGNALS), 'tt_B': ev['proc'] == 'tt_B',
+              'TTBar': ev['proc'] == 'TTBar', 'bkg': ev['label'] == 'bkg'}
+    out = {}
+    for g, m in groups.items():
+        tot = ev.loc[m, 'w'].sum()
+        out[g] = [ev.loc[m & (cat == k), 'w'].sum() / tot if tot > 0 else np.nan for k in range(len(CATEGORIES))]
+    return out
+
+
 def ttlf_cut_efficiencies(ev, cut):
     """Fraction of the weighted yield with ttlf < cut: measured signal, tt+B, tt+LF/C, all background."""
     passed = ev['ttlf'] < cut
@@ -303,9 +354,9 @@ def sigma_line(tot):
 # ----------------------------------------------------------------------------- CLI
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('mode', choices=['binning', 'disc', 'xbb', 'ttlf'])
+    ap.add_argument('mode', choices=['binning', 'disc', 'xbb', 'ttlf', 'argmax'])
     ap.add_argument('--year', default=None,
-                    help="year, or 'run2' for all years together (default: run2 for ttlf, else 2018)")
+                    help="year, or 'run2' for all years together (default: run2 for ttlf and argmax, else 2018)")
     ap.add_argument('--model', default='overlapRemoval_MultiWP')
     ap.add_argument('--scale', type=float, default=None,
                     help='luminosity scale (default: 1 for run2, 2.31 otherwise = 2018 -> 138 fb^-1)')
@@ -319,6 +370,10 @@ def main():
                     help='ttlf mode: tt+LF/C score thresholds (1.0 = no cut, s/(s+ttbb) on all events)')
     ap.add_argument('--fail-bins', type=int, default=1,
                     help='ttlf mode: disc bins kept for events failing the cut (0 = dropped)')
+    ap.add_argument('--ttb-bins', type=int, nargs='+', default=[2, 4, 6],
+                    help='argmax mode: max ttbb-score bins of the tt+B category (one result per value)')
+    ap.add_argument('--lf-bins', type=int, default=1,
+                    help='argmax mode: disc bins of the tt+LF/C category (0 = dropped)')
     ap.add_argument('--pois', nargs='+', default=SIGNALS, choices=SIGNALS + ['tt_B'],
                     help='measured processes (signal strengths) of the FOM')
     ap.add_argument('--fom', choices=['diag', 'fisher'], default='diag',
@@ -326,7 +381,7 @@ def main():
                          'fisher: POIs fitted together (correlations included)')
     args = ap.parse_args()
     if args.year is None:
-        args.year = 'run2' if args.mode == 'ttlf' else '2018'
+        args.year = 'run2' if args.mode in ('ttlf', 'argmax') else '2018'
     if args.scale is None:
         args.scale = 1.0 if args.year == 'run2' else 2.31
     configure(args.pois, args.fom)
@@ -386,6 +441,28 @@ def main():
         best = max(results, key=results.get)
         print(f"\nBest cut ttlf < {best}: binning per channel")
         evaluate_ttlf_cut(ev, best, args.fail_bins, verbose=True, **kw)
+
+    elif args.mode == 'argmax':
+        ev = load_events(args.year, args.model, scale=args.scale)
+        print(f"{'fraction in category':22} " + " ".join(f"{c:>7}" for c in CATEGORIES))
+        for g, fr in argmax_fractions(ev).items():
+            print(f"  {g:20} " + " ".join(f"{v:7.3f}" for v in fr))
+        results = {}
+        for nb in args.ttb_bins:
+            ref_kw = dict(kw, max_bins=args.max_bins + nb + args.lf_bins)
+            _, ref = evaluate(ev, **ref_kw)
+            score = ((lambda t: np.mean([t[X] / ref[X] for X in POIS if ref[X] > 0])) if FOM == 'fisher'
+                     else (lambda t: sum(t.values())))
+            tot = evaluate_argmax(ev, nb, args.lf_bins, **kw)
+            results[nb] = score(tot) / score(ref)
+            print(f"\ntt+B category {nb} bins (Z/H {args.max_bins}, LF {args.lf_bins}); "
+                  f"reference disc in {ref_kw['max_bins']} NN bins:\n"
+                  f"  reference: {info_line(ref)}\n             {sigma_line(ref)}\n"
+                  f"  argmax   : {info_line(tot)}\n             {sigma_line(tot)}\n"
+                  f"  FOM relative to the reference: {results[nb]:.3f}  (> 1 = better)")
+        best = max(results, key=results.get)
+        print(f"\nBest: tt+B category in {best} bins: binning per channel")
+        evaluate_argmax(ev, best, args.lf_bins, verbose=True, **kw)
 
 
 if __name__ == '__main__':

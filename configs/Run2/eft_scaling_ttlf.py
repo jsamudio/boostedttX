@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-EFT scaling (Combine interferenceModel JSON) for the two-step categorization of makeDatacard.py
-(--ttlf-cut <cut> [--ttlf-cr]):
+EFT scaling (Combine interferenceModel JSON) for the SPANet categorizations of makeDatacard.py.
+Two-step (--ttlf-cut <cut> [--ttlf-cr]):
     SR: ttlf score <  cut, NN axis s / (s + ttbb), edges nn_edges_sigvsttbb_<model>_ttlf<cut>.json
     CR: ttlf score >= cut, one bin of the disc s / (s + ttbb + ttlf)
+Argmax (--argmax [--argmax-lf]), categories by the highest score (datacard_shapes.spanet_category):
+    ZH:  highest = sig,  NN axis the disc,       edges nn_edges_disc_<model>_argmaxZH.json
+    TTB: highest = ttbb, NN axis the ttbb score, edges nn_edges_ttbb_score_<model>_argmaxTTB.json
+    LF:  highest = ttlf, one bin of the disc
 Same method and defaults as EFTScaling.ipynb (Cells 1 and 2): the 2018 SMEFT dumps, the datacard
 selection with the 2018 Xbb LP, per-bin EFT/SM ratios with the low-statistics fallback
 (channel-level, then process-level ratio) and the diagonal mass-peak bins kept. The EFT samples
@@ -12,10 +16,12 @@ exist for 2018 only: one scaling file per year of the edges file, each with that
 Usage (after makeDatacard.py --ttlf-cut 0.2 --ttlf-cr, from configs/Run2):
     python3 eft_scaling_ttlf.py --cut 0.2
     python3 eft_scaling_ttlf.py --cut 0.2 --no-cr          # SR cards only
+    python3 eft_scaling_ttlf.py --argmax [--no-cr]         # after makeDatacard.py --argmax [--argmax-lf]
 
-Output: combine_scaling_ttlf<cut>_<year>.json with SR and CR entries. Channel names follow
---channel-format, default "{region}_{channel}" (e.g. SR_Zhpt1), which matches
-    combineCards.py SR=<SR card> CR=<CR card>
+Output: combine_scaling_ttlf<cut>_<year>.json with SR and CR entries, or combine_scaling_argmax_<year>.json
+with ZH, TTB and LF entries (--no-cr: no CR / LF). Channel names follow --channel-format, default
+"{region}_{channel}" (e.g. SR_Zhpt1, TTB_Zhpt2), which matches
+    combineCards.py SR=<SR card> CR=<CR card>      or      combineCards.py ZH=<ZH> TTB=<TTB> [LF=<LF>]
 Change it if the cards are combined with other labels.
 """
 import argparse
@@ -45,7 +51,7 @@ WC_RANGE = (-40, 40)
 
 DIAGONAL = {"Zhpt1": 1, "Zhpt2": 2, "Zhpt3": 3}   # reco channel -> matching gen-pT bin index
 BOSON_MASS = {"ttH": 125.0, "ttZ": 91.19}
-REGIONS = ("SR", "CR")
+CATEGORIES = ("ZH", "TTB", "LF")            # order of the scores, as datacard_shapes.spanet_category
 
 
 def score_columns(model):
@@ -133,11 +139,16 @@ def unreliable(n_raw, sm, sm2, min_events, max_rel_err):
 
 # ---------------- Reading the EFT samples ----------------
 def region_scores(col, model, cut):
-    """{region: (event mask, NN value)}: SR = ttlf < cut in s/(s+ttbb), CR = ttlf >= cut in the disc."""
+    """{region: (event mask, NN value)}. cut = ttlf cut: SR = ttlf < cut in s/(s+ttbb), CR = ttlf >= cut
+    in the disc. cut = 'argmax': ZH / TTB / LF = highest score sig / ttbb / ttlf (ties to the lower index),
+    in the disc / the ttbb score / the disc."""
     s, b, lf = (col(c).astype(np.float64) for c in score_columns(model))
     den_sr, den_cr = s + b, s + b + lf
     sr = np.where(den_sr > 0, s / np.where(den_sr > 0, den_sr, 1.0), 0.0)
     cr = np.where(den_cr > 0, s / np.where(den_cr > 0, den_cr, 1.0), 0.0)
+    if cut == "argmax":
+        cat = np.argmax(np.column_stack([s, b, lf]), axis=1)
+        return {"ZH": (cat == 0, cr), "TTB": (cat == 1, b), "LF": (cat == 2, cr)}
     return {"SR": (lf < cut, sr), "CR": (lf >= cut, cr)}
 
 
@@ -314,11 +325,14 @@ def build_scaling(merged, meta, nn_edges, channel_name, min_events=20, max_rel_e
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--cut", type=float, required=True, help="tt+LF/C score cut (makeDatacard.py --ttlf-cut)")
+    scheme = ap.add_mutually_exclusive_group(required=True)
+    scheme.add_argument("--cut", type=float, help="tt+LF/C score cut (makeDatacard.py --ttlf-cut)")
+    scheme.add_argument("--argmax", action="store_true", help="argmax categories (makeDatacard.py --argmax)")
     ap.add_argument("--model", default="refactor_noOverlap_MultiWP", help="SPANet model of the scores")
     ap.add_argument("--edges", default=None,
-                    help="SR edges JSON (default nn_edges_sigvsttbb_<model>_ttlf<cut>.json from makeDatacard.py)")
-    ap.add_argument("--no-cr", action="store_true", help="SR entries only (cards made without --ttlf-cr)")
+                    help="--cut: SR edges JSON (default nn_edges_sigvsttbb_<model>_ttlf<cut>.json from makeDatacard.py)")
+    ap.add_argument("--no-cr", action="store_true",
+                    help="no CR / LF entries (cards made without --ttlf-cr / --argmax-lf)")
     ap.add_argument("--channel-format", default="{region}_{channel}",
                     help="channel names in the combined card (default SR_Zhpt1 ...)")
     ap.add_argument("--workers", type=int, default=4, help="1 = read serially")
@@ -327,14 +341,21 @@ def main():
     ap.add_argument("--max-rel-err", type=float, default=0.3)
     args = ap.parse_args()
 
-    suffix = f"ttlf{args.cut:g}".replace(".", "p")
-    sr_edges = json.load(open(args.edges or f"nn_edges_sigvsttbb_{args.model}_{suffix}.json"))
-    edges = {"SR": sr_edges}
+    if args.argmax:
+        suffix, cut = "argmax", "argmax"
+        edges = {"ZH": json.load(open(f"nn_edges_disc_{args.model}_argmaxZH.json")),
+                 "TTB": json.load(open(f"nn_edges_ttbb_score_{args.model}_argmaxTTB.json"))}
+        cr_name = "LF"
+    else:
+        suffix, cut = f"ttlf{args.cut:g}".replace(".", "p"), args.cut
+        edges = {"SR": json.load(open(args.edges or f"nn_edges_sigvsttbb_{args.model}_{suffix}.json"))}
+        cr_name = "CR"
+    years = next(iter(edges.values()))
     if not args.no_cr:
-        edges["CR"] = {y: {ch: [0.0, 1.0] for ch in CHANNELS} for y in sr_edges}
+        edges[cr_name] = {y: {ch: [0.0, 1.0] for ch in CHANNELS} for y in years}
 
-    by_region = read_inputs(args.model, args.cut, edges, n_workers=args.workers)
-    for year in sorted(sr_edges):
+    by_region = read_inputs(args.model, cut, edges, n_workers=args.workers)
+    for year in sorted(years):
         entries, worst = [], 0.0
         for region in edges:
             print(f"--- {year} {region}")
