@@ -8,8 +8,8 @@ in tt+LF events (output of the xbbwp group):
 
 Mistag fatjets: all FatJetGood of the analysis preselection (1 lepton, >= 5 AK4, >= 1 AK8; add
 --min-bjets 2 for the btag_mask category) in tt+LF events (TTToSemiLeptonic, TTTo2L2Nu) with no B or
-C hadron (nBHadrons == nCHadrons == 0). The cut of each WP is where the weighted fraction of these
-fatjets above it equals the target rate. Signal efficiency: fatjets containing both b quarks of the
+C hadron: hadronFlavour == 0 (ghost clustering; NanoAODv15 has no FatJet_nBHadrons / nCHadrons).
+The cut of each WP is where the weighted fraction of these fatjets above it equals the target rate. Signal efficiency: fatjets containing both b quarks of the
 H/Z (n_boson_b == 2) in ttH(bb) / ttZ(bb). The result goes to analysis_years.XBB_WP_DICT.
 """
 import argparse
@@ -29,7 +29,7 @@ PT_BINS = [200, 300, 400, 600, np.inf]
 def fatjets(output, keys, min_bjets=0):
     """Per-fatjet arrays (concatenated over keys / datasets) with the event weight normalized by the
     sum of genweights, plus the per-event leading Xbb (the ZH candidate)."""
-    out = {k: [] for k in ("pt", "mass", "xbb", "nB", "nC", "n_boson_b", "weight")}
+    out = {k: [] for k in ("pt", "mass", "xbb", "flav", "n_boson_b", "weight")}
     cand = {"xbb": [], "weight": [], "light": []}
     for key in keys:
         if key not in output["columns"]:
@@ -45,14 +45,13 @@ def fatjets(output, keys, min_bjets=0):
             out["pt"].append(c["FatJetGood_pt"][sel])
             out["mass"].append(c["FatJetGood_mass"][sel])
             out["xbb"].append(c["FatJetGood_btagBB"][sel])
-            out["nB"].append(c["FatJetGood_nBHadrons"][sel])
-            out["nC"].append(c["FatJetGood_nCHadrons"][sel])
+            out["flav"].append(c["FatJetGood_hadronFlavour"][sel])
             out["n_boson_b"].append(c["FatJetGood_n_boson_b"][sel])
             out["weight"].append(w)
             # candidate = leading Xbb fatjet of each event
             offsets = np.concatenate([[0], np.cumsum(n)])
             xbb_all = c["FatJetGood_btagBB"]
-            light_all = (c["FatJetGood_nBHadrons"] == 0) & (c["FatJetGood_nCHadrons"] == 0)
+            light_all = c["FatJetGood_hadronFlavour"] == 0
             for i in np.nonzero(sel_evt & (n > 0))[0]:
                 j = offsets[i] + np.argmax(xbb_all[offsets[i]:offsets[i + 1]])
                 cand["xbb"].append(xbb_all[j])
@@ -87,7 +86,7 @@ def main():
     output = load(args.input)
     bkg, bkg_cand = fatjets(output, MISTAG_KEYS, args.min_bjets)
     sig, _ = fatjets(output, SIGNAL_KEYS, args.min_bjets)
-    light = np.ones(len(bkg["xbb"]), dtype=bool) if args.all_flavours else (bkg["nB"] == 0) & (bkg["nC"] == 0)
+    light = np.ones(len(bkg["xbb"]), dtype=bool) if args.all_flavours else (bkg["flav"] == 0)
     bb = sig["n_boson_b"] == 2
     print(f"mistag fatjets: {light.sum()} ({'all flavours' if args.all_flavours else 'light'}) of {len(light)}; "
           f"signal H/Z->bb fatjets: {bb.sum()} of {len(bb)}")

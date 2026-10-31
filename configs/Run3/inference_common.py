@@ -240,7 +240,7 @@ def build_spanet_columns(category):
 
 
 # Xbb working points: all fatjets of the preselection (derive_xbb_wps.py)
-XBBWP_FATJET_COLUMNS = ["pt", "eta", "phi", "mass", "btagBB", "nBHadrons", "nCHadrons", "matched", "n_boson_b"]
+XBBWP_FATJET_COLUMNS = ["pt", "eta", "phi", "mass", "btagBB", "hadronFlavour", "matched", "n_boson_b"]
 
 
 def build_xbbwp_subsamples():
