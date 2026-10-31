@@ -69,12 +69,12 @@ def match_gen_tt(events, sample):
     # extrapolation from 13 to 13.6 TeV (TOP-25-018), multiplying the 13 TeV correction
     sf13p6 = (lambda x: 0.991 + 0.000075*np.clip(x,0,np.inf))
     #https://indico.cern.ch/event/904971/contributions/3857701/attachments/2036949/3410728/TopPt_20.05.12.pdf'
-    # the theo toppt event re-weighting unc. is based on [1, w**2] where w is the event reweighting
+    # uncertainty: reweighting on vs off (TOP recommendation, one-sided): Up = off, Down = nominal
     # per-top weight SF13(pT) * SF13.6(pT); event weight = geometric mean over top and antitop
     per_top = (lambda x: sf(x) * sf13p6(x))
     toppt_rwgt = np.sqrt(per_top(tt_pt[:,0]) * per_top(tt_pt[:,1]))
-    toppt_rwgt_up = np.where(toppt_rwgt > 1.0, toppt_rwgt**2,  1.0)
-    toppt_rwgt_dn = np.where(toppt_rwgt < 1.0, toppt_rwgt**2,  1.0)
+    toppt_rwgt_up = ak.ones_like(toppt_rwgt)
+    toppt_rwgt_dn = toppt_rwgt
     events['tt_pt1'], events['tt_pt2'] = tt_pt[:,0], tt_pt[:,1]
     events['topptWeight']      = toppt_rwgt
     events['topptWeight_Up']   = toppt_rwgt_up

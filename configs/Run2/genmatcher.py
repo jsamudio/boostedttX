@@ -67,11 +67,11 @@ def match_gen_tt(events, sample):
     # Using the newer theo (NNLO QCD + NLO EW) corrections which is better for BSM analysis aspects
     sf = (lambda x: 0.103*np.exp(-0.0118*np.clip(x,0,np.inf)) - 0.000134*np.clip(x,0,np.inf) + 0.973) #https://twiki.cern.ch/twiki/bin/viewauth/CMS/TopPtReweighting#Case_3_3_The_Effective_Field_The
     #https://indico.cern.ch/event/904971/contributions/3857701/attachments/2036949/3410728/TopPt_20.05.12.pdf'
-    # the theo toppt event re-weighting unc. is based on [1, w**2] where w is the event reweighting
+    # uncertainty: reweighting on vs off (TOP recommendation, one-sided): Up = off, Down = nominal
     # event weight = sqrt of the product of the per-top weights (13 TeV, no 13.6 TeV modification for Run 2)
     toppt_rwgt = np.sqrt(sf(tt_pt[:,0]) * sf(tt_pt[:,1]))
-    toppt_rwgt_up = np.where(toppt_rwgt > 1.0, toppt_rwgt**2,  1.0)
-    toppt_rwgt_dn = np.where(toppt_rwgt < 1.0, toppt_rwgt**2,  1.0)
+    toppt_rwgt_up = ak.ones_like(toppt_rwgt)
+    toppt_rwgt_dn = toppt_rwgt
     events['tt_pt1'], events['tt_pt2'] = tt_pt[:,0], tt_pt[:,1]
     events['topptWeight']      = toppt_rwgt
     events['topptWeight_Up']   = toppt_rwgt_up
