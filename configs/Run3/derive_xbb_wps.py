@@ -36,7 +36,7 @@ def fatjets(output, keys, min_bjets=0):
             print(f"  [skip] {key} not in the output")
             continue
         for dataset, cats in output["columns"][key].items():
-            c = {name: col.value for name, col in cats[CATEGORY].items()}
+            c = {name: col.value for name, col in cats[CATEGORY]["nominal"].items()}
             n = c["FatJetGood_N"]
             sel_evt = c["events_nbJetGood"] >= min_bjets
             w_evt = c["weight"] / output["sum_genweights"][dataset]

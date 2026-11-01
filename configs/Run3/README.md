@@ -42,6 +42,11 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
    fatjets (no B/C hadrons) in tt+LF events: 10% / 5% / 1% for LP / MP / HP.
    `run_pipeline.py inference --groups xbbwp`, then `python3 derive_xbb_wps.py --plots plots/xbbwp`
    prints the `analysis_years.XBB_WP_DICT` entry (and the ttH/ttZ(bb) efficiency, pT dependence).
+   On the 2024 outputs the light-mistag targets give very loose cuts (LP 0.0026, 99.7% signal
+   efficiency), so the WPs are to be chosen by sensitivity instead: `scan_xbb_wp.py` reads the main
+   inference output (signal, bkg, minor) and prints the expected sigma(mu) of ttZ / ttH / tt_B (Fisher,
+   pT x mass bins) per cut (`cut` mode), and ranks sets of WP categories above a preselection against
+   the continuous score (`multiwp` mode, for the SPANet multi-WP Xbb input).
    Then the multi-WP Xbb SFs as in Run 2.
 4. **SPANet**: retrain on these definitions (`spanet_models.py`; inference runs without SPANet
    while `ACTIVE_MODELS` is empty), then pickling / datacards.
