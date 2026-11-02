@@ -9,7 +9,7 @@
 #   python makeDatacard.py               # tt_B is a normal background
 #   python makeDatacard.py --eft-ttbb    # tt_B declared as a signal so the EFT
 #                                         # interferenceModel can scale it
-#   python makeDatacard.py --ttlf-cut 0.2 [--ttlf-cr]
+#   python makeDatacard.py --ttlf-cut 0.2 [--ttlf-cr [--ttlf-cr-shape]]
 #                                         # two-step categorization (see TTLF_CUT below)
 #   python makeDatacard.py --argmax [--argmax-lf]
 #                                         # categories by the highest SPANet score (see ARGMAX below)
@@ -46,7 +46,9 @@ EFT_SCALE_TTBB = False
 #                        signal-quantile edges from the SR events) x mass
 #   control region (CR): ttlf_score >= cut, one bin of the disc x mass; written only with
 #                        --ttlf-cr, as separate cards, so that it can be combined (combineCards.py
-#                        SR=... CR=...), masked or unblinded on its own
+#                        SR=... CR=...), masked or unblinded on its own. With --ttlf-cr-shape the CR
+#                        is binned like the SR (s / (s + ttbb), SR edges), to validate the SR
+#                        discriminant in the CR; cards named sigvsttbb_..._ttlf<cut>CR_
 # The cards get "ttlf<cut>SR_" / "ttlf<cut>CR_" in their names; the default cards are unchanged.
 TTLF_CUT = None
 
@@ -437,7 +439,8 @@ class MakeDataCard:
         self.cut = lambda x : x[self.nn_name] >= 0.0
 
         # Two-step categorization (TTLF_CUT): region 'sr' (nn_name = sigvsttbb_<model>, derived
-        # from the scores when reading) or 'cr' (nn_name = the disc)
+        # from the scores when reading) or 'cr' (nn_name = the disc, or sigvsttbb_<model> with
+        # --ttlf-cr-shape)
         self.derive = None
         score_cols = []
         if ttlf_cut is not None:
@@ -445,8 +448,9 @@ class MakeDataCard:
                 raise ValueError("ttlf_cut needs region 'sr' or 'cr' and the SPANet model")
             ttlf = f'ttlf_score_{model}'
             score_cols = [f'sig_score_{model}', f'ttbb_score_{model}', ttlf]
-            if region == 'sr':
+            if self.nn_name == f'sigvsttbb_{model}':
                 self.derive = lambda df: df.assign(**{self.nn_name: sig_vs_ttbb(df, model)})
+            if region == 'sr':
                 self.cut = lambda x: (x[ttlf] < ttlf_cut) & (x[self.nn_name] >= 0.0)
             else:
                 self.cut = lambda x: (x[ttlf] >= ttlf_cut) & (x[self.nn_name] >= 0.0)
@@ -952,6 +956,9 @@ if __name__ == '__main__':
                              '(cards get "ttlf<cut>SR_" in their names); default cards unchanged')
     parser.add_argument('--ttlf-cr', action='store_true',
                         help='with --ttlf-cut: also write the tt+LF/C control-region cards (ttlf >= cut)')
+    parser.add_argument('--ttlf-cr-shape', action='store_true',
+                        help='with --ttlf-cr: bin the CR in s/(s+ttbb) with the SR edges instead of one disc bin '
+                             '(cards get "sigvsttbb_" instead of "disc_" in their names)')
     parser.add_argument('--argmax', action='store_true', default=ARGMAX,
                         help='categories by the highest SPANet score: ZH cards in the disc, TTB cards in the '
                              'ttbb score (cards get "argmaxZH_" / "argmaxTTB_" in their names)')
@@ -960,6 +967,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.argmax and args.ttlf_cut is not None:
         parser.error('--argmax and --ttlf-cut are alternative categorizations')
+    if args.ttlf_cr_shape and not args.ttlf_cr:
+        parser.error('--ttlf-cr-shape needs --ttlf-cr')
 
     from spanet_models import ACTIVE_MODELS     # one datacard per active SPANet model
 
@@ -985,6 +994,7 @@ if __name__ == '__main__':
             continue
 
         # Two-step categorization: SR in s/(s+ttbb), optional tt+LF/C CR in one disc bin
+        # (--ttlf-cr-shape: in s/(s+ttbb) with the SR edges)
         cut, ttlf = args.ttlf_cut, f'ttlf_score_{model}'
         suffix = f"ttlf{cut:g}".replace('.', 'p')
         sr_nn = f'sigvsttbb_{model}'
@@ -995,7 +1005,12 @@ if __name__ == '__main__':
         plot_edges(json.load(open(f'nn_edges_{sr_nn}_{suffix}.json')), f'plots/nn_edges_{sr_nn}_{suffix}.pdf')
         MakeDataCard(nn_name=sr_nn, hist2d=hist2d, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,
                      model=model, ttlf_cut=cut, region='sr').makeDC()
-        if args.ttlf_cr:
+        if args.ttlf_cr and args.ttlf_cr_shape:
+            hist2d_cr = DataCardShapes(pt_bins, mass_bins, nn=sr_nn, isblind=isblind, years=YEARS,
+                                       edges_file=f'nn_edges_{sr_nn}_{suffix}.json')
+            MakeDataCard(nn_name=sr_nn, hist2d=hist2d_cr, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,
+                         model=model, ttlf_cut=cut, region='cr').makeDC()
+        elif args.ttlf_cr:
             one_bin = {y: {f'Zhpt{i}': [0.0, 1.0] for i in range(1, len(pt_bins))} for y in YEARS}
             hist2d_cr = DataCardShapes(pt_bins, mass_bins, nn=nn_name, isblind=isblind, years=YEARS, edges=one_bin)
             MakeDataCard(nn_name=nn_name, hist2d=hist2d_cr, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,

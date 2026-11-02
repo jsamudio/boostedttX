@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 EFT scaling (Combine interferenceModel JSON) for the SPANet categorizations of makeDatacard.py.
-Two-step (--ttlf-cut <cut> [--ttlf-cr]):
+Two-step (--ttlf-cut <cut> [--ttlf-cr [--ttlf-cr-shape]]):
     SR: ttlf score <  cut, NN axis s / (s + ttbb), edges nn_edges_sigvsttbb_<model>_ttlf<cut>.json
     CR: ttlf score >= cut, one bin of the disc s / (s + ttbb + ttlf)
+        (--cr-shape, for --ttlf-cr-shape cards: s / (s + ttbb) with the SR edges)
 Argmax (--argmax [--argmax-lf]), categories by the highest score (datacard_shapes.spanet_category):
     ZH:  highest = sig,  NN axis the disc,       edges nn_edges_disc_<model>_argmaxZH.json
     TTB: highest = ttbb, NN axis the ttbb score, edges nn_edges_ttbb_score_<model>_argmaxTTB.json
@@ -16,9 +17,11 @@ exist for 2018 only: one scaling file per year of the edges file, each with that
 Usage (after makeDatacard.py --ttlf-cut 0.2 --ttlf-cr, from configs/Run2):
     python3 eft_scaling_ttlf.py --cut 0.2
     python3 eft_scaling_ttlf.py --cut 0.2 --no-cr          # SR cards only
+    python3 eft_scaling_ttlf.py --cut 0.2 --cr-shape       # after makeDatacard.py ... --ttlf-cr-shape
     python3 eft_scaling_ttlf.py --argmax [--no-cr]         # after makeDatacard.py --argmax [--argmax-lf]
 
-Output: combine_scaling_ttlf<cut>_<year>.json with SR and CR entries, or combine_scaling_argmax_<year>.json
+Output: combine_scaling_ttlf<cut>_<year>.json with SR and CR entries (--cr-shape:
+combine_scaling_ttlf<cut>_CRshape_<year>.json), or combine_scaling_argmax_<year>.json
 with ZH, TTB and LF entries (--no-cr: no CR / LF). Channel names follow --channel-format, default
 "{region}_{channel}" (e.g. SR_Zhpt1, TTB_Zhpt2), which matches
     combineCards.py SR=<SR card> CR=<CR card>      or      combineCards.py ZH=<ZH> TTB=<TTB> [LF=<LF>]
@@ -138,9 +141,9 @@ def unreliable(n_raw, sm, sm2, min_events, max_rel_err):
 
 
 # ---------------- Reading the EFT samples ----------------
-def region_scores(col, model, cut):
+def region_scores(col, model, cut, cr_shape=False):
     """{region: (event mask, NN value)}. cut = ttlf cut: SR = ttlf < cut in s/(s+ttbb), CR = ttlf >= cut
-    in the disc. cut = 'argmax': ZH / TTB / LF = highest score sig / ttbb / ttlf (ties to the lower index),
+    in the disc (cr_shape: in s/(s+ttbb), as the SR). cut = 'argmax': ZH / TTB / LF = highest score sig / ttbb / ttlf (ties to the lower index),
     in the disc / the ttbb score / the disc."""
     s, b, lf = (col(c).astype(np.float64) for c in score_columns(model))
     den_sr, den_cr = s + b, s + b + lf
@@ -149,10 +152,10 @@ def region_scores(col, model, cut):
     if cut == "argmax":
         cat = np.argmax(np.column_stack([s, b, lf]), axis=1)
         return {"ZH": (cat == 0, cr), "TTB": (cat == 1, b), "LF": (cat == 2, cr)}
-    return {"SR": (lf < cut, sr), "CR": (lf >= cut, cr)}
+    return {"SR": (lf < cut, sr), "CR": (lf >= cut, sr if cr_shape else cr)}
 
 
-def process_path(label, cfg, path, model, cut, edges):
+def process_path(label, cfg, path, model, cut, edges, cr_shape=False):
     """Accumulate binned EFT coefficients (+ raw count and SM weight^2) for one directory.
     edges: {region: {year: {channel: nn edges}}}. Returns ({region: {year: {(channel, process): array}}}, meta)."""
     import awkward as ak
@@ -183,7 +186,7 @@ def process_path(label, cfg, path, model, cut, edges):
         genpt = col("events_genZHpt") if cfg["gen_split"] else None
         gmasks = gen_masks(label, cfg["gen_split"], genpt, len(sel))
 
-        for region, (rmask, nn) in region_scores(col, model, cut).items():
+        for region, (rmask, nn) in region_scores(col, model, cut, cr_shape).items():
             if region not in edges:
                 continue
             for ch, (lo, hi) in CHANNELS.items():
@@ -215,10 +218,10 @@ def merge_results(results):
     return merged, meta
 
 
-def read_inputs(model, cut, edges, processes=None, n_workers=4):
+def read_inputs(model, cut, edges, processes=None, n_workers=4, cr_shape=False):
     """Read all EFT samples once: {region: {year: (merged, meta)}}."""
     processes = processes or PROCESSES
-    jobs = [(label, cfg, path, model, cut, edges) for label, cfg in processes.items() for path in cfg["paths"]]
+    jobs = [(label, cfg, path, model, cut, edges, cr_shape) for label, cfg in processes.items() for path in cfg["paths"]]
     if n_workers > 1:
         with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as ex:
             results = list(ex.map(process_path, *zip(*jobs)))
@@ -333,6 +336,8 @@ def main():
                     help="--cut: SR edges JSON (default nn_edges_sigvsttbb_<model>_ttlf<cut>.json from makeDatacard.py)")
     ap.add_argument("--no-cr", action="store_true",
                     help="no CR / LF entries (cards made without --ttlf-cr / --argmax-lf)")
+    ap.add_argument("--cr-shape", action="store_true",
+                    help="--cut: CR in s/(s+ttbb) with the SR edges (cards made with --ttlf-cr-shape)")
     ap.add_argument("--channel-format", default="{region}_{channel}",
                     help="channel names in the combined card (default SR_Zhpt1 ...)")
     ap.add_argument("--workers", type=int, default=4, help="1 = read serially")
@@ -350,11 +355,16 @@ def main():
         suffix, cut = f"ttlf{args.cut:g}".replace(".", "p"), args.cut
         edges = {"SR": json.load(open(args.edges or f"nn_edges_sigvsttbb_{args.model}_{suffix}.json"))}
         cr_name = "CR"
+    if args.cr_shape and (args.argmax or args.no_cr):
+        ap.error("--cr-shape needs --cut and the CR (no --no-cr)")
     years = next(iter(edges.values()))
-    if not args.no_cr:
+    if args.cr_shape:
+        suffix += "_CRshape"
+        edges[cr_name] = edges["SR"]
+    elif not args.no_cr:
         edges[cr_name] = {y: {ch: [0.0, 1.0] for ch in CHANNELS} for y in years}
 
-    by_region = read_inputs(args.model, cut, edges, n_workers=args.workers)
+    by_region = read_inputs(args.model, cut, edges, n_workers=args.workers, cr_shape=args.cr_shape)
     for year in sorted(years):
         entries, worst = [], 0.0
         for region in edges:
