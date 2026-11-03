@@ -9,13 +9,14 @@
 #   python makeDatacard.py               # tt_B is a normal background
 #   python makeDatacard.py --eft-ttbb    # tt_B declared as a signal so the EFT
 #                                         # interferenceModel can scale it
-#   python makeDatacard.py --ttlf-cut 0.2 [--ttlf-cr [--ttlf-cr-shape]]
+#   python makeDatacard.py --ttlf-cut 0.2 [--ttlf-cr [--ttlf-cr-shape]] [--pt600-bins 1|2]
 #                                         # two-step categorization (see TTLF_CUT below)
 #   python makeDatacard.py --argmax [--argmax-lf]
 #                                         # categories by the highest SPANet score (see ARGMAX below)
 # The --eft-ttbb cards get "eftTTB_" in their file names, so both versions can coexist.
 
 import argparse
+import functools
 import numpy as np
 import pandas as pd
 import json
@@ -51,6 +52,11 @@ EFT_SCALE_TTBB = False
 #                        discriminant in the CR; cards named sigvsttbb_..._ttlf<cut>CR_
 # The cards get "ttlf<cut>SR_" / "ttlf<cut>CR_" in their names; the default cards are unchanged.
 TTLF_CUT = None
+# High-pT split of the SR (--pt600-bins K, K = 1 or 2): in the top pT channel (Zhpt3, > 450 GeV), events
+# with Z/H pT > HIGH_PT_CUT in the K lowest NN bins (tt+B-like) go to K extra NN bins (same NN edges),
+# appended after the regular bins; the regular K lowest bins then hold 450 < pT <= HIGH_PT_CUT only.
+# Gen-pT split of the signal unchanged. The SR cards get "pt600b<K>_" in their names.
+HIGH_PT_CUT = 600
 
 # Categories by the highest SPANet score (default off; --argmax on the command line). Per reco pT channel:
 #   ZH  (highest = sig):  binned in the disc (column disc_<model>), signal-quantile edges from the ZH events
@@ -256,6 +262,8 @@ class ShapeSystematic(Systematic):
         self.handleQC()
         return self.histos
 
+    n_regular_bins = None       # NN bins per pT channel without the high-pT split bins (handle_extraQC)
+
     @classmethod
     def set_df_histos_histfuncs(cls, data_dict, hist_dict, sumw_sumw2):
         cls.data_dict = data_dict
@@ -400,8 +408,10 @@ class ShapeSystematic(Systematic):
                                 up[j,:,i]   = nom[j,:,i] * np.nansum(up[j,:,i])/np.nansum(nom[j,:,i])
                                 down[j,:,i] = nom[j,:,i] * np.nansum(down[j,:,i])/np.nansum(nom[j,:,i])
                             else :
-                                up[j,2:,i]   = nom[j,2:,i] * np.nansum(up[j,2:,i])/np.nansum(nom[j,2:,i])
-                                down[j,2:,i] = nom[j,2:,i] * np.nansum(down[j,2:,i])/np.nansum(nom[j,2:,i])
+                                # regular NN bins >= 2 only: the high-pT split bins are low-score bins
+                                hi = self.n_regular_bins[j] if self.n_regular_bins else None
+                                up[j,2:hi,i]   = nom[j,2:hi,i] * np.nansum(up[j,2:hi,i])/np.nansum(nom[j,2:hi,i])
+                                down[j,2:hi,i] = nom[j,2:hi,i] * np.nansum(down[j,2:hi,i])/np.nansum(nom[j,2:hi,i])
 
                 else:
                     for j in range(nom.shape[0]):
@@ -420,7 +430,8 @@ class MakeDataCard:
     dc_dir = './datacards'
 
     def __init__(self, nn_name, hist2d, sig=['ttZ', 'ttH'], bkg=None, years=None, isblind=True,
-                 eft_ttbb=EFT_SCALE_TTBB, model=None, ttlf_cut=TTLF_CUT, region=None, category=None):
+                 eft_ttbb=EFT_SCALE_TTBB, model=None, ttlf_cut=TTLF_CUT, region=None, category=None,
+                 hp_bins=0):
         years = list(YEARS) if years is None else list(years)
         bkg = list(BACKGROUNDS) if bkg is None else list(bkg)
         self.nn_name = nn_name
@@ -455,6 +466,15 @@ class MakeDataCard:
             else:
                 self.cut = lambda x: (x[ttlf] >= ttlf_cut) & (x[self.nn_name] >= 0.0)
             self.tag += f"ttlf{ttlf_cut:g}{region.upper()}_".replace('.', 'p')
+
+        # High-pT split of the SR (HIGH_PT_CUT): flag the events above the cut before ZH_pt is clipped
+        self.hp_bins = hp_bins
+        if hp_bins:
+            if region != 'sr':
+                raise ValueError("hp_bins needs the two-step SR (region 'sr')")
+            derive_nn = self.derive
+            self.derive = lambda df: (derive_nn(df) if derive_nn else df).assign(_hp=df['ZH_pt'] > HIGH_PT_CUT)
+            self.tag += f'pt600b{hp_bins}_'
 
         # Argmax categorization (ARGMAX): category 'ZH', 'TTB' or 'LF' of spanet_category
         if category is not None:
@@ -506,18 +526,32 @@ class MakeDataCard:
 
     # Moved inside the class to access self.nn_name and self.hist2d
     def get_sumw_sumw2(self, df, weights, year):
-        ret_x_y = (lambda df: (df[self.nn_name].to_numpy(dtype='float'), df['ZH_M'].to_numpy(dtype='float')))
-        sumw = np.array([
-            self.hist2d[year][i_bin]( *ret_x_y(df[df['pt_bin']==i_bin]),
-                                     weights=weights[df['pt_bin']==i_bin].astype('float'))[0]
-            for i_bin in range(1,len(self.pt_bins))
-        ], dtype = 'float')
-        sumw2 = np.array([
-            self.hist2d[year][i_bin]( *ret_x_y(df[df['pt_bin']==i_bin]),
-                                     weights=np.power(weights[df['pt_bin']==i_bin],2).astype('float'))[0]
-            for i_bin in range(1,len(self.pt_bins))
-        ])
-        return sumw, sumw2
+        """(sumw, sumw2), shape (pT channel, NN bin, mass bin). With the high-pT split the top channel
+        has hp_bins more NN bins; the other channels are padded with empty bins (dropped in fill_roofile)."""
+        x, m = df[self.nn_name].to_numpy(dtype='float'), df['ZH_M'].to_numpy(dtype='float')
+        w, w2 = np.asarray(weights, dtype='float'), np.asarray(np.power(weights, 2), dtype='float')
+        sumw, sumw2 = [], []
+        for i_bin in range(1, len(self.pt_bins)):
+            hist = self.hist2d[year][i_bin]
+            sel = (df['pt_bin'] == i_bin).to_numpy()
+            parts = [(hist, sel)]
+            if self.hp_bins and i_bin == len(self.pt_bins) - 1:
+                nn_edges, mass_edges = hist.keywords['bins']
+                high = sel & df['_hp'].to_numpy(dtype=bool) & (x < nn_edges[self.hp_bins])
+                extra = functools.partial(np.histogram2d, bins=[nn_edges[:self.hp_bins + 1], mass_edges])
+                parts = [(hist, sel & ~high), (extra, high)]
+            sumw.append(np.concatenate([h(x[s], m[s], weights=w[s])[0] for h, s in parts]))
+            sumw2.append(np.concatenate([h(x[s], m[s], weights=w2[s])[0] for h, s in parts]))
+        n = max(len(a) for a in sumw)
+        pad = lambda a: np.pad(a, ((0, n - len(a)), (0, 0)))
+        return np.array([pad(a) for a in sumw], dtype='float'), np.array([pad(a) for a in sumw2], dtype='float')
+
+    def nn_bins(self, year, high_pt=True):
+        """Number of NN bins per pT channel (high_pt: including the extra bins of the high-pT split)."""
+        n = [len(self.hist2d[year][i].keywords['bins'][0]) - 1 for i in range(1, len(self.pt_bins))]
+        if high_pt:
+            n[-1] += self.hp_bins
+        return n
 
     def makeDC(self):
         self.get_data()
@@ -881,6 +915,7 @@ class MakeDataCard:
         process_line = np.array([self.dc_procs for _ in range(self.dc_bins)]).flatten()
         Systematic.set_dc_processes(self.dc_dict, process_line)
         ShapeSystematic.set_df_histos_histfuncs(self.data_dict, self.histos, sumw_sumw2=self.get_sumw_sumw2)
+        ShapeSystematic.n_regular_bins = self.nn_bins(self.years[0], high_pt=False)
 
     @staticmethod
     def merge_last_mbin(pt_bin,a):
@@ -901,6 +936,7 @@ class MakeDataCard:
                 sys     = p.replace(f'{process}_{y}', '')
             else:
                 sys     = ''
+            n_nn = self.nn_bins(y)
             for pt_bin in range(v['sumw'].shape[0]):
                 if pt_bin == 0:
                     if not self.isblind:
@@ -912,10 +948,10 @@ class MakeDataCard:
                         to_flat = (lambda a : self.take_first_last_mbins(a[pt_bin,:,:]))
                     else:
                         to_flat = (lambda a : a[pt_bin,:,:].flatten())
-                temp_dict = {'sumw' : to_flat(v['sumw'])}
+                temp_dict = {'sumw' : to_flat(v['sumw'][:, :n_nn[pt_bin]])}     # drops the padding
                 hist_name = f'Zhpt{pt_bin+1}_{process}{sys}'
                 if 'sumw2' in v:
-                    temp_dict['sumw2'] = to_flat(v['sumw2'])
+                    temp_dict['sumw2'] = to_flat(v['sumw2'][:, :n_nn[pt_bin]])
                 self.roo_dict[y][hist_name] = export1d(temp_dict, hist_name)
 
     def close_roofile(self):
@@ -956,6 +992,9 @@ if __name__ == '__main__':
                              '(cards get "ttlf<cut>SR_" in their names); default cards unchanged')
     parser.add_argument('--ttlf-cr', action='store_true',
                         help='with --ttlf-cut: also write the tt+LF/C control-region cards (ttlf >= cut)')
+    parser.add_argument('--pt600-bins', type=int, choices=[1, 2], default=0,
+                        help='with --ttlf-cut: SR events with Z/H pT > 600 GeV in the 1 or 2 lowest NN bins of the '
+                             'top pT channel get their own NN bins (cards get "pt600b<K>_" in their names)')
     parser.add_argument('--ttlf-cr-shape', action='store_true',
                         help='with --ttlf-cr: bin the CR in s/(s+ttbb) with the SR edges instead of one disc bin '
                              '(cards get "sigvsttbb_" instead of "disc_" in their names)')
@@ -969,6 +1008,8 @@ if __name__ == '__main__':
         parser.error('--argmax and --ttlf-cut are alternative categorizations')
     if args.ttlf_cr_shape and not args.ttlf_cr:
         parser.error('--ttlf-cr-shape needs --ttlf-cr')
+    if args.pt600_bins and args.ttlf_cut is None:
+        parser.error('--pt600-bins needs --ttlf-cut')
 
     from spanet_models import ACTIVE_MODELS     # one datacard per active SPANet model
 
@@ -1004,7 +1045,7 @@ if __name__ == '__main__':
         hist2d.save_edges(f'nn_edges_{sr_nn}_{suffix}.json')
         plot_edges(json.load(open(f'nn_edges_{sr_nn}_{suffix}.json')), f'plots/nn_edges_{sr_nn}_{suffix}.pdf')
         MakeDataCard(nn_name=sr_nn, hist2d=hist2d, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,
-                     model=model, ttlf_cut=cut, region='sr').makeDC()
+                     model=model, ttlf_cut=cut, region='sr', hp_bins=args.pt600_bins).makeDC()
         if args.ttlf_cr and args.ttlf_cr_shape:
             hist2d_cr = DataCardShapes(pt_bins, mass_bins, nn=sr_nn, isblind=isblind, years=YEARS,
                                        edges_file=f'nn_edges_{sr_nn}_{suffix}.json')

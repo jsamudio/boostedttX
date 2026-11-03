@@ -5,6 +5,8 @@ Two-step (--ttlf-cut <cut> [--ttlf-cr [--ttlf-cr-shape]]):
     SR: ttlf score <  cut, NN axis s / (s + ttbb), edges nn_edges_sigvsttbb_<model>_ttlf<cut>.json
     CR: ttlf score >= cut, one bin of the disc s / (s + ttbb + ttlf)
         (--cr-shape, for --ttlf-cr-shape cards: s / (s + ttbb) with the SR edges)
+    --pt600-bins K (cards made with --pt600-bins K): in the SR top pT channel, events with Z/H pT > 600 GeV
+        in the K lowest NN bins go to K extra NN bins after the regular ones
 Argmax (--argmax [--argmax-lf]), categories by the highest score (datacard_shapes.spanet_category):
     ZH:  highest = sig,  NN axis the disc,       edges nn_edges_disc_<model>_argmaxZH.json
     TTB: highest = ttbb, NN axis the ttbb score, edges nn_edges_ttbb_score_<model>_argmaxTTB.json
@@ -18,10 +20,11 @@ Usage (after makeDatacard.py --ttlf-cut 0.2 --ttlf-cr, from configs/Run2):
     python3 eft_scaling_ttlf.py --cut 0.2
     python3 eft_scaling_ttlf.py --cut 0.2 --no-cr          # SR cards only
     python3 eft_scaling_ttlf.py --cut 0.2 --cr-shape       # after makeDatacard.py ... --ttlf-cr-shape
+    python3 eft_scaling_ttlf.py --cut 0.2 --pt600-bins 1   # after makeDatacard.py ... --pt600-bins 1
     python3 eft_scaling_ttlf.py --argmax [--no-cr]         # after makeDatacard.py --argmax [--argmax-lf]
 
 Output: combine_scaling_ttlf<cut>_<year>.json with SR and CR entries (--cr-shape:
-combine_scaling_ttlf<cut>_CRshape_<year>.json), or combine_scaling_argmax_<year>.json
+combine_scaling_ttlf<cut>_CRshape_<year>.json, --pt600-bins K: ..._pt600b<K>_<year>.json), or combine_scaling_argmax_<year>.json
 with ZH, TTB and LF entries (--no-cr: no CR / LF). Channel names follow --channel-format, default
 "{region}_{channel}" (e.g. SR_Zhpt1, TTB_Zhpt2), which matches
     combineCards.py SR=<SR card> CR=<CR card>      or      combineCards.py ZH=<ZH> TTB=<TTB> [LF=<LF>]
@@ -40,6 +43,8 @@ BBVL_WP = 0.9172                       # datacard: ZH_bbvLscore >= LP of 2018 (t
 # Reco channels, right-inclusive like pd.cut in the datacard: (200,300], (300,450], (450,inf)
 CHANNELS = {"Zhpt1": (200, 300), "Zhpt2": (300, 450), "Zhpt3": (450, np.inf)}
 MERGE_LAST_MASS_BIN = {"Zhpt1"}        # datacard merges the last two mass bins in Zhpt1 only (isblind=True)
+HIGH_PT_CUT = 600                      # makeDatacard.py --pt600-bins: high-pT split of the SR top channel
+TOP_CHANNEL = "Zhpt3"
 
 BASE = "/cms/data/store/user/jsamudio/eftchunks/2018"
 PROCESSES = {
@@ -118,11 +123,11 @@ def mass_edges_of(channel):
     return mass[:-2] + [mass[-1]] if channel in MERGE_LAST_MASS_BIN else mass
 
 
-def diagonal_mask(channel, process, nn_edges):
-    """Bins of a diagonal entry (gen-pT bin == reco channel) in the boson's mass-peak bin."""
+def diagonal_mask(channel, process, n_nn):
+    """Bins of a diagonal entry (gen-pT bin == reco channel) in the boson's mass-peak bin; n_nn NN bins."""
     mass = mass_edges_of(channel)
     n_mass = len(mass) - 1
-    n = (len(nn_edges) - 1) * n_mass
+    n = n_nn * n_mass
     i = DIAGONAL.get(channel)
     if i is None or not process[-1:].isdigit() or int(process[-1]) != i:
         return np.zeros(n, dtype=bool)
@@ -155,9 +160,10 @@ def region_scores(col, model, cut, cr_shape=False):
     return {"SR": (lf < cut, sr), "CR": (lf >= cut, sr if cr_shape else cr)}
 
 
-def process_path(label, cfg, path, model, cut, edges, cr_shape=False):
+def process_path(label, cfg, path, model, cut, edges, cr_shape=False, hp_bins=0):
     """Accumulate binned EFT coefficients (+ raw count and SM weight^2) for one directory.
-    edges: {region: {year: {channel: nn edges}}}. Returns ({region: {year: {(channel, process): array}}}, meta)."""
+    edges: {region: {year: {channel: nn edges}}}. hp_bins: high-pT split of the SR top channel (K extra
+    NN bins after the regular ones for Z/H pT > HIGH_PT_CUT in the K lowest NN bins). Returns ({region: {year: {(channel, process): array}}}, meta)."""
     import awkward as ak
     import pyarrow.dataset as ds
     print(f"[{label}] reading {path}")
@@ -194,10 +200,17 @@ def process_path(label, cfg, path, model, cut, edges, cr_shape=False):
                 for proc, gmask in gmasks.items():
                     key, m = (ch, proc), ch_sel & gmask
                     for year, e in edges[region].items():
+                        n_nn, n_hp = len(e[ch]) - 1, hp_bins if (region == "SR" and ch == TOP_CHANNEL) else 0
                         if key not in acc[region][year]:
-                            acc[region][year][key] = np.zeros((len(e[ch]) - 1, len(MASS_BINS) - 1, coefs.shape[1]))
-                        if m.any():
-                            fill(acc[region][year][key], nn[m], zh_m[m], coefs[m], e[ch], MASS_BINS)
+                            acc[region][year][key] = np.zeros((n_nn + n_hp, len(MASS_BINS) - 1, coefs.shape[1]))
+                        if not m.any():
+                            continue
+                        a, rest = acc[region][year][key], m
+                        if n_hp:
+                            high = m & (zh_pt > HIGH_PT_CUT) & (nn < e[ch][n_hp])
+                            fill(a[n_nn:], nn[high], zh_m[high], coefs[high], e[ch][:n_hp + 1], MASS_BINS)
+                            rest = m & ~high
+                        fill(a[:n_nn], nn[rest], zh_m[rest], coefs[rest], e[ch], MASS_BINS)
     return acc, meta
 
 
@@ -218,10 +231,10 @@ def merge_results(results):
     return merged, meta
 
 
-def read_inputs(model, cut, edges, processes=None, n_workers=4, cr_shape=False):
+def read_inputs(model, cut, edges, processes=None, n_workers=4, cr_shape=False, hp_bins=0):
     """Read all EFT samples once: {region: {year: (merged, meta)}}."""
     processes = processes or PROCESSES
-    jobs = [(label, cfg, path, model, cut, edges, cr_shape) for label, cfg in processes.items() for path in cfg["paths"]]
+    jobs = [(label, cfg, path, model, cut, edges, cr_shape, hp_bins) for label, cfg in processes.items() for path in cfg["paths"]]
     if n_workers > 1:
         with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as ex:
             results = list(ex.map(process_path, *zip(*jobs)))
@@ -279,10 +292,10 @@ def closure_check(entry, unrolled, idx1, idx2, wc_names, sm, good, point):
     return float(np.max(np.abs(predicted[good] - direct[good]) / np.maximum(np.abs(direct[good]), 1e-30)))
 
 
-def build_scaling(merged, meta, nn_edges, channel_name, min_events=20, max_rel_err=0.3, wcs=None,
+def build_scaling(merged, meta, channel_name, min_events=20, max_rel_err=0.3, wcs=None,
                   wc_range=WC_RANGE, keep_diagonal=True, log=print):
     """interferenceModel entries of one region (fallback 'auto' of EFTScaling.ipynb).
-    nn_edges: {channel: edges}; channel_name(ch) -> channel name in the combined card."""
+    channel_name(ch) -> channel name in the combined card."""
     proc_totals = {}
     for (ch, proc), full in merged.items():
         ncoef = len(meta[(ch, proc)][0])
@@ -307,7 +320,7 @@ def build_scaling(merged, meta, nn_edges, channel_name, min_events=20, max_rel_e
         n_raw, sm2 = unrolled_full[:, ncoef].copy(), unrolled_full[:, ncoef + 1].copy()
         low_stat = unreliable(n_raw, unrolled[:, k00], sm2, min_events, max_rel_err)
         if keep_diagonal:
-            low_stat &= ~diagonal_mask(ch, proc, nn_edges[ch])
+            low_stat &= ~diagonal_mask(ch, proc, full.shape[0])
         if np.any(low_stat):
             ch_tot = unrolled.sum(axis=0)
             ch_ok = not unreliable(np.array([n_raw.sum()]), np.array([ch_tot[k00]]),
@@ -338,6 +351,8 @@ def main():
                     help="no CR / LF entries (cards made without --ttlf-cr / --argmax-lf)")
     ap.add_argument("--cr-shape", action="store_true",
                     help="--cut: CR in s/(s+ttbb) with the SR edges (cards made with --ttlf-cr-shape)")
+    ap.add_argument("--pt600-bins", type=int, choices=[1, 2], default=0,
+                    help="--cut: high-pT split of the SR top channel (cards made with --pt600-bins)")
     ap.add_argument("--channel-format", default="{region}_{channel}",
                     help="channel names in the combined card (default SR_Zhpt1 ...)")
     ap.add_argument("--workers", type=int, default=4, help="1 = read serially")
@@ -357,6 +372,10 @@ def main():
         cr_name = "CR"
     if args.cr_shape and (args.argmax or args.no_cr):
         ap.error("--cr-shape needs --cut and the CR (no --no-cr)")
+    if args.pt600_bins and args.argmax:
+        ap.error("--pt600-bins needs --cut")
+    if args.pt600_bins:
+        suffix += f"_pt600b{args.pt600_bins}"
     years = next(iter(edges.values()))
     if args.cr_shape:
         suffix += "_CRshape"
@@ -364,13 +383,14 @@ def main():
     elif not args.no_cr:
         edges[cr_name] = {y: {ch: [0.0, 1.0] for ch in CHANNELS} for y in years}
 
-    by_region = read_inputs(args.model, cut, edges, n_workers=args.workers, cr_shape=args.cr_shape)
+    by_region = read_inputs(args.model, cut, edges, n_workers=args.workers, cr_shape=args.cr_shape,
+                            hp_bins=args.pt600_bins)
     for year in sorted(years):
         entries, worst = [], 0.0
         for region in edges:
             print(f"--- {year} {region}")
             merged, meta = by_region[region][year]
-            e, w = build_scaling(merged, meta, edges[region][year],
+            e, w = build_scaling(merged, meta,
                                  lambda ch, r=region: args.channel_format.format(region=r, channel=ch),
                                  min_events=args.min_events, max_rel_err=args.max_rel_err,
                                  wcs=None if args.all_wcs else DEFAULT_WCS)
