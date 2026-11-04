@@ -33,7 +33,7 @@ GROUPS = {
     "ttZ":        {"processes": ["ttZ"], "label": r"$t\bar{t}Z$", "signal": True},
     "tt_B":       {"processes": ["tt_B"], "label": r"$t\bar{t}+B$", "signal": False},
     "TTBar":      {"processes": ["TTBar"], "label": r"$t\bar{t}$+LF/C", "signal": False},
-    "minor":      {"processes": ["SingleTop", "ttX", "VJets", "QCD"], "label": "Minor (t, ttX, V+jets, QCD)",
+    "minor":      {"processes": ["SingleTop", "ttX", "VJets", "QCD"], "label": "Minor (t, ttX, V+jets)",
                    "signal": False},
 }
 COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]
