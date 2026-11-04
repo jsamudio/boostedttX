@@ -50,6 +50,8 @@ EFT_SCALE_TTBB = False
 #                        SR=... CR=...), masked or unblinded on its own. With --ttlf-cr-shape the CR
 #                        is binned like the SR (s / (s + ttbb), SR edges), to validate the SR
 #                        discriminant in the CR; cards named sigvsttbb_..._ttlf<cut>CR_
+#   --ttlf-sr-disc: SR binned in the disc s / (s + ttbb + ttlf) instead (edges nn_edges_disc_<model>_ttlf<cut>.json,
+#                   cards disc_..._ttlf<cut>SR_); at cut >= 1 this is the default analysis
 # The cards get "ttlf<cut>SR_" / "ttlf<cut>CR_" in their names; the default cards are unchanged.
 TTLF_CUT = None
 # High-pT split of the SR (--pt600-bins K, K = 1 or 2): in the top pT channel (Zhpt3, > 450 GeV), events
@@ -998,6 +1000,9 @@ if __name__ == '__main__':
     parser.add_argument('--ttlf-cr-shape', action='store_true',
                         help='with --ttlf-cr: bin the CR in s/(s+ttbb) with the SR edges instead of one disc bin '
                              '(cards get "sigvsttbb_" instead of "disc_" in their names)')
+    parser.add_argument('--ttlf-sr-disc', action='store_true',
+                        help='with --ttlf-cut: bin the SR in the disc s/(s+ttbb+ttlf) instead of s/(s+ttbb) '
+                             '(cards get "disc_" instead of "sigvsttbb_" in their names)')
     parser.add_argument('--argmax', action='store_true', default=ARGMAX,
                         help='categories by the highest SPANet score: ZH cards in the disc, TTB cards in the '
                              'ttbb score (cards get "argmaxZH_" / "argmaxTTB_" in their names)')
@@ -1010,6 +1015,10 @@ if __name__ == '__main__':
         parser.error('--ttlf-cr-shape needs --ttlf-cr')
     if args.pt600_bins and args.ttlf_cut is None:
         parser.error('--pt600-bins needs --ttlf-cut')
+    if args.ttlf_sr_disc and args.ttlf_cut is None:
+        parser.error('--ttlf-sr-disc needs --ttlf-cut')
+    if args.ttlf_sr_disc and args.ttlf_cr_shape:
+        parser.error('--ttlf-sr-disc and --ttlf-cr-shape: not supported together (same CR card names)')
 
     from spanet_models import ACTIVE_MODELS     # one datacard per active SPANet model
 
@@ -1038,10 +1047,11 @@ if __name__ == '__main__':
         # (--ttlf-cr-shape: in s/(s+ttbb) with the SR edges)
         cut, ttlf = args.ttlf_cut, f'ttlf_score_{model}'
         suffix = f"ttlf{cut:g}".replace('.', 'p')
-        sr_nn = f'sigvsttbb_{model}'
+        # --ttlf-sr-disc: SR in the disc (column in the pickles), edges from the SR signal
+        sr_nn = nn_name if args.ttlf_sr_disc else f'sigvsttbb_{model}'
+        derive = None if args.ttlf_sr_disc else (lambda df, m=model: df.assign(**{f'sigvsttbb_{m}': sig_vs_ttbb(df, m)}))
         hist2d = DataCardShapes(pt_bins, mass_bins, nn=sr_nn, isblind=isblind, years=YEARS, common_binning=True,
-                                derive=lambda df, m=model: df.assign(**{f'sigvsttbb_{m}': sig_vs_ttbb(df, m)}),
-                                selection=lambda df, m=model: ttlf_frac(df, m) < cut)
+                                derive=derive, selection=lambda df, m=model: ttlf_frac(df, m) < cut)
         hist2d.save_edges(f'nn_edges_{sr_nn}_{suffix}.json')
         plot_edges(json.load(open(f'nn_edges_{sr_nn}_{suffix}.json')), f'plots/nn_edges_{sr_nn}_{suffix}.pdf')
         MakeDataCard(nn_name=sr_nn, hist2d=hist2d, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,

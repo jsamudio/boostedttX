@@ -5,6 +5,8 @@ Two-step (--ttlf-cut <cut> [--ttlf-cr [--ttlf-cr-shape]]):
     SR: ttlf / (s + ttbb + ttlf) <  cut, NN axis s / (s + ttbb), edges nn_edges_sigvsttbb_<model>_ttlf<cut>.json
     CR: ttlf / (s + ttbb + ttlf) >= cut, one bin of the disc s / (s + ttbb + ttlf)
         (--cr-shape, for --ttlf-cr-shape cards: s / (s + ttbb) with the SR edges)
+    --sr-disc (cards made with --ttlf-sr-disc): SR in the disc, edges nn_edges_disc_<model>_ttlf<cut>.json,
+        output combine_scaling_ttlf<cut>_SRdisc_<year>.json
     --pt600-bins K (cards made with --pt600-bins K): in the SR top pT channel, events with Z/H pT > 600 GeV
         in the K lowest NN bins go to K extra NN bins after the regular ones
 Argmax (--argmax [--argmax-lf]), categories by the highest score (datacard_shapes.spanet_category):
@@ -146,8 +148,8 @@ def unreliable(n_raw, sm, sm2, min_events, max_rel_err):
 
 
 # ---------------- Reading the EFT samples ----------------
-def region_scores(col, model, cut, cr_shape=False):
-    """{region: (event mask, NN value)}. cut = ttlf cut: SR = ttlf < cut in s/(s+ttbb), CR = ttlf >= cut
+def region_scores(col, model, cut, cr_shape=False, sr_disc=False):
+    """{region: (event mask, NN value)}. cut = ttlf cut: SR = ttlf < cut in s/(s+ttbb) (sr_disc: in the disc), CR = ttlf >= cut
     in the disc (cr_shape: in s/(s+ttbb), as the SR). cut = 'argmax': ZH / TTB / LF = highest score sig / ttbb / ttlf (ties to the lower index),
     in the disc / the ttbb score / the disc."""
     s, b, lf = (col(c).astype(np.float64) for c in score_columns(model))
@@ -158,10 +160,10 @@ def region_scores(col, model, cut, cr_shape=False):
         cat = np.argmax(np.column_stack([s, b, lf]), axis=1)
         return {"ZH": (cat == 0, cr), "TTB": (cat == 1, b), "LF": (cat == 2, cr)}
     lf_frac = np.where(den_cr > 0, lf / np.where(den_cr > 0, den_cr, 1.0), 0.0)   # normalized, as makeDatacard ttlf_frac
-    return {"SR": (lf_frac < cut, sr), "CR": (lf_frac >= cut, sr if cr_shape else cr)}
+    return {"SR": (lf_frac < cut, cr if sr_disc else sr), "CR": (lf_frac >= cut, sr if cr_shape else cr)}
 
 
-def process_path(label, cfg, path, model, cut, edges, cr_shape=False, hp_bins=0):
+def process_path(label, cfg, path, model, cut, edges, cr_shape=False, hp_bins=0, sr_disc=False):
     """Accumulate binned EFT coefficients (+ raw count and SM weight^2) for one directory.
     edges: {region: {year: {channel: nn edges}}}. hp_bins: high-pT split of the SR top channel (K extra
     NN bins after the regular ones for Z/H pT > HIGH_PT_CUT in the K lowest NN bins). Returns ({region: {year: {(channel, process): array}}}, meta)."""
@@ -193,7 +195,7 @@ def process_path(label, cfg, path, model, cut, edges, cr_shape=False, hp_bins=0)
         genpt = col("events_genZHpt") if cfg["gen_split"] else None
         gmasks = gen_masks(label, cfg["gen_split"], genpt, len(sel))
 
-        for region, (rmask, nn) in region_scores(col, model, cut, cr_shape).items():
+        for region, (rmask, nn) in region_scores(col, model, cut, cr_shape, sr_disc).items():
             if region not in edges:
                 continue
             for ch, (lo, hi) in CHANNELS.items():
@@ -232,10 +234,10 @@ def merge_results(results):
     return merged, meta
 
 
-def read_inputs(model, cut, edges, processes=None, n_workers=4, cr_shape=False, hp_bins=0):
+def read_inputs(model, cut, edges, processes=None, n_workers=4, cr_shape=False, hp_bins=0, sr_disc=False):
     """Read all EFT samples once: {region: {year: (merged, meta)}}."""
     processes = processes or PROCESSES
-    jobs = [(label, cfg, path, model, cut, edges, cr_shape, hp_bins) for label, cfg in processes.items() for path in cfg["paths"]]
+    jobs = [(label, cfg, path, model, cut, edges, cr_shape, hp_bins, sr_disc) for label, cfg in processes.items() for path in cfg["paths"]]
     if n_workers > 1:
         with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as ex:
             results = list(ex.map(process_path, *zip(*jobs)))
@@ -352,6 +354,8 @@ def main():
                     help="no CR / LF entries (cards made without --ttlf-cr / --argmax-lf)")
     ap.add_argument("--cr-shape", action="store_true",
                     help="--cut: CR in s/(s+ttbb) with the SR edges (cards made with --ttlf-cr-shape)")
+    ap.add_argument("--sr-disc", action="store_true",
+                    help="--cut: SR in the disc s/(s+ttbb+ttlf) (cards made with --ttlf-sr-disc)")
     ap.add_argument("--pt600-bins", type=int, choices=[1, 2], default=0,
                     help="--cut: high-pT split of the SR top channel (cards made with --pt600-bins)")
     ap.add_argument("--channel-format", default="{region}_{channel}",
@@ -369,10 +373,17 @@ def main():
         cr_name = "LF"
     else:
         suffix, cut = f"ttlf{args.cut:g}".replace(".", "p"), args.cut
-        edges = {"SR": json.load(open(args.edges or f"nn_edges_sigvsttbb_{args.model}_{suffix}.json"))}
+        nn = "disc" if args.sr_disc else "sigvsttbb"
+        edges = {"SR": json.load(open(args.edges or f"nn_edges_{nn}_{args.model}_{suffix}.json"))}
+        if args.sr_disc:
+            suffix += "_SRdisc"
         cr_name = "CR"
     if args.cr_shape and (args.argmax or args.no_cr):
         ap.error("--cr-shape needs --cut and the CR (no --no-cr)")
+    if args.sr_disc and args.argmax:
+        ap.error("--sr-disc needs --cut")
+    if args.sr_disc and args.cr_shape:
+        ap.error("--sr-disc and --cr-shape: not supported together")
     if args.pt600_bins and args.argmax:
         ap.error("--pt600-bins needs --cut")
     if args.pt600_bins:
@@ -385,7 +396,7 @@ def main():
         edges[cr_name] = {y: {ch: [0.0, 1.0] for ch in CHANNELS} for y in years}
 
     by_region = read_inputs(args.model, cut, edges, n_workers=args.workers, cr_shape=args.cr_shape,
-                            hp_bins=args.pt600_bins)
+                            hp_bins=args.pt600_bins, sr_disc=args.sr_disc)
     for year in sorted(years):
         entries, worst = [], 0.0
         for region in edges:
