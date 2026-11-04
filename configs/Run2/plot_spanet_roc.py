@@ -10,7 +10,7 @@ Xbb >= LP, MET, 50 < ZH_M < 200).
     python3 plot_spanet_roc.py                          # active model, all years + combined
     python3 plot_spanet_roc.py --model noOverlap_MultiWP --years 2018 --selection none
 
-Outputs (in --outdir): roc_<model>_<year>.pdf/.png, score_<model>_<year>.pdf/.png, and the AUCs on
+Outputs (in --outdir): roc_<model>_<year>.pdf/.png, score_<model>_<year>.pdf/.png (--yields: yields_<model>_<year>), and the AUCs on
 stdout. Signal = ttH + ttZ; ROC backgrounds: all, tt+B, tt+LF/C. CMS style and labels from mplhep.
 """
 import argparse
@@ -23,7 +23,7 @@ import mplhep as hep
 import numpy as np
 import pandas as pd
 
-from analysis_years import YEARS, PICKLE_DIR
+from analysis_years import YEARS, PICKLE_DIR, LUMI_FB
 from datacard_shapes import getZhbbWeight
 from spanet_models import ACTIVE_MODELS
 
@@ -84,7 +84,7 @@ def roc(score_s, w_s, score_b, w_b):
     return eff_s, eff_b, auc
 
 
-def plot_year(df, year, model, outdir, bins, score_name="disc", cut=None):
+def plot_year(df, year, model, outdir, bins, score_name="disc", cut=None, yields=False):
     tag = f"{model}_{year}" if score_name == "disc" else f"{score_name}_{model}_{year}"
     sig = df[df.process.isin(SIGNAL)]
     aucs = {}
@@ -110,7 +110,7 @@ def plot_year(df, year, model, outdir, bins, score_name="disc", cut=None):
     _label(ax, year)
     _save(fig, outdir, f"roc_{tag}")
 
-    # ---- normalized score shapes
+    # ---- score shapes: unit area, or (yields) weighted event yields on a log scale
     fig, ax = plt.subplots()
     edges = np.linspace(0, 1, bins + 1)
     for (name, g), color in zip(GROUPS.items(), COLORS):
@@ -119,24 +119,35 @@ def plot_year(df, year, model, outdir, bins, score_name="disc", cut=None):
             continue
         h, _ = np.histogram(sel.score, edges, weights=sel.weight)
         h2, _ = np.histogram(sel.score, edges, weights=sel.weight ** 2)
-        norm = h.sum()
+        norm = 1.0 if yields else h.sum()
         hep.histplot(h / norm, edges, yerr=np.sqrt(h2) / norm, histtype="step", color=color, lw=3,
                      ls="-" if g["signal"] else "--", label=g["label"], ax=ax)
     ax.set_xlabel("SPANet score" if score_name == "disc" else f"SPANet {score_name}")
-    ax.set_ylabel("a.u.")
     ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1.5 * ax.get_ylim()[1])        # headroom for the legend
+    if yields:
+        ax.set_ylabel("Events")
+        ax.set_yscale("log")
+        lo, hi = ax.get_ylim()
+        ax.set_ylim(max(lo, 1e-2), hi * 1e3)       # headroom for the legend
+    else:
+        ax.set_ylabel("a.u.")
+        ax.set_ylim(0, 1.5 * ax.get_ylim()[1])    # headroom for the legend
     if cut is not None:
         ax.axvline(cut, color="#b0b0a8", lw=2, ls="-.")
     ax.legend(loc="upper center", ncol=2, fontsize="small", title=f"SPANet {model}")
-    _label(ax, year)
-    _save(fig, outdir, f"score_{tag}")
+    _label(ax, year, lumi=yields)
+    _save(fig, outdir, f"{'yields' if yields else 'score'}_{tag}")
     return aucs
 
 
-def _label(ax, year):
-    """'CMS Simulation Preliminary' + era / sqrt(s) (normalized shapes: no luminosity)."""
-    hep.cms.label("Preliminary", data=False, rlabel=f"{'Run 2' if year == 'Run2' else year} (13 TeV)", ax=ax)
+def _label(ax, year, lumi=False):
+    """'CMS Simulation Preliminary' + era / sqrt(s); luminosity only for event yields."""
+    era = "Run 2" if year == "Run2" else year
+    if lumi:
+        fb = sum(v for k, v in LUMI_FB.items() if year == "Run2" or k.startswith(year))
+        hep.cms.label("Preliminary", data=False, rlabel=f"{fb:.3g} fb$^{{-1}}$ (13 TeV)", ax=ax)
+    else:
+        hep.cms.label("Preliminary", data=False, rlabel=f"{era} (13 TeV)", ax=ax)
 
 
 def _save(fig, outdir, name):
@@ -156,6 +167,8 @@ def main():
                     help="score column <score>_<model>: disc, sig_score, ttbb_score or ttlf_score "
                          "(ttlf_score: signal at low values, so the ROC AUCs are 1 - AUC)")
     ap.add_argument("--cut", type=float, default=None, help="vertical line on the score plot (e.g. the ttlf cut)")
+    ap.add_argument("--yields", action="store_true",
+                    help="score plot in weighted event yields (datacard weight) on a log scale instead of unit area")
     ap.add_argument("--bins", type=int, default=20)
     ap.add_argument("--outdir", default="plots/spanet")
     ap.add_argument("--no-combined", action="store_true", help="skip the plots of all years together")
@@ -174,7 +187,7 @@ def main():
     table = {}
     for year, df in data.items():
         print(f"{year}: " + ", ".join(f"{p} {n}" for p, n in df.process.value_counts().items()))
-        table[year] = plot_year(df, year, args.model, args.outdir, args.bins, args.score, args.cut)
+        table[year] = plot_year(df, year, args.model, args.outdir, args.bins, args.score, args.cut, args.yields)
     names = {"all": "all bkg", "tt_B": "tt+B", "TTBar": "tt+LF/C"}
     print("\nAUC, signal = ttH + ttZ")
     print(f"{'':>8}" + "".join(f"{names[b]:>10}" for b in ROC_BACKGROUNDS))
