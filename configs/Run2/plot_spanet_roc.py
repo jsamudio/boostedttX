@@ -43,11 +43,11 @@ ROC_BACKGROUNDS = {"all": ["tt_B", "TTBar", "SingleTop", "ttX", "VJets", "QCD"],
 ROC_LABELS = {"all": "all backgrounds", "tt_B": r"$t\bar{t}+B$", "TTBar": r"$t\bar{t}$+LF/C"}
 
 
-def load(years, model, selection):
-    """One DataFrame per year with process, score and weight."""
+def load(years, model, selection, score_name="disc"):
+    """One DataFrame per year with process, score (column <score_name>_<model>) and weight."""
     if selection == "datacard":
         from makeDatacard import cuts
-    score = f"disc_{model}"
+    score = f"{score_name}_{model}"
     out = {}
     processes = sorted({p for g in GROUPS.values() for p in g["processes"]})
     for year in years:
@@ -84,8 +84,8 @@ def roc(score_s, w_s, score_b, w_b):
     return eff_s, eff_b, auc
 
 
-def plot_year(df, year, model, outdir, bins):
-    tag = f"{model}_{year}"
+def plot_year(df, year, model, outdir, bins, score_name="disc", cut=None):
+    tag = f"{model}_{year}" if score_name == "disc" else f"{score_name}_{model}_{year}"
     sig = df[df.process.isin(SIGNAL)]
     aucs = {}
 
@@ -122,10 +122,12 @@ def plot_year(df, year, model, outdir, bins):
         norm = h.sum()
         hep.histplot(h / norm, edges, yerr=np.sqrt(h2) / norm, histtype="step", color=color, lw=3,
                      ls="-" if g["signal"] else "--", label=g["label"], ax=ax)
-    ax.set_xlabel("SPANet score")
+    ax.set_xlabel("SPANet score" if score_name == "disc" else f"SPANet {score_name}")
     ax.set_ylabel("a.u.")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1.5 * ax.get_ylim()[1])        # headroom for the legend
+    if cut is not None:
+        ax.axvline(cut, color="#b0b0a8", lw=2, ls="-.")
     ax.legend(loc="upper center", ncol=2, fontsize="small", title=f"SPANet {model}")
     _label(ax, year)
     _save(fig, outdir, f"score_{tag}")
@@ -150,6 +152,10 @@ def main():
     ap.add_argument("--years", nargs="+", default=list(YEARS))
     ap.add_argument("--selection", choices=["datacard", "none"], default="datacard",
                     help="datacard: makeDatacard.cuts (incl. Xbb >= LP); none: all pickled events (btag_mask)")
+    ap.add_argument("--score", default="disc",
+                    help="score column <score>_<model>: disc, sig_score, ttbb_score or ttlf_score "
+                         "(ttlf_score: signal at low values, so the ROC AUCs are 1 - AUC)")
+    ap.add_argument("--cut", type=float, default=None, help="vertical line on the score plot (e.g. the ttlf cut)")
     ap.add_argument("--bins", type=int, default=20)
     ap.add_argument("--outdir", default="plots/spanet")
     ap.add_argument("--no-combined", action="store_true", help="skip the plots of all years together")
@@ -158,17 +164,17 @@ def main():
     plt.style.use(hep.style.CMS)
 
     os.makedirs(args.outdir, exist_ok=True)
-    data = load(args.years, args.model, args.selection)
+    data = load(args.years, args.model, args.selection, args.score)
     if not data:
         raise SystemExit("No pickles found")
     if not args.no_combined and len(data) > 1:
         data["Run2"] = pd.concat(data.values(), ignore_index=True)
 
-    print(f"\nSPANet {args.model}, selection: {args.selection}")
+    print(f"\nSPANet {args.model} ({args.score}), selection: {args.selection}")
     table = {}
     for year, df in data.items():
         print(f"{year}: " + ", ".join(f"{p} {n}" for p, n in df.process.value_counts().items()))
-        table[year] = plot_year(df, year, args.model, args.outdir, args.bins)
+        table[year] = plot_year(df, year, args.model, args.outdir, args.bins, args.score, args.cut)
     names = {"all": "all bkg", "tt_B": "tt+B", "TTBar": "tt+LF/C"}
     print("\nAUC, signal = ttH + ttZ")
     print(f"{'':>8}" + "".join(f"{names[b]:>10}" for b in ROC_BACKGROUNDS))
