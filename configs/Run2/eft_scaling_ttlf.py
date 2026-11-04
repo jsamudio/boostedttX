@@ -2,8 +2,8 @@
 """
 EFT scaling (Combine interferenceModel JSON) for the SPANet categorizations of makeDatacard.py.
 Two-step (--ttlf-cut <cut> [--ttlf-cr [--ttlf-cr-shape]]):
-    SR: ttlf score <  cut, NN axis s / (s + ttbb), edges nn_edges_sigvsttbb_<model>_ttlf<cut>.json
-    CR: ttlf score >= cut, one bin of the disc s / (s + ttbb + ttlf)
+    SR: ttlf / (s + ttbb + ttlf) <  cut, NN axis s / (s + ttbb), edges nn_edges_sigvsttbb_<model>_ttlf<cut>.json
+    CR: ttlf / (s + ttbb + ttlf) >= cut, one bin of the disc s / (s + ttbb + ttlf)
         (--cr-shape, for --ttlf-cr-shape cards: s / (s + ttbb) with the SR edges)
     --pt600-bins K (cards made with --pt600-bins K): in the SR top pT channel, events with Z/H pT > 600 GeV
         in the K lowest NN bins go to K extra NN bins after the regular ones
@@ -157,7 +157,8 @@ def region_scores(col, model, cut, cr_shape=False):
     if cut == "argmax":
         cat = np.argmax(np.column_stack([s, b, lf]), axis=1)
         return {"ZH": (cat == 0, cr), "TTB": (cat == 1, b), "LF": (cat == 2, cr)}
-    return {"SR": (lf < cut, sr), "CR": (lf >= cut, sr if cr_shape else cr)}
+    lf_frac = np.where(den_cr > 0, lf / np.where(den_cr > 0, den_cr, 1.0), 0.0)   # normalized, as makeDatacard ttlf_frac
+    return {"SR": (lf_frac < cut, sr), "CR": (lf_frac >= cut, sr if cr_shape else cr)}
 
 
 def process_path(label, cfg, path, model, cut, edges, cr_shape=False, hp_bins=0):

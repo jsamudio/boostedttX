@@ -266,6 +266,13 @@ def channel_info(sub, d, ch, n_fine, max_rel, max_bins):
     return edges, fisher(grouped(cells, bounds)), not still_bad
 
 
+def ttlf_frac(ev):
+    """Normalized tt+LF/C score ttlf / (s + ttbb + ttlf), as datacard_shapes.ttlf_frac (cut of makeDatacard.py)."""
+    s, b, lf = (ev[c].to_numpy(dtype=float) for c in ('s', 'ttbb', 'ttlf'))
+    den = s + b + lf
+    return np.where(den > 0, lf / np.where(den > 0, den, 1.0), 0.0)
+
+
 def evaluate_ttlf_cut(ev, cut, fail_bins=1, n_fine=40, max_rel=0.3, max_bins=8, verbose=False):
     """Two-step categorization per channel: events with ttlf < cut are binned in s / (s + ttbb)
     (up to max_bins), events with ttlf >= cut are kept as fail_bins bins of the current disc
@@ -275,7 +282,7 @@ def evaluate_ttlf_cut(ev, cut, fail_bins=1, n_fine=40, max_rel=0.3, max_bins=8, 
         sub = ev[ev['ch'] == i]
         if sub.empty:
             continue
-        passed = (sub['ttlf'] < cut).to_numpy()
+        passed = ttlf_frac(sub) < cut
         for region, mask, nb, score in (('pass', passed, max_bins, sig_vs_ttbb),
                                         ('fail', ~passed, fail_bins, disc)):
             r = sub[mask]
@@ -336,7 +343,7 @@ def argmax_fractions(ev):
 
 def ttlf_cut_efficiencies(ev, cut):
     """Fraction of the weighted yield with ttlf < cut: measured signal, tt+B, tt+LF/C, all background."""
-    passed = ev['ttlf'] < cut
+    passed = ttlf_frac(ev) < cut
     frac = lambda m: ev.loc[m & passed, 'w'].sum() / ev.loc[m, 'w'].sum() if ev.loc[m, 'w'].sum() > 0 else np.nan
     return {'sig': frac(ev['label'].isin(SIGNALS)), 'tt_B': frac(ev['proc'] == 'tt_B'),
             'TTBar': frac(ev['proc'] == 'TTBar'), 'bkg': frac(ev['label'] == 'bkg')}

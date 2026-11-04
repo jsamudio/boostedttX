@@ -25,7 +25,7 @@ import re
 import uproot
 import os
 import sys
-from datacard_shapes import DataCardShapes, getZhbbWeight, sig_vs_ttbb, spanet_category, SPANET_CATEGORIES
+from datacard_shapes import DataCardShapes, getZhbbWeight, sig_vs_ttbb, ttlf_frac, spanet_category, SPANET_CATEGORIES
 from TH1 import export1d
 from analysis_years import (YEARS, YEAR_RE, find_year, PICKLE_DIR, bbvl_wp,
                             LUMI_UNCERTAINTIES, jes_nuisances, JER_REGIONS)
@@ -43,9 +43,9 @@ isblind = True
 EFT_SCALE_TTBB = False
 
 # Two-step categorization (default off; --ttlf-cut on the command line). Per reco pT channel:
-#   signal region  (SR): ttlf_score < cut, binned in s / (s + ttbb) (column sigvsttbb_<model>,
+#   signal region  (SR): ttlf / (s + ttbb + ttlf) < cut (ttlf_frac), binned in s / (s + ttbb) (column sigvsttbb_<model>,
 #                        signal-quantile edges from the SR events) x mass
-#   control region (CR): ttlf_score >= cut, one bin of the disc x mass; written only with
+#   control region (CR): ttlf / (s + ttbb + ttlf) >= cut, one bin of the disc x mass; written only with
 #                        --ttlf-cr, as separate cards, so that it can be combined (combineCards.py
 #                        SR=... CR=...), masked or unblinded on its own. With --ttlf-cr-shape the CR
 #                        is binned like the SR (s / (s + ttbb), SR edges), to validate the SR
@@ -462,9 +462,9 @@ class MakeDataCard:
             if self.nn_name == f'sigvsttbb_{model}':
                 self.derive = lambda df: df.assign(**{self.nn_name: sig_vs_ttbb(df, model)})
             if region == 'sr':
-                self.cut = lambda x: (x[ttlf] < ttlf_cut) & (x[self.nn_name] >= 0.0)
+                self.cut = lambda x: (ttlf_frac(x, model) < ttlf_cut) & (x[self.nn_name] >= 0.0)
             else:
-                self.cut = lambda x: (x[ttlf] >= ttlf_cut) & (x[self.nn_name] >= 0.0)
+                self.cut = lambda x: (ttlf_frac(x, model) >= ttlf_cut) & (x[self.nn_name] >= 0.0)
             self.tag += f"ttlf{ttlf_cut:g}{region.upper()}_".replace('.', 'p')
 
         # High-pT split of the SR (HIGH_PT_CUT): flag the events above the cut before ZH_pt is clipped
@@ -1041,7 +1041,7 @@ if __name__ == '__main__':
         sr_nn = f'sigvsttbb_{model}'
         hist2d = DataCardShapes(pt_bins, mass_bins, nn=sr_nn, isblind=isblind, years=YEARS, common_binning=True,
                                 derive=lambda df, m=model: df.assign(**{f'sigvsttbb_{m}': sig_vs_ttbb(df, m)}),
-                                selection=lambda df, c=ttlf: df[c] < cut)
+                                selection=lambda df, m=model: ttlf_frac(df, m) < cut)
         hist2d.save_edges(f'nn_edges_{sr_nn}_{suffix}.json')
         plot_edges(json.load(open(f'nn_edges_{sr_nn}_{suffix}.json')), f'plots/nn_edges_{sr_nn}_{suffix}.pdf')
         MakeDataCard(nn_name=sr_nn, hist2d=hist2d, isblind=isblind, years=YEARS, eft_ttbb=args.eft_ttbb,

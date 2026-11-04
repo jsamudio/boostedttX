@@ -37,6 +37,14 @@ def sig_vs_ttbb(df_, model):
     return np.where(den > 0, s / np.where(den > 0, den, 1.0), 0.0)
 
 
+def ttlf_frac(df_, model):
+    """Normalized tt+LF/C score ttlf / (s + ttbb + ttlf) of a SPANet model (s = ttH + ttZ score), for the
+    two-step cut of makeDatacard.py (--ttlf-cut); equal to the ttlf score when the outputs sum to 1."""
+    s, b, lf = (df_[f'{c}_score_{model}'].to_numpy(dtype=float) for c in ('sig', 'ttbb', 'ttlf'))
+    den = s + b + lf
+    return np.where(den > 0, lf / np.where(den > 0, den, 1.0), 0.0)
+
+
 SPANET_CATEGORIES = ['ZH', 'TTB', 'LF']      # order of the scores in spanet_category
 
 
