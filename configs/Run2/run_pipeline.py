@@ -252,7 +252,7 @@ if __name__ == '__main__':
                            for v in (jes_run_tags() if tag == "JES_ALL" else [tag])]
 
     if 'all' in args.steps:
-        steps = ['inference', 'btagnorm', 'pickle', 'datacard']
+        steps = ['inference', 'btagnorm', 'pickle', 'norms', 'datacard']
     else:
         steps = [s for s in STEPS if s in args.steps]
     if args.backend == 'pbs' and {'inference', 'submit'} & set(steps) and len(steps) > 1:
