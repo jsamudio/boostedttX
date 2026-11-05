@@ -18,6 +18,7 @@ from custom_scale_factors import sf_jet_puId_era, set_fatjet_mass, sf_mu, sf_par
 from get_controlvars import get_controlvars
 from btag_norm import calib_sums, OTHER_WEIGHTS as BTAG_CALIB_WEIGHTS, VARIATIONS as BTAG_CALIB_VARIATIONS
 from theory_norms import fill_theory_sums
+from th_reweighting import th_sm_weight
 from eft_genbb import fill_eft_genbb, gen_bb_pair, is_eft_sample
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
@@ -108,6 +109,9 @@ class ZHbbSpanetProcessor(BaseProcessorABC):
         # Theory-weight sums over ALL generated events, for the process norms (theory_norms.py,
         # make_process_norms.py). Runs before the skim, so no event selection is applied.
         if self._isMC:
+            # tH (ctcvcp, generated at kappa_t = -1): SM reweighting factor, 1 for other MC (th_reweighting.py);
+            # set before the theory sums, whose tH 'nominal' then gives the SM normalization
+            self.events["th_sm_weight"] = th_sm_weight(self.events, self._dataset)
             fill_theory_sums(self.events, self.output, self._sample, self._dataset)
             # EFT samples: EFT-coefficient sums of the gen bb pT spectrum (eft_genbb.py, plot_eft_pt.py)
             fill_eft_genbb(self.events, self.output, self._dataset)

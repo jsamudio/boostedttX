@@ -97,6 +97,8 @@ def fill_theory_sums(events, output, sample, dataset):
     if len(events) == 0:
         return
     sign = np.sign(ak.to_numpy(events.genWeight))
+    if "th_sm_weight" in events.fields:          # tH: SM reweighting factor (th_reweighting.py), 1 otherwise
+        sign = sign * ak.to_numpy(events.th_sm_weight)
     ratios = theory_ratios(events)
     out = output.setdefault("theory_sums", {}).setdefault(sample, {}).setdefault(dataset, {})
     for region, mask in region_masks(events, sample).items():

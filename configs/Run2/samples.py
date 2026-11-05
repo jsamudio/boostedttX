@@ -24,6 +24,10 @@ DATASET_JSONS = [
     "DATA_EGamma", "DATA_Muon",
     "ttHSMEFT", "ttZSMEFT", "ttbbSMEFT",
 ]
+# Dataset files built later (after a Rucio transfer) -> the sample they belong to. A missing file is
+# skipped, unless its sample is processed (then inference_common.dataset_jsons raises).
+#   THQ, THW, tZq_ll: tH and tZq (Z -> ll) for the ttX sample, datasets/th_tzq_definitions.json
+PENDING_DATASET_JSONS = {"THQ": "ttX", "THW": "ttX", "tZq_ll": "ttX"}
 
 # ---------------------------------------------------------------- sample groups
 SIGNAL_SAMPLES = ["ttHTobb", "ttHToNonbb", "TTZToQQ", "TTZToLLNuNu", "TTZToBB"]

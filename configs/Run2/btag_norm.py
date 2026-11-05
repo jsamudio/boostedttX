@@ -119,11 +119,12 @@ def read_calib(coffea_files, category='btag_calib', variations=None, samples=Non
         seen.add((dataset, sample, variation))
         era = find_era(dataset)
         _add(total.setdefault(variation, {}), (era, sample), sums,
-             get_norm(sample, dataset, genweight_df, era))
+             get_norm(sample, dataset, genweight_df, era, theory_sums))
 
     for coffea_file in coffea_files:
         filein = load(coffea_file)
         genweight_df = pd.DataFrame.from_dict(filein['sum_signOf_genweights'], orient='index')
+        theory_sums = filein.get('theory_sums')          # tH SM normalization (outputToPkl.get_norm)
 
         if 'btag_calib' in filein:                       # accumulated by the processor
             for dataset, by_sample in filein['btag_calib'].items():

@@ -30,6 +30,7 @@ import outvars
 from analysis_years import ERA_RE, find_era, ERA_TO_YEAR, LUMI_FB, PICKLE_DIR
 from samples import PICKLE_SIGNAL, PICKLE_BACKGROUND
 from spanet_models import ACTIVE_MODELS, score_columns
+from th_reweighting import is_th
 
 ERA_SUFFIX = re.compile(rf'_{ERA_RE}$')
 # ttbar / ttbb modelling-variation samples (samples.TTBAR_VARIATION_SAMPLES): nominal cross section
@@ -51,6 +52,8 @@ XSEC_DICT = {
     "TTToSemiLeptonic": 364.018, "TTTo2L2Nu": 88.29, "TTbb_Hadronic": 9.286,
     "TTbb_SemiLeptonic": 8.168, "TTbb_2L2Nu": 1.807, "TTWJetsToLNu": 0.2163,
     "TTWJetsToQQ": 0.4432, "TTTT": 0.008091, "TTGJets": 3.774,
+    # tH (YR4 SM values, as in the previous analysis; SM-reweighted, th_reweighting.py) and tZq (Z -> ll)
+    "THQ": 0.07425, "THW": 0.01517, "tZq_ll": 0.0758,
     "ST_tW_top": 39.65, "ST_tW_antitop": 39.65, "ST_s_channel": 3.608,
     "ST_t_channel_top": 134.2, "ST_t_channel_antitop": 80.0,
     "QCD_HT500to700": 29980.0, "QCD_HT700to1000": 6334.0, "QCD_HT1000to1500": 1088.0,
@@ -68,17 +71,29 @@ XSEC_DICT = {
 MODELS = ACTIVE_MODELS       # see spanet_models.py
 
 
-def get_norm(sample, dataset, genweight_df, era):
-    """Per-event normalization: lumi(era) * xsec / sum of sign(genWeight). Fails loudly."""
+def get_norm(sample, dataset, genweight_df, era, theory_sums=None):
+    """Per-event normalization: lumi(era) * xsec / sum of sign(genWeight). Fails loudly.
+    tH datasets (th_reweighting.py): the denominator is sum sign(genWeight) * th_sm_weight over all
+    generated events (theory_sums[sample][dataset]['all']['nominal']), so that with th_sm_weight in the
+    event weight the yield is the SM cross section."""
     name = VARIATION_SUFFIX.sub('', ERA_SUFFIX.sub('', dataset))
     key = name if name in XSEC_DICT else VARIATION_SUFFIX.sub('', sample.split('__')[0])
     if key not in XSEC_DICT:
         raise KeyError(f"No cross section for dataset '{dataset}' (sample '{sample}')")
-    if dataset not in genweight_df.index:
-        raise KeyError(f"No sum_signOf_genweights for dataset '{dataset}'")
     if era not in LUMI_FB:
         raise KeyError(f"No luminosity configured for {era} (LUMI_FB in analysis_years.py)")
-    return LUMI_FB[era] * 1000.0 * XSEC_DICT[key] / genweight_df.loc[dataset, 0]
+    if is_th(dataset):
+        base = sample.split('__')[0]
+        try:
+            denominator = theory_sums[base][dataset]['all']['nominal']
+        except (KeyError, TypeError):
+            raise KeyError(f"No theory_sums for tH dataset '{dataset}' (sample '{base}'): needed for the SM "
+                           f"reweighting normalization (th_reweighting.py)") from None
+    else:
+        if dataset not in genweight_df.index:
+            raise KeyError(f"No sum_signOf_genweights for dataset '{dataset}'")
+        denominator = genweight_df.loc[dataset, 0]
+    return LUMI_FB[era] * 1000.0 * XSEC_DICT[key] / denominator
 
 
 class OutputToPkl:
@@ -121,7 +136,7 @@ class OutputToPkl:
                 cols = by_var[variation]
                 era = find_era(dataset)
                 year = ERA_TO_YEAR[era]
-                norm = get_norm(sample, dataset, genweight_df, era)
+                norm = get_norm(sample, dataset, genweight_df, era, filein.get('theory_sums'))
 
                 tmp, missing = {}, []
                 for var in variables:
