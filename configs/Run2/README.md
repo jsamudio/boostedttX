@@ -88,10 +88,10 @@ resubmitting.
 
 From the host (where `qsub` is available; pocket-coffea is run inside apptainer automatically):
 ```bash
-python run_pipeline.py inference --backend pbs --groups signal bkg minor --eras 2018 --jec-variations JES_ALL JER JMSJMR
-python run_pipeline.py status    --backend pbs --jec-variations JES_ALL JER JMSJMR     # done/failed/running per group
-python run_pipeline.py resubmit  --backend pbs --jec-variations JES_ALL JER JMSJMR     # failed jobs + new merge
-python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMSJMR    # once everything is merged
+python run_pipeline.py inference --backend pbs --groups signal bkg minor --eras 2018 --jec-variations JES_ALL JER JMSJMR METUnclust
+python run_pipeline.py status    --backend pbs --jec-variations JES_ALL JER JMSJMR METUnclust     # done/failed/running per group
+python run_pipeline.py resubmit  --backend pbs --jec-variations JES_ALL JER JMSJMR METUnclust     # failed jobs + new merge
+python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMSJMR METUnclust    # once everything is merged
 ```
 `resubmit --include-unfinished` also resubmits jobs that never finished (e.g. killed by the batch
 system); it refuses while PBS still lists the arrays. Per directory the same is available as

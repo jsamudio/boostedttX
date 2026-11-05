@@ -19,6 +19,7 @@ Environment overrides (no need to edit any file for these):
                                    JER           AK4 in 6 (|eta|, pT) regions -> AK4PFchs_JER_<region>Up/Down,
                                                  AK8 -> AK8PFPuppi_JERUp/Down
                                    JMSJMR        AK8 mass scale/resolution -> JMSUp/Down, JMRUp/Down
+                                   METUnclust    unclustered energy of the type-1 MET -> METUnclustUp/Down
     PC_NO_ROCHESTER=1            muon Rochester corrections off (impact check against the nominal)
     PC_DCTR=1                    DCTR hdamp weights dctr_hdamp_up/down for DCTR_HDAMP['samples'] (dctr.py)
 """
@@ -138,6 +139,8 @@ def shape_variation_settings(parameters, eras, variation):
         return "jet_calibration", no_jet_variations
     if variation == "JMSJMR":
         return "fatjet_mass", no_jet_variations
+    if variation == "METUnclust":
+        return "met_type1_run2", no_jet_variations
     if variation == "JER":
         # default merging (AK4PFchs with the type-1 MET jets): AK4 and AK8 are varied separately;
         # the AK4 JER is split into the JME (|eta|, pT) regions (jet_variation_splits.py)
@@ -152,7 +155,7 @@ def shape_variation_settings(parameters, eras, variation):
         jes = {era: [f"JES_{jes_source(variation, era)}"] for era in ERAS}
         return "jet_calibration", {jet_type: (jes if jet_type in jet_types else no_jet_variations[jet_type])
                                    for jet_type in VARIED_JET_TYPES}
-    raise ValueError(f"PC_JEC_VARIATION={variation} not known: use nominal, JER, JMSJMR or a JES tag "
+    raise ValueError(f"PC_JEC_VARIATION={variation} not known: use nominal, JER, JMSJMR, METUnclust or a JES tag "
                      f"of analysis_years.jes_run_tags(): {jes_run_tags()}")
 
 
@@ -242,6 +245,7 @@ def build_columns(sample_list, is_data):
         event_vars = [v for v in outvars.common_vars if v not in outvars.mc_only_vars] + outvars.validation_vars
     else:
         event_vars = outvars.common_vars + outvars.validation_vars + outvars.weight_vars
+    event_vars += [v for v in outvars.ele_energy_vars if v not in event_vars]
 
     bysample = {}
     for sample in sample_list:

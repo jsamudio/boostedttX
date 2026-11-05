@@ -29,10 +29,10 @@ pocket-coffea and the python steps are wrapped in `apptainer exec` when not alre
 
 Examples:
     python run_pipeline.py inference --groups signal bkg minor --eras 2018 --backend pbs
-    python run_pipeline.py inference --backend pbs --jec-variations JES_ALL JER JMSJMR
-    python run_pipeline.py status --backend pbs --jec-variations JES_ALL JER JMSJMR
+    python run_pipeline.py inference --backend pbs --jec-variations JES_ALL JER JMSJMR METUnclust
+    python run_pipeline.py status --backend pbs --jec-variations JES_ALL JER JMSJMR METUnclust
     python run_pipeline.py resubmit --backend pbs
-    python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMSJMR
+    python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMSJMR METUnclust
 
 Shape variations (--jec-variations, one inference run each, see inference_common.py):
     JES_...        one JES source (analysis_years.jes_run_tags): AK4 + AK8 jets shifted together,
@@ -40,6 +40,7 @@ Shape variations (--jec-variations, one inference run each, see inference_common
     JES_ALL        all JES sources of analysis_years.JES_SCHEME (full + flavour split: 31 runs)
     JER            AK4 JER in 6 (|eta|, pT) regions and AK8 JER, all in one run
     JMSJMR         AK8 jet mass scale and resolution (one run)
+    METUnclust     unclustered energy of the type-1 MET (one run)
     python run_pipeline.py inference --dry-run      # print every command without running it
 
 Anything after '--' is passed on to 'pocket-coffea run', e.g.  -- --executor futures --test
@@ -233,7 +234,7 @@ if __name__ == '__main__':
                     help=f'sample groups (default: {" ".join(MC_GROUPS)})')
     ap.add_argument('--eras', nargs='+', default=['2018'])
     ap.add_argument('--jec-variations', nargs='*', default=[],
-                    help='shape variations to run in addition to nominal: JES_<source>, JES_ALL, JER, JMSJMR')
+                    help='shape variations to run in addition to nominal: JES_<source>, JES_ALL, JER, JMSJMR, METUnclust')
     ap.add_argument('--outdir', default='outputs')
     ap.add_argument('--backend', choices=['local', 'pbs'], default='local')
     ap.add_argument('--container', choices=['auto', 'always', 'never'], default='auto',

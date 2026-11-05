@@ -95,9 +95,9 @@ class OutputToPkl:
         spanet_vars = [c for m in MODELS for c in score_columns(m)]
         # PDF members exist only for signal and tt+jets (outvars.pdf_vars): read when present
         self.sig_vars = (outvars.common_vars + outvars.sig_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
-                         + outvars.pdf_vars)
+                         + outvars.pdf_vars + outvars.ele_energy_vars)
         self.bkg_vars = (outvars.common_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"] + outvars.pdf_vars
-                         + outvars.bkg_vars)
+                         + outvars.bkg_vars + outvars.ele_energy_vars)
 
     @staticmethod
     def variations_in(filein):

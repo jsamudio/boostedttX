@@ -44,6 +44,14 @@ def get_controlvars(events):
     events['ele_eta'] = ak.firsts(ele.eta)
     events['muon_eta'] = ak.firsts(muon.eta)
 
+    # Relative electron energy shifts of the leading selected electron (EGM scale / smearing check,
+    # ele_energy_check.py); 0 without an electron or when the NanoAOD has no such field
+    ele0 = ak.firsts(ele)
+    energy = ele0.pt * np.cosh(ele0.eta)
+    for var in ('dEscaleUp', 'dEscaleDown', 'dEsigmaUp', 'dEsigmaDown'):
+        rel = ele0[var] / energy if var in ele.fields else ak.zeros_like(ele0.pt)
+        events[f'ele_{var}'] = ak.fill_none(rel, 0.0)
+
     events['n_ak4'] = ak.count(ak4.pt, axis=1)
     events['n_bjet'] = ak.count(bjet.pt, axis=1)
     events['n_ak8'] = ak.count(ak8.pt, axis=1)

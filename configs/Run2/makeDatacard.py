@@ -101,7 +101,7 @@ VJETS_PDF_UNC   = 1.038
 # Years, pickle paths, Xbb working points and luminosity uncertainties: see analysis_years.py
 
 # Jet energy / mass shape uncertainties, from separately processed samples
-# (run_pipeline.py --jec-variations JES_ALL JER JMSJMR -> pickles <process>_<tag>Up/Down.pkl).
+# (run_pipeline.py --jec-variations JES_ALL JER JMSJMR METUnclust -> pickles <process>_<tag>Up/Down.pkl).
 USE_JET_VARIATIONS = False
 # Processes the jet variations are applied to (as before); the others keep the nominal template
 JET_SYST_PROCESSES = ['ttH', 'ttZ', 'TTBar', 'tt_B', 'SingleTop']
@@ -114,6 +114,7 @@ def jet_systematics(years):
     for y in years:                               # resolution and mass: uncorrelated across years
         out += [(f'AK4PFchs_JER_{r}', f'jer_ak4_{r}_{y}') for r in JER_REGIONS]
         out += [('AK8PFPuppi_JER', f'jer_ak8_{y}'), ('JMS', f'jms_{y}'), ('JMR', f'jmr_{y}')]
+        out += [('METUnclust', f'met_unclust_{y}')]     # unclustered MET energy (type-1 MET)
     return out
 
 

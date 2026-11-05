@@ -16,6 +16,10 @@ varied) by pocket-coffea's JetsCalibrator, with corrected pT (muon subtracted) >
 or the data tag of the run era). The lepton scale corrections of the calibrators before it are
 propagated as well.
 
+Unclustered energy (MC, variations METUnclustUp/Down, PC_JEC_VARIATION=METUnclust): the recomputed
+MET is shifted by +/- the NanoAOD unclustered-energy shift (MET_MetUnclustEnUpDeltaX/Y; the down
+variation is the mirror image), on top of the nominal jets.
+
 It replaces pocket-coffea's METCalibrator, which also starts from RawMET but uses an L1 factor of 1
 (correct only for PUPPI jets) and returns the raw MET in data when apply_data is false.
 
@@ -38,6 +42,7 @@ T1_JET_PT_MIN = 15.0
 T1_JET_EM_MAX = 0.9
 T1_JET_TYPE = "AK4PFchs"                         # JEC payload of the type-1 jets (Run 2)
 T1_COLLECTIONS = ("Jet", "CorrT1METJet")         # AK4 jets entering the type-1 MET
+MET_UNCLUST_VARIATIONS = {"METUnclustUp": 1.0, "METUnclustDown": -1.0}   # sign of the NanoAOD shift
 
 
 def _evaluate(corr, jets_flat, pt_raw_flat, rho_flat, run_flat):
@@ -55,10 +60,16 @@ def _sum_xy(pt, phi, mask):
 
 class METType1Calibrator(Calibrator):
     name = "met_type1_run2"
-    has_variations = False
+    has_variations = True
     isMC_only = False
     # Only existing fields: the CalibratorsManager cannot store originals of new fields
     calibrated_collections = ["MET.pt", "MET.phi"]
+
+    def __init__(self, params, metadata, do_variations=True, **kwargs):
+        super().__init__(params, metadata, do_variations, **kwargs)
+        is_mc = str(metadata.get("isMC", False)).lower() in ("true", "1")
+        # unclustered-energy variations only when requested (PC_JEC_VARIATION=METUnclust), MC only
+        self._variations = list(MET_UNCLUST_VARIATIONS) if (do_variations and is_mc) else []
 
     def initialize(self, events):
         calib = self.params.jets_calibration.jet_types[T1_JET_TYPE][self.year]
@@ -108,6 +119,11 @@ class METType1Calibrator(Calibrator):
                 lep = events[coll]
                 dx, dy = _sum_xy(lep.pt - orig_colls[key], lep.phi, ak.ones_like(lep.pt, dtype=bool))
                 mx, my = mx - dx, my - dy
+        sign = MET_UNCLUST_VARIATIONS.get(variation)
+        if sign is not None:                                     # unclustered energy, +/- the NanoAOD shift
+            met = events["MET"]
+            mx = mx + sign * met.MetUnclustEnUpDeltaX
+            my = my + sign * met.MetUnclustEnUpDeltaY
         return {"MET.pt": np.hypot(mx, my), "MET.phi": np.arctan2(my, mx)}
 
 

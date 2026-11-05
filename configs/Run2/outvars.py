@@ -56,6 +56,11 @@ bkg_vars = ['tt_B', 'tt_2b', 'tt_C']
 # get PDF shape uncertainties: signal and tt+jets (the 'sig' and 'bkg' column groups)
 pdf_vars = [f'pdfweight_{i}' for i in range(103)]
 
+# Electron energy scale / smearing check (EGM, UL NanoAODv9): leading selected electron pT and the
+# relative energy shifts dE/E of NanoAOD Electron_dEscaleUp/Down (filled in data only) and
+# Electron_dEsigmaUp/Down (filled in MC only); 0 for events without an electron. Data and MC.
+ele_energy_vars = ['ele_pt', 'ele_dEscaleUp', 'ele_dEscaleDown', 'ele_dEsigmaUp', 'ele_dEsigmaDown']
+
 # common_vars that only exist for MC (dropped from the data columns)
 mc_only_vars = ['xbb_genmatch', 'n_genb_matchZH']
 
