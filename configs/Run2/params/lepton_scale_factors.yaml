@@ -24,3 +24,7 @@ lepton_scale_factors:
         iso: NUM_LooseRelIso_DEN_MediumID
         trigger: NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight
         reco: NUM_TrackerMuons_DEN_genTracks
+    # Rochester corrections: pocket-coffea's install has no compiled RoccoR.so; built into the analysis
+    # checkout instead (shared with the PBS jobs), see inference_common.check_roccor
+    rochester:
+      so_path: "${config_dir:}/roccor/RoccoR.so"

@@ -170,6 +170,22 @@ def dctr_options():
     return {"samples": list(DCTR_HDAMP["samples"]), "models": dict(DCTR_HDAMP["models"])}
 
 
+ROCCOR_BUILD = ("SRC=$(python3 -c \"import os, pocket_coffea; print(os.path.join(os.path.dirname(pocket_coffea.__file__), "
+                "'lib/calibrators/legacy'))\") && g++ -O2 -shared -fPIC -std=c++17 -I$SRC -o {so} $SRC/RoccoR_wrap.cc")
+
+
+def check_roccor(parameters, eras):
+    """The Rochester calibrator loads a compiled RoccoR.so (lepton_scale_factors.muon_sf.rochester.so_path),
+    which pocket-coffea's install does not ship: fail early, with the build command, if it is missing."""
+    roc = parameters.lepton_scale_factors.muon_sf.rochester
+    if not any(roc.apply.get(era, False) for era in eras):
+        return
+    so = str(roc.so_path)
+    if not os.path.exists(so):
+        raise FileNotFoundError(f"Rochester library {so} missing. Build it once (in the container, from configs/Run2):\n"
+                                f"  {ROCCOR_BUILD.format(so=so)}\nor set PC_NO_ROCHESTER=1 to run without Rochester.")
+
+
 def load_parameters(eras):
     """Default pocket-coffea parameters + params/*.yaml, with the shape variation from the environment."""
     defaults.register_configuration_dir("config_dir", LOCALDIR + "/params")
@@ -182,6 +198,7 @@ def load_parameters(eras):
         for era in ERAS:
             parameters.lepton_scale_factors.muon_sf.rochester.apply[era] = False
         print("--> Rochester corrections off")
+    check_roccor(parameters, eras)
 
     variation = os.environ.get("PC_JEC_VARIATION")
     shape_calibrator, jet_variations = shape_variation_settings(parameters, eras, variation)
