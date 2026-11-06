@@ -85,16 +85,20 @@ def observables(ev):
             "y_tt": rapidity(pz, e), "pt_top": ev["t_pt"]}
 
 
-def features(ev, name, pid):
+# hdamp / mt of the UL CP5 samples: nominal 1.379, up 2.305, down 0.8738 (hdamp = 1.379 +0.926 -0.505 mt)
+HDAMP_TARGET = {"up": 2.305, "down": 0.8738}
+
+
+def features(ev, name, pid, hdamp):
     px, py, pz, e = p4(ev, name)
     n = len(px)
     return np.stack([np.log10(ev[f"{name}_pt"]), rapidity(pz, e), ev[f"{name}_phi"],
-                     ev[f"{name}_mass"] / dctr.MAX_MASS, np.full(n, pid), np.full(n, dctr.HDAMP_NOMINAL)], axis=-1)
+                     ev[f"{name}_mass"] / dctr.MAX_MASS, np.full(n, pid), np.full(n, hdamp)], axis=-1)
 
 
-def dctr_ratio(ev, path, pt_tt):
-    """p0/p1 per event as in dctr.py (1 above MAX_TTBAR_PT)."""
-    inputs = np.stack([features(ev, "t", 0.1), features(ev, "tbar", 0.2)], axis=1).astype(np.float32)
+def dctr_ratio(ev, path, pt_tt, hdamp=dctr.HDAMP_NOMINAL):
+    """p0/p1 per event as in dctr.py (1 above MAX_TTBAR_PT); hdamp = value of the 6th feature."""
+    inputs = np.stack([features(ev, "t", 0.1, hdamp), features(ev, "tbar", 0.2, hdamp)], axis=1).astype(np.float32)
     r = np.ones(len(pt_tt))
     for i in range(0, len(r), 200000):
         r[i:i + 200000] = dctr._ratio(path, inputs[i:i + 200000])
@@ -115,6 +119,9 @@ if __name__ == "__main__":
     ap.add_argument("--era", default="2018")
     ap.add_argument("--max-events", type=int, default=300000)
     ap.add_argument("--outdir", default="plots/hdamp_dctr_gen")
+    ap.add_argument("--hdamp-feature", choices=["nominal", "target"], default="nominal",
+                    help="6th DCTR feature: nominal hdamp/mt 1.379 for both models (as dctr.py), or the target "
+                         "value of each model (up 2.305, down 0.8738; parametrized-DCTR convention)")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
 
@@ -130,14 +137,22 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     for var in ("up", "down"):
-        r = dctr_ratio(nom, DCTR_HDAMP["models"][var], obs["nominal"]["pt_tt"])
+        hd_feat = dctr.HDAMP_NOMINAL if args.hdamp_feature == "nominal" else HDAMP_TARGET[var]
+        r = dctr_ratio(nom, DCTR_HDAMP["models"][var], obs["nominal"]["pt_tt"], hd_feat)
         conv = {"p0/p1": r, "p1/p0": 1.0 / r}
-        print(f"\n=== hdamp {var}: {len(nom['w'])} nominal, {len(evs[var]['w'])} {var} events")
+        print(f"\n=== hdamp {var}: {len(nom['w'])} nominal, {len(evs[var]['w'])} {var} events, "
+              f"hdamp feature {hd_feat}")
         for c, w in conv.items():
             print(f"  DCTR {c}: inclusive mean weight {np.sum(w0 * w) / np.sum(w0):.4f}, "
                   f"min {w.min():.3f} max {w.max():.3f}")
         for o, (bins, label) in OBS.items():
             hn, en = hist(obs["nominal"][o], w0, bins)
+            if o == "pt_tt":      # direction of the effect: sample and DCTR ratio per bin
+                hs_, _ = hist(obs[var][o], evs[var]["w"], bins)
+                print("    pt_tt ratio to nominal per bin  sample: " + " ".join(f"{v:.3f}" for v in hs_ / hn))
+                for c, w in conv.items():
+                    hd_, _ = hist(obs["nominal"][o], w0 * w, bins)
+                    print(f"    pt_tt ratio to nominal per bin  {c:6}: " + " ".join(f"{v:.3f}" for v in hd_ / hn))
             hs, es = hist(obs[var][o], evs[var]["w"], bins)
             ok = hn > 0
             rs = np.divide(hs, hn, out=np.zeros_like(hn), where=ok)
@@ -160,5 +175,5 @@ if __name__ == "__main__":
             ax.set_title(f"{args.sample} {args.era}, gen level: hdamp {var}", fontsize=9)
             fig.tight_layout()
             for ext in ("png", "pdf"):
-                fig.savefig(f"{args.outdir}/{args.sample}_{args.era}_{var}_{o}.{ext}")
+                fig.savefig(f"{args.outdir}/{args.sample}_{args.era}_{var}_{o}_hd{args.hdamp_feature}.{ext}")
             plt.close(fig)
