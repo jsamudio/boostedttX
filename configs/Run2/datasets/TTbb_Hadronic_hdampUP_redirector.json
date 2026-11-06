@@ -1,0 +1,18 @@
+{
+    "TTbb_Hadronic_hdampUP_2018": {
+        "metadata": {
+            "das_names": "['/TTbb_4f_TTToHadronic_hdampUP_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM']",
+            "sample": "TTbb_Hadronic_hdampUP",
+            "year": "2018",
+            "isMC": "True",
+            "xsec": "9.286",
+            "nevents": "2780967",
+            "size": "7015426242"
+        },
+        "files": [
+            "root://xrootd-cms.infn.it///store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_hdampUP_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/254A6B8C-B76B-1940-A80E-1CAD021175DE.root",
+            "root://xrootd-cms.infn.it///store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_hdampUP_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/D7DE3E41-1BD5-F941-958B-57AE30959396.root",
+            "root://xrootd-cms.infn.it///store/mc/RunIISummer20UL18NanoAODv9/TTbb_4f_TTToHadronic_hdampUP_TuneCP5-Powheg-Openloops-Pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/03F56D13-7C63-3F4A-BD30-37C77B871B4A.root"
+        ]
+    }
+}
