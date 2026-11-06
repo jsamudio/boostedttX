@@ -54,9 +54,10 @@ for _m in ACTIVE_MODELS:
     OBSERVABLES[f"ttlf_score_{_m}"] = (np.linspace(0, 1, 11), f"ttlf score {_m}")
 
 
-def read(files, samples, btag_norm, dctr=False):
+def read(files, samples, btag_norm, dctr=False, era=None):
     """DataFrame of the selected events of the given (sub)samples; with dctr=True also the DCTR
-    normalization factors S_nom / S_var per dataset (columns dctr_norm_up/down)."""
+    normalization factors S_nom / S_var per dataset (columns dctr_norm_up/down). era: keep only that era
+    (e.g. the 2018 part of a multi-era production output)."""
     from coffea.util import load
     from outputToPkl import OutputToPkl
     from datacard_shapes import getZhbbWeight
@@ -72,6 +73,8 @@ def read(files, samples, btag_norm, dctr=False):
         genweight_df = pd.DataFrame.from_dict(filein["sum_signOf_genweights"], orient="index")
         for sample in samples:
             for df in reader.read_samples(filein, genweight_df, [sample], variables):
+                if era is not None and df["era"].iloc[0] != era:
+                    continue
                 df["subsample"] = sample.split("__")[1]
                 if dctr:
                     base = sample.split("__")[0]
