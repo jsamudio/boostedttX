@@ -21,6 +21,10 @@ import numpy as np
 TH_DATASET_PREFIXES = ("THQ_", "THW_")      # dataset names of datasets/th_tzq_definitions.json
 TH_SM_INDEX = 11
 TH_N_POINTS = 69
+# Files dropped from the tH samples (th_sm_weight = 0 for all their events, so they drop out of the yield and of
+# the normalization sum): THQ_2017 BC0B1DEE stores 68 points instead of 69 (decided 2026-11-06, review-notes).
+# In code rather than only in datasets/THQ.json, since already prepared PBS jobs keep their file lists.
+TH_DROPPED_FILES = ("BC0B1DEE-7E4F-0A4F-B385-999056531ADA",)
 
 
 def is_th(dataset):
@@ -34,6 +38,10 @@ def th_sm_weight(events, dataset):
         return np.ones(n)
     if "LHEReweightingWeight" not in events.fields:
         raise KeyError(f"{dataset}: no LHEReweightingWeight, cannot reweight tH to the SM")
+    filename = str(getattr(events, "metadata", {}).get("filename", ""))
+    if any(f in filename for f in TH_DROPPED_FILES):
+        print(f"--> {dataset}: {filename} dropped (TH_DROPPED_FILES), th_sm_weight = 0")
+        return np.zeros(n)
     w = events.LHEReweightingWeight
     counts = ak.to_numpy(ak.num(w))
     if n and not np.all(counts == TH_N_POINTS):
