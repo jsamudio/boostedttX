@@ -1,0 +1,98 @@
+{
+    "TTbb_Hadronic_hdampUP": {
+        "sample": "TTbb_Hadronic_hdampUP",
+        "json_output": "datasets/TTbb_Hadronic_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTbb_4f_TTToHadronic_hdampUP_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 9.286
+                }
+            }
+        ]
+    },
+    "TTbb_Hadronic_hdampDOWN": {
+        "sample": "TTbb_Hadronic_hdampDOWN",
+        "json_output": "datasets/TTbb_Hadronic_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTbb_4f_TTToHadronic_hdampDOWN_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 9.286
+                }
+            }
+        ]
+    },
+    "TTbb_SemiLeptonic_hdampUP": {
+        "sample": "TTbb_SemiLeptonic_hdampUP",
+        "json_output": "datasets/TTbb_SemiLeptonic_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTbb_4f_TTToSemiLeptonic_hdampUP_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 8.168
+                }
+            }
+        ]
+    },
+    "TTbb_SemiLeptonic_hdampDOWN": {
+        "sample": "TTbb_SemiLeptonic_hdampDOWN",
+        "json_output": "datasets/TTbb_SemiLeptonic_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTbb_4f_TTToSemiLeptonic_hdampDOWN_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 8.168
+                }
+            }
+        ]
+    },
+    "TTbb_2L2Nu_hdampUP": {
+        "sample": "TTbb_2L2Nu_hdampUP",
+        "json_output": "datasets/TTbb_2L2Nu_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTbb_4f_TTTo2L2Nu_hdampUP_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 1.807
+                }
+            }
+        ]
+    },
+    "TTbb_2L2Nu_hdampDOWN": {
+        "sample": "TTbb_2L2Nu_hdampDOWN",
+        "json_output": "datasets/TTbb_2L2Nu_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTbb_4f_TTTo2L2Nu_hdampDOWN_TuneCP5-Powheg-Openloops-Pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 1.807
+                }
+            }
+        ]
+    }
+}

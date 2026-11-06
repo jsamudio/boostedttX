@@ -72,10 +72,13 @@ LOCALDIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_ERAS = ['2018']
 
 # DCTR hdamp weights (PC_DCTR=1): tried on the nominal 4FS ttbb against the dedicated hdamp samples.
-# Needs the 13 TeV classifiers: set the paths before use.
+# 13 TeV classifiers of the TOP MLReweighting twiki (CERN login, so downloaded by hand into
+# params/dctr/, not in git): https://twiki.cern.ch/twiki/pub/CMS/MLReweighting/<file>
+DCTR_DIR = f"{LOCALDIR}/params/dctr"
 DCTR_HDAMP = {
     "samples": ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu"],
-    "models": {"up": None, "down": None},
+    "models": {"up": f"{DCTR_DIR}/mymodel12_hdamp_up_13TeV.onnx",
+               "down": f"{DCTR_DIR}/mymodel12_hdamp_down_13TeV.onnx"},
 }
 
 # params/<name>.yaml merged on top of the pocket-coffea defaults (overrides only).
@@ -166,6 +169,10 @@ def dctr_options():
     missing = [var for var, path in DCTR_HDAMP["models"].items() if not path]
     if missing:
         raise ValueError(f"PC_DCTR=1 but no DCTR model for {missing}: set DCTR_HDAMP['models'] in inference_common.py")
+    absent = [path for path in DCTR_HDAMP["models"].values() if not os.path.exists(path)]
+    if absent:
+        raise FileNotFoundError(f"PC_DCTR=1 but the DCTR model(s) {absent} are missing: download them from "
+                                f"https://twiki.cern.ch/twiki/pub/CMS/MLReweighting/ (CERN login) into {DCTR_DIR}/")
     print(f"--> DCTR hdamp weights for {DCTR_HDAMP['samples']}")
     return {"samples": list(DCTR_HDAMP["samples"]), "models": dict(DCTR_HDAMP["models"])}
 
