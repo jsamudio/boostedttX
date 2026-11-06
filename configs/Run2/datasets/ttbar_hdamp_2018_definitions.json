@@ -1,0 +1,98 @@
+{
+    "TTToHadronic_hdampUP": {
+        "sample": "TTToHadronic_hdampUP",
+        "json_output": "datasets/TTToHadronic_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTToHadronic_hdampUP_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 380.095
+                }
+            }
+        ]
+    },
+    "TTToHadronic_hdampDOWN": {
+        "sample": "TTToHadronic_hdampDOWN",
+        "json_output": "datasets/TTToHadronic_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTToHadronic_hdampDOWN_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 380.095
+                }
+            }
+        ]
+    },
+    "TTToSemiLeptonic_hdampUP": {
+        "sample": "TTToSemiLeptonic_hdampUP",
+        "json_output": "datasets/TTToSemiLeptonic_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTToSemiLeptonic_hdampUP_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 364.018
+                }
+            }
+        ]
+    },
+    "TTToSemiLeptonic_hdampDOWN": {
+        "sample": "TTToSemiLeptonic_hdampDOWN",
+        "json_output": "datasets/TTToSemiLeptonic_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTToSemiLeptonic_hdampDOWN_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 364.018
+                }
+            }
+        ]
+    },
+    "TTTo2L2Nu_hdampUP": {
+        "sample": "TTTo2L2Nu_hdampUP",
+        "json_output": "datasets/TTTo2L2Nu_hdampUP.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTTo2L2Nu_hdampUP_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 88.29
+                }
+            }
+        ]
+    },
+    "TTTo2L2Nu_hdampDOWN": {
+        "sample": "TTTo2L2Nu_hdampDOWN",
+        "json_output": "datasets/TTTo2L2Nu_hdampDOWN.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTTo2L2Nu_hdampDOWN_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2018",
+                    "isMC": true,
+                    "xsec": 88.29
+                }
+            }
+        ]
+    }
+}

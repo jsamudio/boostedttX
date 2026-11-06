@@ -120,8 +120,9 @@ if __name__ == "__main__":
     ap.add_argument("--max-events", type=int, default=300000)
     ap.add_argument("--outdir", default="plots/hdamp_dctr_gen")
     ap.add_argument("--hdamp-feature", choices=["nominal", "target"], default="nominal",
-                    help="6th DCTR feature: nominal hdamp/mt 1.379 for both models (as dctr.py), or the target "
-                         "value of each model (up 2.305, down 0.8738; parametrized-DCTR convention)")
+                    help="6th DCTR feature: nominal hdamp/mt 1.379 for both models (as dctr.py; the TOP MLReweighting "
+                         "twiki convention), or the target value of each model (up 2.305, down 0.8738; NOT the "
+                         "twiki convention, kept only as a cross-check)")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
 
