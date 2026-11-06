@@ -125,6 +125,7 @@ if __name__ == "__main__":
                          "twiki convention, kept only as a cross-check)")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
+    store = {"sample": args.sample, "era": args.era}       # twiki convention (p0/p1), for plot_dctr_summary.py
 
     evs = {}
     for tag, name in (("nominal", args.sample), ("up", f"{args.sample}_hdampUP"), ("down", f"{args.sample}_hdampDOWN")):
@@ -143,6 +144,7 @@ if __name__ == "__main__":
         conv = {"p0/p1": r, "p1/p0": 1.0 / r}
         print(f"\n=== hdamp {var}: {len(nom['w'])} nominal, {len(evs[var]['w'])} {var} events, "
               f"hdamp feature {hd_feat}")
+        store[f"{var}_meanw"] = np.sum(w0 * r) / np.sum(w0)
         for c, w in conv.items():
             print(f"  DCTR {c}: inclusive mean weight {np.sum(w0 * w) / np.sum(w0):.4f}, "
                   f"min {w.min():.3f} max {w.max():.3f}")
@@ -166,6 +168,12 @@ if __name__ == "__main__":
                 hd, ed = hist(obs["nominal"][o], w0 * w, bins)
                 chi2 = (((hs - hd) ** 2) / np.maximum(es ** 2 + ed ** 2, 1e-30))[ok & (hs > 0)].sum()
                 line.append(f"{c} {chi2:.1f}/{int((ok & (hs > 0)).sum()) - 1}")
+                if c == "p0/p1":
+                    store.update({f"{var}_{o}_bins": bins, f"{var}_{o}_rs": rs,
+                                  f"{var}_{o}_es": np.divide(es, hn, out=np.zeros_like(hn), where=ok),
+                                  f"{var}_{o}_rd": np.divide(hd, hn, out=np.zeros_like(hn), where=ok),
+                                  f"{var}_{o}_ed": np.divide(ed, hn, out=np.zeros_like(hn), where=ok),
+                                  f"{var}_{o}_chi2": chi2, f"{var}_{o}_ndf": int((ok & (hs > 0)).sum()) - 1})
                 ax.stairs(np.divide(hd, hn, out=np.zeros_like(hn), where=ok), bins, baseline=None, lw=1.5,
                           label=f"DCTR {c} / nominal")
             print(f"    {o:8} chi2/ndf (sample vs DCTR): " + "  ".join(line))
@@ -178,3 +186,7 @@ if __name__ == "__main__":
             for ext in ("png", "pdf"):
                 fig.savefig(f"{args.outdir}/{args.sample}_{args.era}_{var}_{o}_hd{args.hdamp_feature}.{ext}")
             plt.close(fig)
+
+    if args.hdamp_feature == "nominal":
+        np.savez(f"{args.outdir}/{args.sample}_{args.era}_dctr.npz", **store)
+        print(f"Wrote {args.outdir}/{args.sample}_{args.era}_dctr.npz (for plot_dctr_summary.py)")
