@@ -214,6 +214,102 @@ def draw(bins, label, curves, stem):
         fig.savefig(f"{stem}.{ext}")
     plt.close(fig)
 
+DC_MASS_BINS = [50, 80, 105, 145, 200]          # makeDatacard.mass_bins
+
+
+def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True):
+    """hdamp sample / nominal per datacard bin (NN bin x mass bin, flattened as NN-major: bin = i_nn * 4 + i_mass),
+    per pT channel, with the NN edges of the cards (nn_edges_disc_<model>.json). Prints the inclusive rate,
+    the flat chi2 (shape vs pure rate) in the datacard binning, and draws the per-bin ratio with the
+    nominal stat. (band) and the hdamp-sample stat. (error bars), as in the previous AN's hdamp figures."""
+    import json
+    with open(edges_file) as f:
+        all_edges = json.load(f)
+    year = str(nom["year"].iloc[0])
+    edges = all_edges.get(year, next(iter(all_edges.values())))
+    col = f"disc_{model}"
+    nom = nom[nom["subsample"] == sub]
+    var = {v: d[d["subsample"] == sub] for v, d in var.items()}
+    print(f"\n  datacard binning ({col}, edges {edges_file}, {year}): hdamp sample / nominal")
+    res = {}
+    for ch, (lo, hi) in CHANNELS.items():
+        nn_edges = np.asarray(edges[ch], dtype=float)
+
+        def h2(df):
+            m = ((df["ZH_pt"] > lo) & (df["ZH_pt"] <= hi)).to_numpy()
+            x, mass, w = (df[c].to_numpy(dtype=float)[m] for c in (col, "ZH_M", "w"))
+            h, _, _ = np.histogram2d(x, mass, bins=[nn_edges, DC_MASS_BINS], weights=w)
+            e2, _, _ = np.histogram2d(x, mass, bins=[nn_edges, DC_MASS_BINS], weights=w ** 2)
+            return h.ravel(), np.sqrt(e2.ravel())
+
+        hn, en = h2(nom)
+        res[ch] = {"nominal": (hn, en)}
+        line = f"    {ch}: {len(hn)} bins"
+        for v in VARS:
+            hv, ev = h2(var[v])
+            rate = hv.sum() / hn.sum()
+            ok = (hn > 0) & (hv > 0)
+            # shape: scale the variation to the nominal total, ratio per bin, stat. of both
+            r = np.divide(hv / rate, hn, out=np.ones_like(hn), where=hn > 0)
+            re = np.sqrt(np.divide(ev / rate, hn, out=np.zeros_like(hn), where=hn > 0) ** 2
+                         + (r * np.divide(en, hn, out=np.zeros_like(hn), where=hn > 0)) ** 2)
+            c2 = (((r - 1) / np.maximum(re, 1e-12)) ** 2)[ok].sum()
+            line += f"   {VARS[v]}: rate {rate:.4f}, flat chi2 {c2:.1f}/{ok.sum() - 1} (p={chi2_pvalue(c2, ok.sum() - 1)})"
+            res[ch][v] = (hv, ev, rate)
+        print(line)
+    # one lnN = one common rate in every bin of every channel: flat chi2 over all bins with the global rate
+    hn_all = np.concatenate([res[ch]["nominal"][0] for ch in res])
+    en_all = np.concatenate([res[ch]["nominal"][1] for ch in res])
+    line = f"    all channels ({len(hn_all)} bins, one common rate = lnN):"
+    for v in VARS:
+        hv = np.concatenate([res[ch][v][0] for ch in res])
+        ev = np.concatenate([res[ch][v][1] for ch in res])
+        rate = hv.sum() / hn_all.sum()
+        ok = (hn_all > 0) & (hv > 0)
+        r = np.divide(hv / rate, hn_all, out=np.ones_like(hn_all), where=hn_all > 0)
+        re = np.sqrt(np.divide(ev / rate, hn_all, out=np.zeros_like(hn_all), where=hn_all > 0) ** 2
+                     + (r * np.divide(en_all, hn_all, out=np.zeros_like(hn_all), where=hn_all > 0)) ** 2)
+        c2 = (((r - 1) / np.maximum(re, 1e-12)) ** 2)[ok].sum()
+        line += f"   {VARS[v]}: rate {rate:.4f}, flat chi2 {c2:.1f}/{ok.sum() - 1} (p={chi2_pvalue(c2, ok.sum() - 1)})"
+    print(line)
+    if plot:
+        draw_datacard_bins(res, sub, f"{outdir}/{sub.replace('+', '')}_datacard_bins")
+
+
+def draw_datacard_bins(res, sub, stem):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(len(res), 1, figsize=(8, 3.2 * len(res)), squeeze=False)
+    colors = {"up": "#1f77b4", "down": "#ff7f0e"}
+    for ax, (ch, r) in zip(axes[:, 0], res.items()):
+        hn, en = r["nominal"]
+        n = len(hn)
+        edges = np.arange(n + 1)
+        rel = np.divide(en, hn, out=np.zeros_like(hn), where=hn > 0)
+        ax.fill_between(edges, np.append(1 - rel, 1 - rel[-1]), np.append(1 + rel, 1 + rel[-1]), step="post",
+                        facecolor="none", edgecolor="#d62728", hatch="xxxx", lw=0, label="nominal stat. unc.")
+        for k, v in enumerate(VARS):
+            hv, ev, rate = r[v]
+            ratio_ = np.divide(hv, hn, out=np.full_like(hn, np.nan), where=hn > 0)
+            err = np.divide(ev, hn, out=np.zeros_like(hn), where=hn > 0)
+            ax.errorbar(np.arange(n) + 0.35 + 0.3 * k, ratio_, yerr=err, fmt="o", ms=3, color=colors[v],
+                        label=f"{VARS[v]} / nominal (sample stat.)")
+            ax.axhline(rate, color=colors[v], ls="--", lw=1.2, label=f"{VARS[v]} rate {rate:.3f}")
+        ax.axhline(1, color="gray", lw=0.8)
+        ax.set_xlim(0, n)
+        ax.set_ylim(0.0, 2.0)
+        ax.set_ylabel("Variation / Nom")
+        ax.set_title(f"tt+B hdamp, {ch} (bin = NN bin x 4 + mass bin)", fontsize=9)
+        ax.grid(alpha=0.3)
+    axes[0, 0].legend(fontsize=7, ncol=3, loc="upper left")
+    axes[-1, 0].set_xlabel("Bin number")
+    fig.tight_layout()
+    for ext in ("png", "pdf"):
+        fig.savefig(f"{stem}.{ext}")
+    plt.close(fig)
+
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -225,6 +321,11 @@ if __name__ == "__main__":
     ap.add_argument("--subsamples", nargs="+", default=["tt+B"], choices=list(TTBAR_SPLIT))
     ap.add_argument("--outdir", default="plots/hdamp_dctr")
     ap.add_argument("--no-plots", action="store_true")
+    ap.add_argument("--edges", default=None,
+                    help="NN edges of the cards (nn_edges_disc_<model>.json from makeDatacard.py): also compare "
+                         "per datacard bin (pT channel x NN bin x mass bin)")
+    ap.add_argument("--model", default=None,
+                    help="SPANet model of --edges (default: taken from the file name nn_edges_disc_<model>.json)")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
 
@@ -233,3 +334,6 @@ if __name__ == "__main__":
            for v, tag in VARS.items()}
     for sub in args.subsamples:
         compare(nom, var, sub, args.outdir, plot=not args.no_plots)
+        if args.edges:
+            model = args.model or os.path.basename(args.edges).removeprefix("nn_edges_disc_").removesuffix(".json")
+            datacard_bins(nom, var, sub, args.edges, model, args.outdir, plot=not args.no_plots)
