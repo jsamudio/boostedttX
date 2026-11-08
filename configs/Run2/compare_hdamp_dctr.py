@@ -25,6 +25,9 @@ Plots: <outdir>/<subsample>_<observable>.png/.pdf
 
     python3 compare_hdamp_dctr.py --nominal outputs_dctr/nominal/bkg/output_all.coffea \
         --hdamp outputs_hdamp/nominal/variations/output_all.coffea [--btag-norm btag_norm_hdamp.json]
+    # integrated Run 2, card binning only (no DCTR): all eras summed bin by bin, per-year rates printed
+    python3 compare_hdamp_dctr.py --no-dctr --nominal outputs/nominal/bkg/output_all.coffea \
+        --hdamp outputs_hdamp/nominal/variations/output_all.coffea --edges nn_edges_disc_<model>.json
 """
 import argparse
 import gc
@@ -58,8 +61,11 @@ for _m in ACTIVE_MODELS:
 
 def read(files, samples, btag_norm, dctr=False, era=None):
     """DataFrame of the selected events of the given (sub)samples; with dctr=True also the DCTR
-    normalization factors S_nom / S_var per dataset (columns dctr_norm_up/down). era: keep only that era
-    (e.g. the 2018 part of a multi-era production output)."""
+    normalization factors S_nom / S_var per dataset (columns dctr_norm_up/down). era: keep only that era,
+    or those eras if a list (e.g. the 2018 part of a multi-era production output). Each dataset is
+    normalized to its own era's luminosity and cut with its era's Xbb WP, so several eras add up as
+    in the integrated Run 2 card."""
+    eras = None if era is None else ({era} if isinstance(era, str) else set(era))
     from coffea.util import load
     from outputToPkl import OutputToPkl
     from datacard_shapes import getZhbbWeight
@@ -75,7 +81,7 @@ def read(files, samples, btag_norm, dctr=False, era=None):
         genweight_df = pd.DataFrame.from_dict(filein["sum_signOf_genweights"], orient="index")
         for sample in samples:
             for df in reader.read_samples(filein, genweight_df, [sample], variables):
-                if era is not None and df["era"].iloc[0] != era:
+                if eras is not None and df["era"].iloc[0] not in eras:
                     continue
                 df["subsample"] = sample.split("__")[1]
                 if dctr:
@@ -225,22 +231,40 @@ def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True):
     import json
     with open(edges_file) as f:
         all_edges = json.load(f)
-    year = str(nom["year"].iloc[0])
-    edges = all_edges.get(year, next(iter(all_edges.values())))
     col = f"disc_{model}"
     nom = nom[nom["subsample"] == sub]
     var = {v: d[d["subsample"] == sub] for v, d in var.items()}
-    print(f"\n  datacard binning ({col}, edges {edges_file}, {year}): hdamp sample / nominal")
+    years = sorted(set(nom["year"].astype(str)) | set().union(*(set(d["year"].astype(str)) for d in var.values())))
+    for v, d in var.items():
+        missing = set(nom["year"].astype(str)) ^ set(d["year"].astype(str))
+        if missing:
+            raise ValueError(f"years {sorted(missing)} only in the nominal or only in {VARS[v]}: "
+                             f"restrict both with --eras")
+    edges_y = {y: all_edges.get(y, next(iter(all_edges.values()))) for y in years}
+    print(f"\n  datacard binning ({col}, edges {edges_file}, years {', '.join(years)} summed bin by bin as in "
+          f"the integrated card): hdamp sample / nominal")
+    if len(years) > 1:          # inclusive rate per year: are the eras consistent with one value?
+        for y in years:
+            line = f"    {y}:"
+            for v in VARS:
+                n_, v_ = nom[nom["year"].astype(str) == y], var[v][var[v]["year"].astype(str) == y]
+                yn, en = yields(n_, n_["w"].to_numpy())
+                yv, ev = yields(v_, v_["w"].to_numpy())
+                rr, re_ = ratio(np.array([yv]), np.array([ev]), np.array([yn]), np.array([en]))
+                line += f"   {VARS[v]}: rate {rr[0]:.4f} +- {re_[0]:.4f}"
+            print(line)
     res = {}
     for ch, (lo, hi) in CHANNELS.items():
-        nn_edges = np.asarray(edges[ch], dtype=float)
-
         def h2(df):
-            m = ((df["ZH_pt"] > lo) & (df["ZH_pt"] <= hi)).to_numpy()
-            x, mass, w = (df[c].to_numpy(dtype=float)[m] for c in (col, "ZH_M", "w"))
-            h, _, _ = np.histogram2d(x, mass, bins=[nn_edges, DC_MASS_BINS], weights=w)
-            e2, _, _ = np.histogram2d(x, mass, bins=[nn_edges, DC_MASS_BINS], weights=w ** 2)
-            return h.ravel(), np.sqrt(e2.ravel())
+            h = e2 = 0.0
+            for y in years:         # each year with its own NN edges (identical with common binning)
+                d = df[df["year"].astype(str) == y]
+                nn_edges = np.asarray(edges_y[y][ch], dtype=float)
+                m = ((d["ZH_pt"] > lo) & (d["ZH_pt"] <= hi)).to_numpy()
+                x, mass, w = (d[c].to_numpy(dtype=float)[m] for c in (col, "ZH_M", "w"))
+                h = h + np.histogram2d(x, mass, bins=[nn_edges, DC_MASS_BINS], weights=w)[0]
+                e2 = e2 + np.histogram2d(x, mass, bins=[nn_edges, DC_MASS_BINS], weights=w ** 2)[0]
+            return np.ravel(h), np.sqrt(np.ravel(e2))
 
         hn, en = h2(nom)
         res[ch] = {"nominal": (hn, en)}
@@ -273,7 +297,8 @@ def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True):
         line += f"   {VARS[v]}: rate {rate:.4f}, flat chi2 {c2:.1f}/{ok.sum() - 1} (p={chi2_pvalue(c2, ok.sum() - 1)})"
     print(line)
     if plot:
-        draw_datacard_bins(res, sub, f"{outdir}/{sub.replace('+', '')}_datacard_bins")
+        tag = "" if len(years) == 1 else "_" + "_".join(years)
+        draw_datacard_bins(res, sub, f"{outdir}/{sub.replace('+', '')}_datacard_bins{tag}")
 
 
 def draw_datacard_bins(res, sub, stem):
@@ -313,7 +338,8 @@ def draw_datacard_bins(res, sub, stem):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--nominal", nargs="+", required=True, help="nominal TTbb .coffea with PC_DCTR=1")
+    ap.add_argument("--nominal", nargs="+", required=True,
+                    help="nominal TTbb .coffea with PC_DCTR=1 (with --no-dctr any nominal production)")
     ap.add_argument("--hdamp", nargs="+", required=True, help="TTbb hdampUP/DOWN .coffea")
     ap.add_argument("--btag-norm", default=None,
                     help="btag_norm.json with entries for the nominal AND hdamp TTbb samples (btag_norm.py on both "
@@ -326,14 +352,24 @@ if __name__ == "__main__":
                          "per datacard bin (pT channel x NN bin x mass bin)")
     ap.add_argument("--model", default=None,
                     help="SPANet model of --edges (default: taken from the file name nn_edges_disc_<model>.json)")
+    ap.add_argument("--no-dctr", action="store_true",
+                    help="skip the DCTR comparison (nominal without PC_DCTR, e.g. the full production): rates "
+                         "and, with --edges, the per-datacard-bin check only; works on several eras")
+    ap.add_argument("--eras", nargs="+", default=None,
+                    help="keep only these eras (e.g. 2016_PreVFP 2016_PostVFP 2017 2018); default: all in the inputs")
     args = ap.parse_args()
+    if args.no_dctr and not args.edges:
+        ap.error("--no-dctr needs --edges (nothing else to compare)")
     os.makedirs(args.outdir, exist_ok=True)
 
-    nom = read(args.nominal, [f"{s}__{c}" for s in TTBB for c in args.subsamples], args.btag_norm, dctr=True)
-    var = {v: read(args.hdamp, [f"{s}_{tag}__{c}" for s in TTBB for c in args.subsamples], args.btag_norm)
+    nom = read(args.nominal, [f"{s}__{c}" for s in TTBB for c in args.subsamples], args.btag_norm,
+               dctr=not args.no_dctr, era=args.eras)
+    var = {v: read(args.hdamp, [f"{s}_{tag}__{c}" for s in TTBB for c in args.subsamples], args.btag_norm,
+                   era=args.eras)
            for v, tag in VARS.items()}
     for sub in args.subsamples:
-        compare(nom, var, sub, args.outdir, plot=not args.no_plots)
+        if not args.no_dctr:
+            compare(nom, var, sub, args.outdir, plot=not args.no_plots)
         if args.edges:
             model = args.model or os.path.basename(args.edges).removeprefix("nn_edges_disc_").removesuffix(".json")
             datacard_bins(nom, var, sub, args.edges, model, args.outdir, plot=not args.no_plots)
