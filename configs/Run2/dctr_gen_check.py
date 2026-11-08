@@ -43,29 +43,39 @@ def files_of(name, era):
     return [f.replace("file:", "") for f in d[key]["files"]]
 
 
-def read(files, max_events):
-    """Arrays of t and tbar (pt, eta, phi, mass) for events with exactly one first-copy t and tbar."""
+def read(files, max_events, ttb=False):
+    """Arrays of t and tbar (pt, eta, phi, mass) for events with exactly one first-copy t and tbar; with
+    ttb=True only tt+B events (genTtbarId % 100 >= 51). Read in steps (GenPart is large). Also returns the
+    sign(genWeight) sums of all events and of the tt+B events (tt+B fraction)."""
     cols = ["GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_mass", "GenPart_pdgId",
-            "GenPart_statusFlags", "genWeight"]
-    out, n = [], 0
+            "GenPart_statusFlags", "genWeight"] + (["genTtbarId"] if ttb else [])
+    out, n, sum_all, sum_ttb = [], 0, 0.0, 0.0
     for path in files:
         if n >= max_events:
             break
-        a = uproot.open(path)["Events"].arrays(cols, entry_stop=max_events - n)
-        n += len(a)
-        first = (a.GenPart_statusFlags >> FIRST_COPY_BIT) & 1 == 1
-        sel = {}
-        for name, pid in (("t", 6), ("tbar", -6)):
-            m = first & (a.GenPart_pdgId == pid)
-            sel[name] = m
-        ok = (ak.sum(sel["t"], axis=1) == 1) & (ak.sum(sel["tbar"], axis=1) == 1)
-        ev = {"w": np.sign(ak.to_numpy(a.genWeight[ok]))}
-        for name in ("t", "tbar"):
-            for v in ("pt", "eta", "phi", "mass"):
-                ev[f"{name}_{v}"] = ak.to_numpy(ak.flatten(a[f"GenPart_{v}"][sel[name]][ok]))
-        out.append(ev)
-        print(f"  {os.path.basename(path)}: {len(a)} events, {int(ak.sum(ok))} with one t and one tbar")
-    return {k: np.concatenate([o[k] for o in out]) for k in out[0]}
+        tree = uproot.open(path)["Events"]
+        n_file = 0
+        for a in tree.iterate(cols, step_size=200000, entry_stop=min(tree.num_entries, max_events - n)):
+            n_file += len(a)
+            first = (a.GenPart_statusFlags >> FIRST_COPY_BIT) & 1 == 1
+            sel = {name: first & (a.GenPart_pdgId == pid) for name, pid in (("t", 6), ("tbar", -6))}
+            ok = (ak.sum(sel["t"], axis=1) == 1) & (ak.sum(sel["tbar"], axis=1) == 1)
+            sign = np.sign(ak.to_numpy(a.genWeight))
+            sum_all += sign.sum()
+            if ttb:
+                is_ttb = ak.to_numpy(a.genTtbarId % 100 >= 51)
+                sum_ttb += sign[is_ttb].sum()
+                ok = ok & is_ttb
+            ev = {"w": sign[ak.to_numpy(ok)]}
+            for name in ("t", "tbar"):
+                for v in ("pt", "eta", "phi", "mass"):
+                    ev[f"{name}_{v}"] = ak.to_numpy(ak.flatten(a[f"GenPart_{v}"][sel[name]][ok]))
+            out.append(ev)
+        n += n_file
+        print(f"  {os.path.basename(path)}: {n_file} events read")
+    ev = {k: np.concatenate([o[k] for o in out]) for k in out[0]}
+    print(f"  -> {len(ev['w'])} events kept" + (f" (tt+B; tt+B fraction {sum_ttb / sum_all:.4f})" if ttb else ""))
+    return ev, (sum_all, sum_ttb)
 
 
 def p4(ev, name):
@@ -118,6 +128,9 @@ if __name__ == "__main__":
     ap.add_argument("--sample", default="TTbb_SemiLeptonic")
     ap.add_argument("--era", default="2018")
     ap.add_argument("--max-events", type=int, default=300000)
+    ap.add_argument("--ttb", action="store_true",
+                    help="only tt+B events (genTtbarId %% 100 >= 51), e.g. the tt+B part of the 5FS ttbar "
+                         "(~1-2%% of the events: use a few million --max-events); prints the tt+B fraction change")
     ap.add_argument("--outdir", default="plots/hdamp_dctr_gen")
     ap.add_argument("--hdamp-feature", choices=["nominal", "target"], default="nominal",
                     help="6th DCTR feature: nominal hdamp/mt 1.379 for both models (as dctr.py; the TOP MLReweighting "
@@ -125,12 +138,19 @@ if __name__ == "__main__":
                          "twiki convention, kept only as a cross-check)")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
-    store = {"sample": args.sample, "era": args.era}       # twiki convention (p0/p1), for plot_dctr_summary.py
+    sums = {}
+    store = {"sample": args.sample + (" tt+B" if args.ttb else ""), "era": args.era}       # twiki convention (p0/p1), for plot_dctr_summary.py
 
     evs = {}
     for tag, name in (("nominal", args.sample), ("up", f"{args.sample}_hdampUP"), ("down", f"{args.sample}_hdampDOWN")):
         print(f"Reading {name} {args.era}")
-        evs[tag] = read(files_of(name, args.era), args.max_events)
+        evs[tag], sums[tag] = read(files_of(name, args.era), args.max_events, args.ttb)
+    if args.ttb:
+        f0 = sums["nominal"][1] / sums["nominal"][0]
+        for v in ("up", "down"):
+            fv = sums[v][1] / sums[v][0]
+            store[f"{v}_ttbfrac_ratio"] = fv / f0
+            print(f"tt+B fraction: nominal {f0:.4f}, hdamp {v} {fv:.4f}, ratio {fv / f0:.4f}")
     obs = {k: observables(v) for k, v in evs.items()}
     nom, w0 = evs["nominal"], evs["nominal"]["w"]
 
@@ -184,9 +204,10 @@ if __name__ == "__main__":
             ax.set_title(f"{args.sample} {args.era}, gen level: hdamp {var}", fontsize=9)
             fig.tight_layout()
             for ext in ("png", "pdf"):
-                fig.savefig(f"{args.outdir}/{args.sample}_{args.era}_{var}_{o}_hd{args.hdamp_feature}.{ext}")
+                fig.savefig(f"{args.outdir}/{args.sample}_{args.era}{'_ttB' if args.ttb else ''}_{var}_{o}_hd{args.hdamp_feature}.{ext}")
             plt.close(fig)
 
     if args.hdamp_feature == "nominal":
-        np.savez(f"{args.outdir}/{args.sample}_{args.era}_dctr.npz", **store)
-        print(f"Wrote {args.outdir}/{args.sample}_{args.era}_dctr.npz (for plot_dctr_summary.py)")
+        stem = f"{args.outdir}/{args.sample}_{args.era}{'_ttB' if args.ttb else ''}_dctr.npz"
+        np.savez(stem, **store)
+        print(f"Wrote {stem} (for plot_dctr_summary.py)")

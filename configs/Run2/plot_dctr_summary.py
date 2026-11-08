@@ -12,6 +12,9 @@ with chi2/ndf and the inclusive mean DCTR weight in each panel.
     python3 dctr_gen_check.py --sample TTbb_SemiLeptonic --era 2018
     python3 plot_dctr_summary.py plots/hdamp_dctr_gen/TTToSemiLeptonic_2018_dctr.npz \
         plots/hdamp_dctr_gen/TTbb_SemiLeptonic_2018_dctr.npz
+    # tt+B: 5FS tt+B part vs 4FS (dctr_gen_check.py --ttb), e.g.
+    python3 plot_dctr_summary.py plots/hdamp_dctr_gen/TTToSemiLeptonic_2018_ttB_dctr.npz \
+        plots/hdamp_dctr_gen/TTbb_SemiLeptonic_2018_ttB_dctr.npz --tag ttB
 """
 import argparse
 import os
@@ -23,10 +26,11 @@ import numpy as np  # noqa: E402
 
 OBS = {"pt_tt": r"$p_T(t\bar{t})$ [GeV]", "pt_top": r"top $p_T$ [GeV]",
        "m_tt": r"$m(t\bar{t})$ [GeV]", "y_tt": r"$y(t\bar{t})$"}
-LABEL = {"TTToSemiLeptonic": r"5FS $t\bar{t}$ (training process)", "TTbb_SemiLeptonic": r"4FS $t\bar{t}b\bar{b}$"}
+LABEL = {"TTToSemiLeptonic": r"5FS $t\bar{t}$ (training process)", "TTbb_SemiLeptonic": r"4FS $t\bar{t}b\bar{b}$",
+         "TTToSemiLeptonic tt+B": r"5FS $t\bar{t}$, tt+B part", "TTbb_SemiLeptonic tt+B": r"4FS $t\bar{t}b\bar{b}$, tt+B"}
 
 
-def draw(runs, obs, outdir, ylim):
+def draw(runs, obs, outdir, ylim, tag=""):
     fig, axes = plt.subplots(len(runs), 2, figsize=(10, 3.4 * len(runs)), sharex=True, squeeze=False)
     for i, run in enumerate(runs):
         sample = str(run["sample"])
@@ -42,7 +46,9 @@ def draw(runs, obs, outdir, ylim):
             ax.set_ylim(*ylim)
             ax.text(0.03, 0.95, f"{LABEL.get(sample, sample)}, hdamp {var}\n"
                     rf"$\chi^2$/ndf = {float(run[f'{var}_{obs}_chi2']):.0f}/{int(run[f'{var}_{obs}_ndf'])}, "
-                    f"mean DCTR weight {float(run[f'{var}_meanw']):.3f}",
+                    f"mean DCTR weight {float(run[f'{var}_meanw']):.3f}"
+                    + (f"\ntt+B fraction / nominal {float(run[f'{var}_ttbfrac_ratio']):.3f}"
+                       if f"{var}_ttbfrac_ratio" in run else ""),
                     transform=ax.transAxes, va="top", fontsize=8)
             if j == 0:
                 ax.set_ylabel("ratio to nominal (unit area)")
@@ -53,9 +59,9 @@ def draw(runs, obs, outdir, ylim):
     fig.suptitle(f"DCTR hdamp reweighting (TOP 13 TeV model), generator level, {str(runs[0]['era'])}", fontsize=10)
     fig.tight_layout()
     for ext in ("png", "pdf"):
-        fig.savefig(f"{outdir}/dctr_summary_{obs}.{ext}")
+        fig.savefig(f"{outdir}/dctr_summary_{obs}{'_' + tag if tag else ''}.{ext}")
     plt.close(fig)
-    print(f"Wrote {outdir}/dctr_summary_{obs}.png/.pdf")
+    print(f"Wrote {outdir}/dctr_summary_{obs}{'_' + tag if tag else ''}.png/.pdf")
 
 
 if __name__ == "__main__":
@@ -64,8 +70,9 @@ if __name__ == "__main__":
     ap.add_argument("--obs", nargs="+", default=["pt_tt", "pt_top"], choices=list(OBS))
     ap.add_argument("--ylim", nargs=2, type=float, default=[0.8, 1.25])
     ap.add_argument("--outdir", default="plots/hdamp_dctr_gen")
+    ap.add_argument("--tag", default="", help="suffix of the output names (dctr_summary_<obs>_<tag>)")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
     runs = [dict(np.load(f, allow_pickle=True)) for f in args.npz]
     for obs in args.obs:
-        draw(runs, obs, args.outdir, args.ylim)
+        draw(runs, obs, args.outdir, args.ylim, args.tag)
