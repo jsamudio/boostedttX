@@ -18,7 +18,9 @@ Event weight = datacard weight (datacard_shapes.getZhbbWeight), selection = make
 
 Output: per subsample (default tt+B) the rate ratio to nominal (total and per Z/H pT channel) for
 hdamp sample vs DCTR, and per observable the ratio to nominal of both, with a shape chi2 of
-(sample - DCTR) using the stat. uncertainties (approximate: nominal and DCTR share the events).
+(sample - DCTR) using the stat. uncertainties (approximate: nominal and DCTR share the events), and
+a 'flat' chi2 of the sample against a pure rate change (shape ratio = 1), which is the argument for
+treating hdamp as a rate-only uncertainty (as in the previous analysis).
 Plots: <outdir>/<subsample>_<observable>.png/.pdf
 
     python3 compare_hdamp_dctr.py --nominal outputs_dctr/nominal/bkg/output_all.coffea \
@@ -119,6 +121,17 @@ def yields(df, w, mask=None):
     return w[m].sum(), np.sqrt((w[m] ** 2).sum())
 
 
+def chi2_pvalue(c2, ndf):
+    """p-value of chi2 for ndf degrees of freedom (scipy if available), as a short string."""
+    if ndf <= 0:
+        return "-"
+    try:
+        from scipy.stats import chi2
+        return f"{chi2.sf(c2, ndf):.2f}"
+    except ImportError:
+        return "n/a"
+
+
 def compare(nom, var, sub, outdir, plot=True):
     nom, var = nom[nom["subsample"] == sub], {v: d[d["subsample"] == sub] for v, d in var.items()}
     wn = nom["w"].to_numpy()
@@ -148,7 +161,8 @@ def compare(nom, var, sub, outdir, plot=True):
             line += f" {rs[0]:12.4f} +- {rse[0]:.4f} {yd / yn:12.4f} +- {dd / yn:.4f}"
         print(line)
 
-    print(f"  shape chi2 / ndf (sample vs DCTR, both normalized to the nominal yield):")
+    print(f"  shape chi2 / ndf (sample vs DCTR, both normalized to the nominal yield;"
+          f" 'flat' = sample vs a pure rate change, i.e. sample/nominal at unit area against 1):")
     for obs, (bins, label) in OBSERVABLES.items():
         if obs not in nom:
             continue
@@ -165,7 +179,10 @@ def compare(nom, var, sub, outdir, plot=True):
             rde = np.divide(ediff, hn, out=np.zeros_like(hn), where=hn > 0)
             ok = (hn > 0) & (hs > 0)
             c2 = (((rs - rd) ** 2) / np.maximum(rse ** 2 + rde ** 2, 1e-12))[ok].sum()
-            chi.append(f"{v} {c2:.1f}/{ok.sum() - 1}")
+            # pure-rate hypothesis: the shape ratio is flat at 1 (sample and nominal stat., independent);
+            # one dof less for the normalization
+            c2f = (((rs - 1.0) ** 2) / np.maximum(rse ** 2, 1e-12))[ok].sum()
+            chi.append(f"{v} {c2:.1f}/{ok.sum() - 1} (flat {c2f:.1f}, p={chi2_pvalue(c2f, ok.sum() - 1)})")
             curves[v] = (rs, rse, rd, rde)
         print(f"    {obs:28} " + "  ".join(chi))
         if plot:
