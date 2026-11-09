@@ -20,6 +20,10 @@ number of additional b jets (all events); pT(bb), m(bb), dR(bb), pT(ttbb) (two l
 jets + t + tbar: the recoil against the extra radiation, which hdamp controls in the 4FS) for events
 with >= 2; leading additional b-jet pT for events with >= 1. Each histogram is unit area over the
 events where the observable is defined.
+Additional light jets: GenJet pT > 20 GeV, |eta| < 2.4, hadronFlavour != 5 (udscg), dR > 0.4 to every
+top-decay product (b quarks with a top mother, quarks and charged leptons with a W mother; GenJets
+include leptons). Observables: their number (all events) and the leading one's pT (events with >= 1),
+the extra radiation that hdamp acts on directly in both schemes.
 Also the inclusive mean weight (1 expected for a normalization-preserving reweighting).
 
     python3 dctr_gen_check.py --sample TTbb_SemiLeptonic --era 2018 --max-events 300000
@@ -49,6 +53,8 @@ OBS = {
     "pt_bb": (np.array([0, 25, 50, 75, 100, 150, 200, 300, 500, 1000]), r"$p_T(b\bar{b})$, additional [GeV]"),
     "m_bb": (np.array([0, 30, 60, 90, 120, 160, 200, 300, 500, 1000]), r"$m(b\bar{b})$, additional [GeV]"),
     "dr_bb": (np.linspace(0.4, 4.4, 9), r"$\Delta R(b\bar{b})$, additional"),
+    "n_addj": (np.arange(-0.5, 6.5, 1.0), "N additional light jets"),
+    "pt_j1": (np.array([20, 30, 40, 60, 80, 100, 150, 200, 300, 500, 1000]), r"leading additional light jet $p_T$ [GeV]"),
     "pt_ttbb": (np.array([0, 25, 50, 75, 100, 150, 200, 300, 400, 600, 1000]), r"$p_T(t\bar{t}b\bar{b})$ [GeV]"),
 }
 
@@ -89,6 +95,7 @@ def read(files, max_events, ttb=False):
                 for v in ("pt", "eta", "phi", "mass"):
                     ev[f"{name}_{v}"] = ak.to_numpy(ak.flatten(a[f"GenPart_{v}"][sel[name]][ok]))
             ev.update(additional_b(a[ok]))
+            ev.update(additional_light(a[ok]))
             out.append(ev)
         n += n_file
         print(f"  {os.path.basename(path)}: {n_file} events read")
@@ -119,6 +126,29 @@ def additional_b(a):
     return out
 
 
+def min_dr(eta1, phi1, eta2, phi2):
+    """Per object of collection 1, the smallest dR to collection 2 (99 if collection 2 is empty)."""
+    j, b = ak.unzip(ak.cartesian([ak.zip({"eta": eta1, "phi": phi1}), ak.zip({"eta": eta2, "phi": phi2})],
+                                 nested=True))
+    dphi = (j.phi - b.phi + np.pi) % (2 * np.pi) - np.pi
+    return ak.fill_none(ak.min(np.hypot(j.eta - b.eta, dphi), axis=2), 99.0)
+
+
+def additional_light(a):
+    """Additional non-b jets (see the docstring): their number and the leading one's pT (NaN if none)."""
+    mom = a.GenPart_genPartIdxMother
+    mom_pdg = abs(a.GenPart_pdgId[ak.where(mom >= 0, mom, 0)])
+    pdg = abs(a.GenPart_pdgId)
+    decay = (mom >= 0) & (((pdg == 5) & (mom_pdg == 6))
+                          | ((mom_pdg == 24) & ((pdg <= 5) | (pdg == 11) | (pdg == 13) | (pdg == 15))))
+    jsel = (a.GenJet_pt > ADDB_PT) & (abs(a.GenJet_eta) < ADDB_ETA) & (a.GenJet_hadronFlavour != 5)
+    pt, eta, phi = a.GenJet_pt[jsel], a.GenJet_eta[jsel], a.GenJet_phi[jsel]
+    add = min_dr(eta, phi, a.GenPart_eta[decay], a.GenPart_phi[decay]) > ADDB_DR
+    lead = ak.pad_none(pt[add], 1, clip=True)[:, 0]        # GenJets are pT-ordered
+    return {"n_addj": ak.to_numpy(ak.sum(add, axis=1)).astype(float),
+            "j1_pt": ak.to_numpy(ak.fill_none(lead, np.nan)).astype(float)}
+
+
 def p4(ev, name):
     pt, eta, phi, m = (ev[f"{name}_{v}"] for v in ("pt", "eta", "phi", "mass"))
     px, py, pz = pt * np.cos(phi), pt * np.sin(phi), pt * np.sinh(eta)
@@ -138,6 +168,7 @@ def observables(ev):
     b1, b2 = p4(ev, "b1"), p4(ev, "b2")
     bx, by, bz, be = (a + b for a, b in zip(b1, b2))
     dphi = (ev["b1_phi"] - ev["b2_phi"] + np.pi) % (2 * np.pi) - np.pi
+    out.update({"n_addj": ev["n_addj"], "pt_j1": ev["j1_pt"]})
     out.update({"n_addb": ev["n_addb"], "pt_b1": ev["b1_pt"], "pt_bb": np.hypot(bx, by),
                 "m_bb": np.sqrt(np.maximum(be ** 2 - bx ** 2 - by ** 2 - bz ** 2, 0)),
                 "dr_bb": np.hypot(ev["b1_eta"] - ev["b2_eta"], dphi),
@@ -224,7 +255,7 @@ if __name__ == "__main__":
                   f"min {w.min():.3f} max {w.max():.3f}")
         for o, (bins, label) in OBS.items():
             hn, en = hist(obs["nominal"][o], w0, bins)
-            if o in ("pt_tt", "pt_ttbb", "pt_bb"):      # direction of the effect: sample and DCTR ratio per bin
+            if o in ("pt_tt", "pt_ttbb", "pt_bb", "pt_j1"):      # direction of the effect: sample and DCTR ratio per bin
                 hs_, _ = hist(obs[var][o], evs[var]["w"], bins)
                 print(f"    {o} ratio to nominal per bin  sample: " + " ".join(f"{v:.3f}" for v in hs_ / hn))
                 for c, w in conv.items():
