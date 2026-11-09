@@ -2,6 +2,9 @@
 """
 Generator-level check of the DCTR hdamp weights on the 4FS ttbb (no selection, NanoAOD directly).
 
+Also the additional b system (b jets not from the top decays), the part of the event that hdamp does not
+act on in the 4FS ttbb (bb in the Born) but does in the 5FS (bb from the hardest emission / shower).
+
 DCTR is trained on the gen top / antitop kinematics, so with the right convention the reweighted
 nominal sample must reproduce the gen top kinematics of the dedicated hdamp samples. This tests
 (a) the weight convention, p0/p1 (as in configs/common/dctr.py) or p1/p0, and (b) how well the
@@ -11,6 +14,12 @@ Per sample (nominal, hdampUP, hdampDOWN) the first --max-events events of the da
 are read (GenPart first-copy t / tbar, sign(genWeight)). The features and the model call are those
 of dctr.py. Histograms (unit area) of pT(tt), m(tt), y(tt), top pT; ratio to nominal for the sample,
 DCTR p0/p1 and DCTR p1/p0; chi2 of each DCTR convention against the sample (stat. of both).
+Additional b jets: GenJet pT > 20 GeV, |eta| < 2.4, hadronFlavour 5, dR > 0.4 to both b quarks from the
+top decays (GenPart |pdgId| 5 with a top mother), as in the genTtbarId tt+B definition. Observables:
+number of additional b jets (all events); pT(bb), m(bb), dR(bb), pT(ttbb) (two leading additional b
+jets + t + tbar: the recoil against the extra radiation, which hdamp controls in the 4FS) for events
+with >= 2; leading additional b-jet pT for events with >= 1. Each histogram is unit area over the
+events where the observable is defined.
 Also the inclusive mean weight (1 expected for a normalization-preserving reweighting).
 
     python3 dctr_gen_check.py --sample TTbb_SemiLeptonic --era 2018 --max-events 300000
@@ -29,11 +38,18 @@ import dctr  # noqa: E402
 from inference_common import DCTR_HDAMP  # noqa: E402
 
 FIRST_COPY_BIT = 12          # GenPart_statusFlags bit isFirstCopy
+ADDB_PT, ADDB_ETA, ADDB_DR = 20.0, 2.4, 0.4
 OBS = {
     "pt_tt": (np.array([0, 25, 50, 75, 100, 150, 200, 300, 400, 600, 1000]), r"$p_T(t\bar{t})$ [GeV]"),
     "m_tt": (np.array([340, 400, 450, 500, 600, 700, 850, 1000, 1500, 3000]), r"$m(t\bar{t})$ [GeV]"),
     "y_tt": (np.linspace(-2.5, 2.5, 11), r"$y(t\bar{t})$"),
     "pt_top": (np.array([0, 50, 100, 150, 200, 300, 400, 600, 1000]), r"top $p_T$ [GeV]"),
+    "n_addb": (np.arange(-0.5, 5.5, 1.0), "N additional b jets"),
+    "pt_b1": (np.array([20, 30, 40, 60, 80, 100, 150, 200, 300, 500]), r"leading additional b jet $p_T$ [GeV]"),
+    "pt_bb": (np.array([0, 25, 50, 75, 100, 150, 200, 300, 500, 1000]), r"$p_T(b\bar{b})$, additional [GeV]"),
+    "m_bb": (np.array([0, 30, 60, 90, 120, 160, 200, 300, 500, 1000]), r"$m(b\bar{b})$, additional [GeV]"),
+    "dr_bb": (np.linspace(0.4, 4.4, 9), r"$\Delta R(b\bar{b})$, additional"),
+    "pt_ttbb": (np.array([0, 25, 50, 75, 100, 150, 200, 300, 400, 600, 1000]), r"$p_T(t\bar{t}b\bar{b})$ [GeV]"),
 }
 
 
@@ -48,7 +64,9 @@ def read(files, max_events, ttb=False):
     ttb=True only tt+B events (genTtbarId % 100 >= 51). Read in steps (GenPart is large). Also returns the
     sign(genWeight) sums of all events and of the tt+B events (tt+B fraction)."""
     cols = ["GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_mass", "GenPart_pdgId",
-            "GenPart_statusFlags", "genWeight"] + (["genTtbarId"] if ttb else [])
+            "GenPart_statusFlags", "GenPart_genPartIdxMother", "genWeight",
+            "GenJet_pt", "GenJet_eta", "GenJet_phi", "GenJet_mass", "GenJet_hadronFlavour"] \
+        + (["genTtbarId"] if ttb else [])
     out, n, sum_all, sum_ttb = [], 0, 0.0, 0.0
     for path in files:
         if n >= max_events:
@@ -70,12 +88,35 @@ def read(files, max_events, ttb=False):
             for name in ("t", "tbar"):
                 for v in ("pt", "eta", "phi", "mass"):
                     ev[f"{name}_{v}"] = ak.to_numpy(ak.flatten(a[f"GenPart_{v}"][sel[name]][ok]))
+            ev.update(additional_b(a[ok]))
             out.append(ev)
         n += n_file
         print(f"  {os.path.basename(path)}: {n_file} events read")
     ev = {k: np.concatenate([o[k] for o in out]) for k in out[0]}
     print(f"  -> {len(ev['w'])} events kept" + (f" (tt+B; tt+B fraction {sum_ttb / sum_all:.4f})" if ttb else ""))
     return ev, (sum_all, sum_ttb)
+
+
+def additional_b(a):
+    """Additional b jets per event (see the docstring): their number and the (pt, eta, phi, mass) of the
+    two leading ones (NaN if absent)."""
+    mom = a.GenPart_genPartIdxMother
+    mom_pdg = a.GenPart_pdgId[ak.where(mom >= 0, mom, 0)]
+    btop = (abs(a.GenPart_pdgId) == 5) & (mom >= 0) & (abs(mom_pdg) == 6)
+    bq_eta, bq_phi = a.GenPart_eta[btop], a.GenPart_phi[btop]
+    jsel = (a.GenJet_pt > ADDB_PT) & (abs(a.GenJet_eta) < ADDB_ETA) & (a.GenJet_hadronFlavour == 5)
+    jets = {v: a[f"GenJet_{v}"][jsel] for v in ("pt", "eta", "phi", "mass")}
+    j, b = ak.unzip(ak.cartesian([ak.zip({"eta": jets["eta"], "phi": jets["phi"]}),
+                                  ak.zip({"eta": bq_eta, "phi": bq_phi})], nested=True))    # [event][jet][b]
+    dphi = (j.phi - b.phi + np.pi) % (2 * np.pi) - np.pi
+    dr_min = ak.fill_none(ak.min(np.hypot(j.eta - b.eta, dphi), axis=2), 99.0)
+    add = dr_min > ADDB_DR
+    out = {"n_addb": ak.to_numpy(ak.sum(add, axis=1)).astype(float)}
+    for v in ("pt", "eta", "phi", "mass"):
+        lead = ak.pad_none(jets[v][add], 2, clip=True)       # GenJets are pT-ordered
+        for k in (0, 1):
+            out[f"b{k + 1}_{v}"] = ak.to_numpy(ak.fill_none(lead[:, k], np.nan)).astype(float)
+    return out
 
 
 def p4(ev, name):
@@ -91,8 +132,20 @@ def rapidity(pz, e):
 def observables(ev):
     t, tb = p4(ev, "t"), p4(ev, "tbar")
     px, py, pz, e = (a + b for a, b in zip(t, tb))
-    return {"pt_tt": np.hypot(px, py), "m_tt": np.sqrt(np.maximum(e ** 2 - px ** 2 - py ** 2 - pz ** 2, 0)),
-            "y_tt": rapidity(pz, e), "pt_top": ev["t_pt"]}
+    out = {"pt_tt": np.hypot(px, py), "m_tt": np.sqrt(np.maximum(e ** 2 - px ** 2 - py ** 2 - pz ** 2, 0)),
+           "y_tt": rapidity(pz, e), "pt_top": ev["t_pt"]}
+    # additional b system: NaN (dropped from the histogram) where fewer than 2 (1 for pt_b1) b jets
+    b1, b2 = p4(ev, "b1"), p4(ev, "b2")
+    bx, by, bz, be = (a + b for a, b in zip(b1, b2))
+    dphi = (ev["b1_phi"] - ev["b2_phi"] + np.pi) % (2 * np.pi) - np.pi
+    out.update({"n_addb": ev["n_addb"], "pt_b1": ev["b1_pt"], "pt_bb": np.hypot(bx, by),
+                "m_bb": np.sqrt(np.maximum(be ** 2 - bx ** 2 - by ** 2 - bz ** 2, 0)),
+                "dr_bb": np.hypot(ev["b1_eta"] - ev["b2_eta"], dphi),
+                "pt_ttbb": np.hypot(px + bx, py + by)})
+    two = ev["n_addb"] >= 2
+    for k in ("pt_bb", "m_bb", "dr_bb", "pt_ttbb"):
+        out[k] = np.where(two, out[k], np.nan)
+    return out
 
 
 # hdamp / mt of the UL CP5 samples: nominal 1.379, up 2.305, down 0.8738 (hdamp = 1.379 +0.926 -0.505 mt)
@@ -116,7 +169,8 @@ def dctr_ratio(ev, path, pt_tt, hdamp=dctr.HDAMP_NOMINAL):
 
 
 def hist(x, w, bins):
-    x = np.clip(x, bins[0], bins[-1] - 1e-9)
+    fin = np.isfinite(x)                       # observable undefined (e.g. < 2 additional b jets)
+    x, w = np.clip(x[fin], bins[0], bins[-1] - 1e-9), w[fin]
     h, _ = np.histogram(x, bins, weights=w)
     e2, _ = np.histogram(x, bins, weights=w ** 2)
     s = h.sum()
@@ -170,12 +224,12 @@ if __name__ == "__main__":
                   f"min {w.min():.3f} max {w.max():.3f}")
         for o, (bins, label) in OBS.items():
             hn, en = hist(obs["nominal"][o], w0, bins)
-            if o == "pt_tt":      # direction of the effect: sample and DCTR ratio per bin
+            if o in ("pt_tt", "pt_ttbb", "pt_bb"):      # direction of the effect: sample and DCTR ratio per bin
                 hs_, _ = hist(obs[var][o], evs[var]["w"], bins)
-                print("    pt_tt ratio to nominal per bin  sample: " + " ".join(f"{v:.3f}" for v in hs_ / hn))
+                print(f"    {o} ratio to nominal per bin  sample: " + " ".join(f"{v:.3f}" for v in hs_ / hn))
                 for c, w in conv.items():
                     hd_, _ = hist(obs["nominal"][o], w0 * w, bins)
-                    print(f"    pt_tt ratio to nominal per bin  {c:6}: " + " ".join(f"{v:.3f}" for v in hd_ / hn))
+                    print(f"    {o} ratio to nominal per bin  {c:6}: " + " ".join(f"{v:.3f}" for v in hd_ / hn))
             hs, es = hist(obs[var][o], evs[var]["w"], bins)
             ok = hn > 0
             rs = np.divide(hs, hn, out=np.zeros_like(hn), where=ok)

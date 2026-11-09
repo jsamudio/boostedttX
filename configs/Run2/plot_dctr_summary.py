@@ -25,7 +25,10 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 OBS = {"pt_tt": r"$p_T(t\bar{t})$ [GeV]", "pt_top": r"top $p_T$ [GeV]",
-       "m_tt": r"$m(t\bar{t})$ [GeV]", "y_tt": r"$y(t\bar{t})$"}
+       "m_tt": r"$m(t\bar{t})$ [GeV]", "y_tt": r"$y(t\bar{t})$",
+       "n_addb": "N additional b jets", "pt_b1": r"leading additional b jet $p_T$ [GeV]",
+       "pt_bb": r"$p_T(b\bar{b})$, additional [GeV]", "m_bb": r"$m(b\bar{b})$, additional [GeV]",
+       "dr_bb": r"$\Delta R(b\bar{b})$, additional", "pt_ttbb": r"$p_T(t\bar{t}b\bar{b})$ [GeV]"}
 LABEL = {"TTToSemiLeptonic": r"5FS $t\bar{t}$ (training process)", "TTbb_SemiLeptonic": r"4FS $t\bar{t}b\bar{b}$",
          "TTToSemiLeptonic tt+B": r"5FS $t\bar{t}$, tt+B part", "TTbb_SemiLeptonic tt+B": r"4FS $t\bar{t}b\bar{b}$, tt+B"}
 
