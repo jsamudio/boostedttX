@@ -67,9 +67,10 @@ def load_settings(jobs_dir):
         return json.load(f)
 
 
-def apptainer_prefix(settings):
+def apptainer_prefix(settings, env=""):
+    """`apptainer exec` with the binds and KRB5CCNAME; `env` = extra `--env` options (before the image)."""
     binds = " ".join(f"-B {b}" for b in settings["apptainer-binds"])
-    return f'apptainer exec {binds} --env KRB5CCNAME="${{KRB5CCNAME:-}}" {settings["apptainer-image"]}'
+    return f'apptainer exec {binds} --env KRB5CCNAME="${{KRB5CCNAME:-}}" {env + " " if env else ""}{settings["apptainer-image"]}'
 
 
 def _resources(settings, ncpus, mem):
@@ -152,8 +153,8 @@ WORK={settings['scratch-dir']}/$USER/pc_{settings['name']}_${{JOBID}}_$$
 mkdir -p "$WORK" && cd "$WORK" || exit 1
 cp "$JOBS_DIR/config_job_$JOBID.pkl" "$JOBS_DIR/job.sh" "$JOBS_DIR/{settings['inner-yaml']}" .
 
-{apptainer_prefix(settings)} \\
-    bash job.sh "$JOBID" "config_job_$JOBID.pkl" "$CHUNKSIZE" > "$JOBS_DIR/logs/job_$JOBID.log" 2>&1
+{apptainer_prefix(settings, '--env _CONDOR_SCRATCH_DIR="$WORK"')} \\
+    bash job.sh "$JOBID" "config_job_$JOBID.pkl" "$CHUNKSIZE" {settings['cores-per-worker']} > "$JOBS_DIR/logs/job_$JOBID.log" 2>&1
 STATUS=$?
 
 cd / && rm -rf "$WORK"
