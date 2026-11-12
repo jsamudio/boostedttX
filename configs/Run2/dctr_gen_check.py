@@ -262,6 +262,11 @@ if __name__ == "__main__":
                     hd_, _ = hist(obs["nominal"][o], w0 * w, bins)
                     print(f"    {o} ratio to nominal per bin  {c:6}: " + " ".join(f"{v:.3f}" for v in hd_ / hn))
             hs, es = hist(obs[var][o], evs[var]["w"], bins)
+            # unit-area histograms and number of events where the observable is defined
+            # (plot_hdamp_4fs_5fs_gen.py: nominal shapes, hdamp ratios with the stat. of both samples)
+            store.update({f"nominal_{o}_h": hn, f"nominal_{o}_e": en, f"{var}_{o}_h": hs, f"{var}_{o}_e": es,
+                          f"nominal_{o}_n": int(np.isfinite(obs["nominal"][o]).sum()),
+                          f"{var}_{o}_n": int(np.isfinite(obs[var][o]).sum())})
             ok = hn > 0
             rs = np.divide(hs, hn, out=np.zeros_like(hn), where=ok)
             line, fig = [], plt.figure(figsize=(6, 4))
