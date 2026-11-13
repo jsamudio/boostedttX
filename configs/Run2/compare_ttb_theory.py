@@ -16,8 +16,9 @@ years). For each nuisance acting on the process (lnN and shape, theory group by 
               chi2   sum of (Nom_i s_i / sigma_i)^2 with sigma_i = nominal MC stat. of the bin: whether the
                      shape is resolved beyond the template stat. (ndf = number of bins - 1)
   hdamp (4FS samples): the same, from independent samples, so their stat. fluctuations look like shape;
-            'rms (stat-subtracted)' removes the expected stat. RMS of the ratio in quadrature and chi2 uses
-            the stat. of both samples (chi2 ~ ndf = no shape beyond the sample stat.).
+            its RMS is NOT corrected for them (the RMS expected from the sample stat. alone is printed
+            in the note), and chi2 uses the stat. of both samples (chi2 ~ ndf = no shape beyond the
+            sample stat.). A statistically sound size (e.g. toy-based upper limit) is still to do.
 
 Writes a table (stdout and <outdir>/<process>_theory.csv), a bar chart of rate and shape size per
 nuisance (<process>_theory_summary.png) and the per-bin shape-only ratios of the largest nuisances
@@ -65,7 +66,6 @@ def shape_metrics(nom, enom, up, eup=None):
         both = ok & (up > 0)
         out["chi2"] = np.sum((s[both] / er[both]) ** 2)
         noise = np.sum(w[both] * er[both] ** 2) / w[both].sum()
-        out["rms_sub"] = np.sqrt(max(rms ** 2 - noise, 0.0))
         out["rms_noise"] = np.sqrt(noise)          # RMS expected from the sample stat. alone
     out["ndf"] = int(ok.sum()) - 1
     return out
@@ -144,27 +144,27 @@ def main():
             hv = np.concatenate([np.asarray(hd["channels"][c][ud][0]) for c in chs])
             ev = np.concatenate([np.asarray(hd["channels"][c][ud][1]) for c in chs])
             m = shape_metrics(hn, he, hv, ev)
-            row.update({f"rate_{ud}": m["rate"], f"rms_{ud}": m["rms"], f"rmssub_{ud}": m["rms_sub"],
+            row.update({f"rate_{ud}": m["rate"], f"rms_{ud}": m["rms"],
                         f"max_{ud}": m["max"], f"chi2_{ud}": m["chi2"], "ndf": m["ndf"]})
             row["note"] += f"; {ud}: raw rms {100 * m['rms']:.1f}% vs {100 * m['rms_noise']:.1f}% expected from stat."
         rows.append(row)
 
-    rows.sort(key=lambda r: -max(r.get("rmssub_up", r["rms_up"]), r.get("rmssub_down", r["rms_down"])))
+    rows.sort(key=lambda r: -max(r["rms_up"], r["rms_down"]))
     head = (f"{'nuisance':24} {'type':7} {'rate up':>8} {'rate dn':>8} {'shape rms up/dn [%]':>20} "
             f"{'max |s| up/dn [%]':>18} {'chi2 up/dn / ndf':>20}  note")
     print("\n" + head + "\n" + "-" * len(head))
     for r in rows:
-        rms = (f"{100 * r.get('rmssub_up', r['rms_up']):.1f}/{100 * r.get('rmssub_down', r['rms_down']):.1f}"
-               + (" *" if "rmssub_up" in r else ""))
+        rms = f"{100 * r['rms_up']:.1f}/{100 * r['rms_down']:.1f}" + (" *" if r["type"] == "samples" else "")
         chi = (f"{r['chi2_up']:.0f}/{r['chi2_down']:.0f} / {r['ndf']}" if "chi2_up" in r else "-")
         mx = f"{100 * r['max_up']:.1f}/{100 * r['max_down']:.1f}"
         print(f"{r['name']:24} {r['type']:7} {r['rate_up']:8.3f} {r['rate_down']:8.3f} {rms:>20} {mx:>18} "
               f"{chi:>20}  {r['note']}")
-    print("* stat-subtracted (independent samples); chi2 with the stat. of both samples. "
+    print("* independent samples: the RMS includes their stat. fluctuations (not subtracted, see the note); "
+          "chi2 with the stat. of both samples. "
           "Rate parts are absorbed if the process floats.")
 
     with open(f"{args.outdir}/{args.process}_theory.csv", "w", newline="") as f:
-        keys = ["name", "type", "rate_up", "rate_down", "rms_up", "rms_down", "rmssub_up", "rmssub_down",
+        keys = ["name", "type", "rate_up", "rate_down", "rms_up", "rms_down",
                 "max_up", "max_down", "chi2_up", "chi2_down", "ndf", "note"]
         wr = csv.DictWriter(f, keys, extrasaction="ignore")
         wr.writeheader()
@@ -185,7 +185,7 @@ def draw(rows, nbins, args):
     for k, (ud, c) in enumerate((("up", up_c), ("down", dn_c))):
         off = (k - 0.5) * 0.36
         a1.barh(y + off, [100 * (r[f"rate_{ud}"] - 1) for r in rows], 0.34, color=c, label=ud)
-        a2.barh(y + off, [100 * r.get(f"rmssub_{ud}", r[f"rms_{ud}"]) for r in rows], 0.34, color=c, label=ud)
+        a2.barh(y + off, [100 * r[f"rms_{ud}"] for r in rows], 0.34, color=c, label=ud)
     for i, r in enumerate(rows):
         if r["type"] == "samples":
             for a in (a1, a2):
@@ -199,7 +199,7 @@ def draw(rows, nbins, args):
     for a in (a1, a2):
         a.grid(axis="x", alpha=0.3)
     fig.suptitle(f"{args.process}: theory nuisances in {os.path.basename(args.card)} "
-                 f"(shaded: hdamp from the 4FS samples, stat-subtracted)", fontsize=9)
+                 f"(shaded: hdamp from the 4FS samples, incl. sample stat.)", fontsize=9)
     fig.tight_layout()
     for ext in ("png", "pdf"):
         fig.savefig(f"{args.outdir}/{args.process}_theory_summary.{ext}")
