@@ -223,7 +223,7 @@ def draw(bins, label, curves, stem):
 DC_MASS_BINS = [50, 80, 105, 145, 200]          # makeDatacard.mass_bins
 
 
-def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True):
+def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True, export=None):
     """hdamp sample / nominal per datacard bin (NN bin x mass bin, flattened as NN-major: bin = i_nn * 4 + i_mass),
     per pT channel, with the NN edges of the cards (nn_edges_disc_<model>.json). Prints the inclusive rate,
     the flat chi2 (shape vs pure rate) in the datacard binning, and draws the per-bin ratio with the
@@ -296,6 +296,13 @@ def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True):
         c2 = (((r - 1) / np.maximum(re, 1e-12)) ** 2)[ok].sum()
         line += f"   {VARS[v]}: rate {rate:.4f}, flat chi2 {c2:.1f}/{ok.sum() - 1} (p={chi2_pvalue(c2, ok.sum() - 1)})"
     print(line)
+    if export:                  # per-bin yields for compare_ttb_theory.py (hdamp next to the card's theory nuisances)
+        out = {"subsample": sub, "years": years, "edges": edges_file, "channels": {
+            ch: {"nominal": [r["nominal"][0].tolist(), r["nominal"][1].tolist()],
+                 **{v: [r[v][0].tolist(), r[v][1].tolist()] for v in VARS}} for ch, r in res.items()}}
+        with open(export, "w") as f:
+            json.dump(out, f, indent=1)
+        print(f"  wrote {export}")
     if plot:
         tag = "" if len(years) == 1 else "_" + "_".join(years)
         draw_datacard_bins(res, sub, f"{outdir}/{sub.replace('+', '')}_datacard_bins{tag}")
@@ -355,6 +362,9 @@ if __name__ == "__main__":
     ap.add_argument("--no-dctr", action="store_true",
                     help="skip the DCTR comparison (nominal without PC_DCTR, e.g. the full production): rates "
                          "and, with --edges, the per-datacard-bin check only; works on several eras")
+    ap.add_argument("--export", action="store_true",
+                    help="with --edges: write the per-datacard-bin yields (nominal, hdamp up/down) to "
+                         "<outdir>/hdamp_<subsample>_<model>_<years>.json for compare_ttb_theory.py")
     ap.add_argument("--eras", nargs="+", default=None,
                     help="keep only these eras (e.g. 2016_PreVFP 2016_PostVFP 2017 2018); default: all in the inputs")
     args = ap.parse_args()
@@ -372,4 +382,6 @@ if __name__ == "__main__":
             compare(nom, var, sub, args.outdir, plot=not args.no_plots)
         if args.edges:
             model = args.model or os.path.basename(args.edges).removeprefix("nn_edges_disc_").removesuffix(".json")
-            datacard_bins(nom, var, sub, args.edges, model, args.outdir, plot=not args.no_plots)
+            export = (f"{args.outdir}/hdamp_{sub.replace('+', '')}_{model}_"
+                      f"{'_'.join(sorted(set(nom['year'].astype(str))))}.json") if args.export else None
+            datacard_bins(nom, var, sub, args.edges, model, args.outdir, plot=not args.no_plots, export=export)
