@@ -1,11 +1,17 @@
+import os
 import re
+import sys
 import numpy as np
 import awkward as ak
 from pocket_coffea.lib.correction_cache import load_correction_set
 from pocket_coffea.lib.scale_factors import sf_jet_puId
 from omegaconf import OmegaConf
-# JMS/JMR of the regressed fatjet mass and the per-chunk RNG are shared with Run 3 (configs/common)
-from fatjet_mass_variations import apply_jms_jmr, chunk_rng  # noqa: F401
+# JMS/JMR of the regressed fatjet mass and the per-chunk RNG are shared with Run 3 (configs/common);
+# on the path here too, so scripts run directly (make_process_norms.py via theory_norms) find it
+_COMMON = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common")
+if _COMMON not in sys.path:
+    sys.path.insert(0, _COMMON)
+from fatjet_mass_variations import apply_jms_jmr, chunk_rng  # noqa: F401,E402
 
 
 def _load_correction(file, name):

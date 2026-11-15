@@ -103,6 +103,8 @@ def run(cmd, args, env_extra=None):
     if args.dry_run:
         return
     env = dict(os.environ, **(env_extra or {}))
+    # analysis modules import shared ones of configs/common (e.g. fatjet_mass_variations), as in the jobs
+    env["PYTHONPATH"] = os.pathsep.join(p for p in (HERE, COMMON, env.get("PYTHONPATH", "")) if p)
     subprocess.run(cmd, cwd=HERE, env=env, check=True)
 
 
