@@ -7,12 +7,14 @@ uncertainties of the card, bin by bin. One figure, one panel per pT channel:
   y       variation / nominal, each variation scaled to the nominal total (shape only: the tt_B
           normalization floats in the fit, CMS_ttbbnorm), or with the rate kept (--keep-rate)
   band    the other tt_B theory uncertainties of the card in quadrature: per bin, for each shape
-          nuisance the larger of |Up/Nom - 1| and |Down/Nom - 1|, summed in quadrature
+          nuisance the larger of |Up/Nom - 1| and |Down/Nom - 1|, summed in quadrature; with
+          --keep-rate also the rate-only (lnN) ones, so the band is their full rate + shape size
   points  hdamp up and down / nominal from the samples, with the statistical uncertainty of the
           hdamp sample and the nominal (independent samples, so they scatter)
 
-Reading: hdamp points inside the band (within their error bars) = hdamp shape change not larger than
-what the card's other theory uncertainties already cover.
+Reading: hdamp points inside the band (within their error bars) = hdamp change not larger than what
+the card's other theory uncertainties already cover. With --keep-rate the dashed lines are the hdamp
+rates: points scattering around their dashed line = rate only; a trend away from it = shape.
 
 Inputs: the Run 2 card (.txt + .root, e.g. from sum_datacards.py) and the hdamp yields per datacard
 bin from compare_hdamp_dctr.py --export (same model, years and NN edges). The hdamp Zhpt1 bins are
@@ -29,7 +31,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))
-from sum_datacards import parse_card, Templates  # noqa: E402
+from sum_datacards import parse_card, Templates, lnn  # noqa: E402
 from compare_ttb_theory import card_nuisances  # noqa: E402
 
 
@@ -66,7 +68,9 @@ def main():
     nom_all = np.concatenate([nom[ch] for ch in channels])
 
     # other theory uncertainties: per bin, max(|up-1|, |down-1|) of each shape nuisance, in quadrature
-    shapes = {n: e for n, (t, e) in card_nuisances(card, args.process, ["theo"]).items() if t == "shape"}
+    # hdamp itself (the card's hdamp_ttbb) is what is compared, not part of the band
+    theo = {n: v for n, v in card_nuisances(card, args.process, ["theo"]).items() if "hdamp" not in n}
+    shapes = {n: e for n, (t, e) in theo.items() if t == "shape"}
     band2 = np.zeros_like(nom_all)
     for name, entries in shapes.items():
         dev = []
@@ -76,6 +80,12 @@ def main():
             scale = 1.0 if args.keep_rate else nom_all.sum() / h.sum()
             dev.append(np.abs(np.divide(h * scale, nom_all, out=np.ones_like(nom_all), where=nom_all > 0) - 1))
         band2 += np.maximum(*dev) ** 2
+    if args.keep_rate:          # rate-only uncertainties: the same in every bin
+        for name, (t, entries) in theo.items():
+            if t == "lnN":
+                down, up = lnn(next(iter(entries.values())))
+                band2 += max(abs(up - 1), abs(down - 1)) ** 2
+                print(f"band includes lnN {name} ({down:.3f}/{up:.3f})")
     band = np.sqrt(band2)
 
     with open(args.hdamp) as f:
@@ -120,6 +130,8 @@ def main():
             r, er, rate = ratios[v]
             ax.errorbar(x + (k - 0.5) * 0.25, r[sl], yerr=er[sl], fmt=m, ms=3.5, color=c, lw=1,
                         mfc=c if v == "up" else "white", label=f"hdamp {v} / nominal (sample stat.)")
+            if args.keep_rate:
+                ax.axhline(rate, color=c, ls="--", lw=1.2, label=f"hdamp {v} rate {rate:.3f}")
         ax.axhline(1, color="black", lw=0.8)
         ax.set_xlim(-0.5, n - 0.5)
         ax.set_ylim(0.5, 1.5)
