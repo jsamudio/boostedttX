@@ -8,8 +8,8 @@ floating rate). Method of the previous analysis.
 Input: the theory-weight sums over ALL generated events, accumulated by the processor
 (theory_norms.py) in output['theory_sums'] of the nominal .coffea outputs.
 
-    python3 make_process_norms.py -i outputs/nominal/signal/output_all.coffea \\
-                                     outputs/nominal/bkg/output_all.coffea
+    python3 make_process_norms.py -i outputs/nominal/signal/merged/*.coffea \\
+                                     outputs/nominal/bkg/merged/*.coffea
 
 For a variation v (e.g. mu_r_up) and N_x = sum of sign(genWeight) * ratio_x over the events:
 
@@ -208,7 +208,15 @@ def read_theory_sums(paths):
         out = load(path)
         if "theory_sums" not in out:
             print(f"  [WARNING] no 'theory_sums' in {path}: produced before theory_norms.py was added?")
-        theory_sums.update(out.get("theory_sums", {}))
+        # theory_sums[sample][dataset]: merge per dataset, since one sample's datasets can be spread over
+        # several files (per-dataset merge); a dataset seen twice would be double counted -> error
+        for sample, by_dataset in out.get("theory_sums", {}).items():
+            target = theory_sums.setdefault(sample, {})
+            dup = set(target) & set(by_dataset)
+            if dup:
+                raise ValueError(f"{sample}: datasets {sorted(dup)} in more than one input (e.g. both "
+                                 f"output_all.coffea and merged/*.coffea passed)")
+            target.update(by_dataset)
         del out
     return theory_sums
 

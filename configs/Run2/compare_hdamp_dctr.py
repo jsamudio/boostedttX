@@ -26,7 +26,7 @@ Plots: <outdir>/<subsample>_<observable>.png/.pdf
     python3 compare_hdamp_dctr.py --nominal outputs_dctr/nominal/bkg/output_all.coffea \
         --hdamp outputs_hdamp/nominal/variations/output_all.coffea [--btag-norm btag_norm_hdamp.json]
     # integrated Run 2, card binning only (no DCTR): all eras summed bin by bin, per-year rates printed
-    python3 compare_hdamp_dctr.py --no-dctr --nominal outputs/nominal/bkg/output_all.coffea \
+    python3 compare_hdamp_dctr.py --no-dctr --nominal outputs/nominal/bkg/merged/*.coffea \
         --hdamp outputs_hdamp/nominal/variations/output_all.coffea --edges nn_edges_disc_<model>.json
 """
 import argparse

@@ -24,7 +24,7 @@ difference in sigma; per observable the shape ratio to nominal (unit area) of bo
     python3 compare_hdamp_4fs_5fs.py --era 2018 \
         --nominal-4fs outputs_dctr/nominal/bkg/output_all.coffea \
         --hdamp-4fs outputs_hdamp/nominal/variations/output_all.coffea \
-        --nominal-5fs outputs/nominal/bkg/output_all.coffea \
+        --nominal-5fs outputs/nominal/bkg/merged/*.coffea \
         --hdamp-5fs outputs_hdamp_5fs/nominal/variations/output_all.coffea
 """
 import argparse

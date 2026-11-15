@@ -1,6 +1,6 @@
 """
 pocket-coffea executor for PBS Pro: one batch job per chunk of files, each running the futures
-executor on all cores of its node inside apptainer, plus a merge job.
+executor on all cores of its node inside apptainer, plus the merge (per dataset by default, pbs_tools.py).
 
     cd <analysis config dir>
     pocket-coffea run --cfg <config>.py -o <outputdir> \
@@ -67,7 +67,7 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
             "config_pkl_total": f"{os.path.abspath(self.outputdir)}/configurator.pkl",
             "jobs_list": {},
         }
-        # Postprocessing happens once, in the merge job
+        # Postprocessing happens in the merge (per dataset: pocket-coffea scales each dataset by its own sums)
         self.config.do_postprocessing = False
         config_files = []
         for i, split in enumerate(splits):
@@ -135,6 +135,8 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
             # proxy used by the jobs (refreshed by pbs_tools at every submission); None = no proxy
             "x509-path": None if self.run_options["ignore-grid-certificate"] else self.x509_path,
             "chunksizes": chunksizes,
+            # per-dataset merge (pbs_tools.merge_groups): the jobs sharing a dataset are merged together
+            "merge-groups": pbs_tools.group_jobs({i: sorted(split.keys()) for i, split in enumerate(self._splits)}),
         })
         with open(os.path.join(jobs_dir, pbs_tools.SETTINGS_FILE), "w") as f:
             json.dump(settings, f, indent=1)

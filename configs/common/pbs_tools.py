@@ -10,15 +10,28 @@ A jobs directory <outputdir>/job is prepared by
         --executor-custom-setup ../common/executors_pbs.py -ro run_options_pbs.yaml
 and contains one pickled configurator per job, job.sh, jobs_config.yaml and pbs_settings.json.
 This module turns it into a PBS job array (one subjob per pocket-coffea job, each running
-the futures executor on all cores of its node inside apptainer) plus a merge job that runs
-after the array and writes <outputdir>/output_all.coffea.
+the futures executor on all cores of its node inside apptainer) plus a merge that runs after
+the array.
 
-    python pbs_tools.py submit   <outputdir>    # array + merge job
+Merge modes ('merge-mode' in run_options_pbs.yaml / pbs_settings.json):
+  dataset (default)  one merge per dataset, as a PBS array (merge_group.py), writing
+                     <outputdir>/merged/<dataset>.coffea: each a complete pocket-coffea output of its
+                     dataset (columns, genweight and theory sums, cutflow), so a merge needs the memory
+                     of one dataset, not of the whole group. Jobs sharing a dataset are merged together
+                     (merge_groups). merged_outputs(<outputdir>) returns the files to read.
+  all                one merge of every job into <outputdir>/output_all.coffea (the old behaviour).
+
+    python pbs_tools.py submit   <outputdir>    # array + merge
     python pbs_tools.py pending  <outputdir>... # submit the prepared, not yet submitted dirs, until
                                                 # the per-user queue limit is reached (rerun later)
-    python pbs_tools.py status   <outputdir>    # done / failed / running / idle per job
-    python pbs_tools.py resubmit <outputdir>    # failed jobs (+ --include-unfinished) and a new merge
-    python pbs_tools.py merge    <outputdir>    # (re)submit only the merge job
+    python pbs_tools.py status   <outputdir>    # done / failed / running / idle per job, merged datasets
+    python pbs_tools.py resubmit <outputdir>    # failed jobs (+ --include-unfinished), then the merges
+                                                # of their datasets
+    python pbs_tools.py merge    <outputdir>    # (re)submit the merges whose output is missing
+                                                # (--all: every dataset again)
+    python pbs_tools.py groups   <outputdir>    # store the dataset groups in pbs_settings.json; needs
+                                                # PyYAML: for dirs prepared before the per-dataset merge,
+                                                # run it once inside the image if the host has no PyYAML
 """
 import argparse
 import os
@@ -38,7 +51,8 @@ DEFAULTS = {
     "cores-per-worker": 8,
     "mem-per-worker": "32gb",          # whole job (all cores)
     "walltime": None,                  # e.g. "12:00:00"; None = no request
-    "merge-mem": "32gb",
+    "merge-mem": "32gb",               # per merge job (per dataset in merge-mode 'dataset')
+    "merge-mode": "dataset",           # 'dataset': merged/<dataset>.coffea; 'all': output_all.coffea
     "scratch-dir": "/tmp",             # job-local working directory (must be bound in the image)
     "apptainer-image": "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/pocketcoffea:lxplus-el9-latest",
     "apptainer-binds": ["/cvmfs", "/cms/data", "/home/$USER", "/tmp"],
@@ -123,6 +137,104 @@ def job_ids(jobs_dir):
     return list(range(len(load_settings(jobs_dir)["chunksizes"])))
 
 
+# ---------------------------------------------------------------- per-dataset merge
+MERGED_DIR = "merged"            # <outputdir>/merged/<dataset>.coffea (also in merge_group.py)
+
+
+def merge_mode(settings):
+    return settings.get("merge-mode") or DEFAULTS["merge-mode"]
+
+
+def group_jobs(job_datasets):
+    """Groups of jobs to merge together: {name: [job ids]}, one per dataset. job_datasets is
+    {job id: [datasets of the job]}; jobs that share a dataset end up in the same group (connected
+    components), so every merged file holds complete datasets. Name: the dataset, or the first
+    dataset + '_plus<N>' if a group holds several."""
+    parent = {}
+
+    def find(x):
+        while parent.setdefault(x, x) != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i, datasets in job_datasets.items():
+        if not datasets:
+            raise ValueError(f"job {i} has no datasets")
+        for d in datasets[1:]:
+            parent[find(d)] = find(datasets[0])
+        find(datasets[0])
+    comps = {}
+    for i, datasets in job_datasets.items():
+        comps.setdefault(find(datasets[0]), set()).add(i)
+    groups = {}
+    for jobs in comps.values():
+        datasets = sorted({d for i in jobs for d in job_datasets[i]})
+        name = datasets[0] + (f"_plus{len(datasets) - 1}" if len(datasets) > 1 else "")
+        name = "".join(c if c.isalnum() or c in "_-." else "_" for c in name)
+        groups[name] = sorted(int(i) for i in jobs)
+    return dict(sorted(groups.items()))
+
+
+def merge_groups(jobs_dir):
+    """{group name: [job ids]}: from pbs_settings.json ('merge-groups', written at preparation by
+    executors_pbs.py), else derived from jobs_config.yaml (needs PyYAML) and stored there."""
+    settings = load_settings(jobs_dir)
+    if settings.get("merge-groups"):
+        return settings["merge-groups"]
+    try:
+        import yaml
+    except ImportError:
+        sys.exit(f"{jobs_dir}: no dataset groups in {SETTINGS_FILE} and no PyYAML here to read "
+                 f"jobs_config.yaml. Run once inside the apptainer image:\n"
+                 f"    python {os.path.abspath(__file__)} groups {os.path.dirname(jobs_dir)}")
+    with open(os.path.join(jobs_dir, "jobs_config.yaml")) as f:
+        jobs_list = yaml.safe_load(f)["jobs_list"]
+    groups = group_jobs({int(name.split("_")[1]): sorted((job.get("filesets") or {}).keys())
+                         for name, job in jobs_list.items()})
+    settings["merge-groups"] = groups
+    with open(os.path.join(jobs_dir, SETTINGS_FILE), "w") as f:
+        json.dump(settings, f, indent=1)
+    return groups
+
+
+def merged_file(settings, group):
+    return os.path.join(settings["output-dir"], MERGED_DIR, f"{group}.coffea")
+
+
+def merged_outputs(path, allow_incomplete=False):
+    """The merged .coffea files of an output dir, to pass to the analysis scripts:
+    merged/<dataset>.coffea (per-dataset merge) or output_all.coffea (single merge, or a local run).
+    Raises if both kinds are present (the same events twice) or, for a PBS dir, if datasets are
+    still unmerged (unless allow_incomplete). Returns [] if nothing is merged yet."""
+    path = os.path.abspath(path)
+    merged_dir = os.path.join(path, MERGED_DIR)
+    per_ds = (sorted(os.path.join(merged_dir, f) for f in os.listdir(merged_dir) if f.endswith(".coffea"))
+              if os.path.isdir(merged_dir) else [])
+    single = os.path.join(path, "output_all.coffea")
+    if per_ds and os.path.exists(single):
+        raise RuntimeError(f"{path} has both output_all.coffea and {MERGED_DIR}/*.coffea (the same events "
+                           f"twice): remove one of them")
+    if not per_ds:
+        return [single] if os.path.exists(single) else []
+    jobs_dir = find_jobs_dir(path)
+    if jobs_dir is not None and not allow_incomplete:
+        settings = load_settings(jobs_dir)
+        groups = settings.get("merge-groups")
+        if groups:
+            # by file name inside merged/ (the stored output-dir may differ from `path` by symlinks)
+            names = {os.path.basename(f) for f in per_ds}
+            missing = [g for g in groups if f"{g}.coffea" not in names]
+            if missing:
+                raise RuntimeError(f"{path}: {len(missing)} of {len(groups)} datasets not merged yet "
+                                   f"(e.g. {missing[:3]}); see pbs_tools.py status / merge")
+            extra = sorted(names - {f"{g}.coffea" for g in groups})
+            if extra:
+                raise RuntimeError(f"{path}: files in {MERGED_DIR}/ that are not a dataset group of this "
+                                   f"dir: {extra}")
+    return per_ds
+
+
 # ---------------------------------------------------------------- scripts
 def write_joblist(jobs_dir, name, ids, settings):
     """One line per array index: '<pocket-coffea job id> <chunksize>'."""
@@ -166,8 +278,40 @@ exit $STATUS
     return path
 
 
-def write_merge_script(jobs_dir, settings, tag):
+def write_merge_script(jobs_dir, settings, tag, groups=None):
+    """Merge job script: per-dataset array over `groups` ({name: [job ids]}) in merge-mode 'dataset',
+    else the single merge into output_all.coffea."""
     mem_gb = _mem_gb(settings["merge-mem"])
+    if merge_mode(settings) == "dataset":
+        if not groups:
+            raise ValueError("no dataset groups to merge")
+        groups_file = os.path.join(jobs_dir, f"merge_groups_{tag}.txt")
+        with open(groups_file, "w") as f:
+            for name, ids in groups.items():
+                f.write(f"{name} {','.join(str(i) for i in ids)}\n")
+        array_line = f"#PBS -J 0-{len(groups) - 1}" if len(groups) > 1 else ""
+        common = settings.get("common-dir", os.path.dirname(os.path.abspath(__file__)))
+        script = f"""#!/bin/bash
+#PBS -N {settings['name'][:10]}_merge
+{_resources(settings, 1, settings['merge-mem'])}
+{array_line}
+#PBS -j oe
+#PBS -o {jobs_dir}/logs/
+
+# One merge per dataset group ({len(groups)}): merged/<group>.coffea; jobs with missing outputs are marked .failed
+IDX=${{PBS_ARRAY_INDEX:-0}}
+NAME=$(sed -n "$((IDX + 1))p" {groups_file} | cut -d' ' -f1)
+cd {settings['analysis-dir']}
+{apptainer_prefix(settings)} bash -c '
+    export PYTHONPATH={settings['analysis-dir']}:{common}:$PYTHONPATH
+    python {common}/merge_group.py {jobs_dir} {groups_file} '"$IDX"' -m {max(1.0, mem_gb / 2):.0f}
+' > {jobs_dir}/logs/merge_{tag}_"$NAME".log 2>&1
+"""
+        path = os.path.join(jobs_dir, f"pbs_merge_{tag}.sh")
+        with open(path, "w") as f:
+            f.write(script)
+        return path
+
     script = f"""#!/bin/bash
 #PBS -N {settings['name'][:10]}_merge
 {_resources(settings, 1, settings['merge-mem'])}
@@ -235,19 +379,34 @@ def submit(path, ids=None, tag="all"):
                 os.remove(p)
         open(os.path.join(jobs_dir, f"job_{i}.idle"), "w").close()
 
+    groups = groups_of(jobs_dir, settings, ids)       # resolve before qsub: fail early, not after the array
     joblist = write_joblist(jobs_dir, f"joblist_{tag}.txt", ids, settings)
     array_id = qsub(write_array_script(jobs_dir, settings, joblist, tag))
     try:
-        merge_id = qsub(write_merge_script(jobs_dir, settings, tag), depend=f"afterany:{array_id}")
+        merge_id = qsub(write_merge_script(jobs_dir, settings, tag, groups), depend=f"afterany:{array_id}")
     except QueueFull:
         # the array is in; the merge job is submitted later by submit_pending
         record_submission(jobs_dir, {"tag": tag, "array": array_id, "merge": None, "jobs": list(ids)})
         print(f"{settings['name']}: submitted {len(ids)} job(s) as {array_id}; merge job not yet (queue full)")
         raise
     record_submission(jobs_dir, {"tag": tag, "array": array_id, "merge": merge_id, "jobs": list(ids)})
-    print(f"{settings['name']}: submitted {len(ids)} job(s) as {array_id}; merge job {merge_id} "
-          f"-> {settings['output-dir']}/output_all.coffea")
+    target = (f"{len(groups)} dataset(s) -> {settings['output-dir']}/{MERGED_DIR}/" if groups
+              else f"{settings['output-dir']}/output_all.coffea")
+    print(f"{settings['name']}: submitted {len(ids)} job(s) as {array_id}; merge job {merge_id}, {target}")
     return array_id, merge_id
+
+
+def groups_of(jobs_dir, settings, ids=None):
+    """Dataset groups to merge after the jobs `ids` (all if None): those containing one of them, plus
+    every group without a merged file yet (e.g. a dir merged before into output_all.coffea, or a merge
+    that failed). None in merge-mode 'all'."""
+    if merge_mode(settings) != "dataset":
+        return None
+    groups = merge_groups(jobs_dir)
+    if ids is None:
+        return groups
+    ids = set(int(i) for i in ids)
+    return {g: j for g, j in groups.items() if ids & set(j) or not os.path.exists(merged_file(settings, g))}
 
 
 def submissions(jobs_dir):
@@ -291,7 +450,7 @@ def submit_missing_merge(jobs_dir):
     subs = submissions(jobs_dir)
     last = [s for s in subs if s.get("array")][-1]
     active = subprocess.run(["qstat", last["array"]], capture_output=True).returncode == 0
-    merge_id = qsub(write_merge_script(jobs_dir, settings, last["tag"]),
+    merge_id = qsub(write_merge_script(jobs_dir, settings, last["tag"], groups_of(jobs_dir, settings, last.get("jobs"))),
                     depend=f"afterany:{last['array']}" if active else None)
     last["merge"] = merge_id
     with open(os.path.join(jobs_dir, SUBMISSIONS_FILE), "w") as f:
@@ -316,9 +475,19 @@ def status(path):
     settings = load_settings(jobs_dir)
     st = states(jobs_dir)
     counts = {s: sum(1 for v in st.values() if v == s) for s in ("done", "failed", "running", "idle", "missing")}
-    merged = os.path.exists(os.path.join(settings["output-dir"], "output_all.coffea"))
-    print(f"{settings['name']:24} " + "  ".join(f"{k}={v}" for k, v in counts.items())
-          + f"  merged={'yes' if merged else 'no'}")
+    if merge_mode(settings) == "dataset" and settings.get("merge-groups"):
+        groups = settings["merge-groups"]
+        n = sum(os.path.exists(merged_file(settings, g)) for g in groups)
+        merged = f"{n}/{len(groups)} datasets"
+    elif merge_mode(settings) == "dataset":
+        n = len([f for f in os.listdir(os.path.join(settings["output-dir"], MERGED_DIR)) if f.endswith(".coffea")]) \
+            if os.path.isdir(os.path.join(settings["output-dir"], MERGED_DIR)) else 0
+        merged = f"{n} datasets (groups not stored yet)"
+    else:
+        merged = "yes" if os.path.exists(os.path.join(settings["output-dir"], "output_all.coffea")) else "no"
+    if os.path.exists(os.path.join(settings["output-dir"], "output_all.coffea")) and merge_mode(settings) == "dataset":
+        merged += "; output_all.coffea from an older single merge is also present (remove one)"
+    print(f"{settings['name']:24} " + "  ".join(f"{k}={v}" for k, v in counts.items()) + f"  merged={merged}")
     failed = [i for i, s in st.items() if s == "failed"]
     if failed:
         print(f"    failed jobs: {failed}  (logs: {jobs_dir}/logs/job_<id>.log)")
@@ -356,12 +525,25 @@ def resubmit(path, include_unfinished=False):
     submit(jobs_dir, ids=sorted(redo), tag=f"r{n}")
 
 
-def merge(path):
+def merge(path, all_groups=False):
+    """Submit the merge now (no dependency): in merge-mode 'dataset' the datasets whose merged file is
+    missing (all of them with all_groups), else the single merge."""
     jobs_dir = jobs_dir_of(path)
     settings = load_settings(jobs_dir)
-    merge_id = qsub(write_merge_script(jobs_dir, settings, "manual"))
-    record_submission(jobs_dir, {"tag": "manual-merge", "merge": merge_id})
-    print(f"{settings['name']}: merge job {merge_id}")
+    groups = groups_of(jobs_dir, settings)
+    if groups is not None and not all_groups:
+        groups = {g: j for g, j in groups.items() if not os.path.exists(merged_file(settings, g))}
+        if not groups:
+            print(f"{settings['name']}: every dataset is merged (--all to merge them again)")
+            return
+    n = 1
+    while os.path.exists(os.path.join(jobs_dir, f"pbs_merge_m{n}.sh")):
+        n += 1
+    merge_id = qsub(write_merge_script(jobs_dir, settings, f"m{n}", groups))
+    record_submission(jobs_dir, {"tag": f"m{n}", "merge": merge_id})
+    print(f"{settings['name']}: merge job {merge_id}"
+          + (f" ({len(groups)} dataset(s): {', '.join(list(groups)[:5])}{' ...' if len(groups) > 5 else ''})"
+             if groups else ""))
 
 
 def _run_command(args):
@@ -372,16 +554,21 @@ def _run_command(args):
             status(d)
         elif args.command == "resubmit":
             resubmit(d, args.include_unfinished)
+        elif args.command == "groups":
+            groups = merge_groups(jobs_dir_of(d))
+            print(f"{d}: {len(groups)} dataset groups stored ({sum(len(j) for j in groups.values())} jobs)")
         else:
-            merge(d)
+            merge(d, args.all)
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["submit", "pending", "status", "resubmit", "merge"])
+    ap.add_argument("command", choices=["submit", "pending", "status", "resubmit", "merge", "groups"])
     ap.add_argument("outputdirs", nargs="+", help="pocket-coffea output dir(s) (or their job/ subdir)")
     ap.add_argument("--include-unfinished", action="store_true",
                     help="resubmit: also jobs left running/idle/missing (e.g. killed by the batch system)")
+    ap.add_argument("--all", action="store_true",
+                    help="merge: merge every dataset again, not only those without a merged file")
     args = ap.parse_args()
     if args.command == "pending":
         sys.exit(1 if submit_pending(args.outputdirs) else 0)

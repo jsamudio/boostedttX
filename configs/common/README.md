@@ -6,7 +6,8 @@ pocket-coffea, 0.9.x with the calibrator system).
 | File | What |
 |---|---|
 | `executors_pbs.py` | pocket-coffea executor for PBS Pro: one batch job per chunk of files, each running the futures executor on all cores of its node inside apptainer |
-| `pbs_tools.py` | job array + merge job submission, status, resubmission, VOMS proxy refresh (stdlib only, runs on the host) |
+| `pbs_tools.py` | job array + per-dataset merge submission, status, resubmission, VOMS proxy refresh (stdlib only, runs on the host; PyYAML only to derive the dataset groups of dirs prepared before the per-dataset merge) |
+| `merge_group.py` | one per-dataset merge (`merge-outputs -jc` on the dataset's jobs), run by the merge array inside the image |
 | `run_options_pbs.yaml` | template run options (queue, cores, memory, image, binds, splitting) |
 | `met_calibration.py` | type-1 PF MET for Run 2 UL, consistent in data and MC (replaces pocket-coffea's `METCalibrator`) |
 | `fatjet_mass_variations.py` | JMS/JMR of the DNN-regressed fatjet mass (JMAR: no nominal correction, 2% / 3% variations), the `JMSJMR` calibrator that declares them, per-chunk RNG |
@@ -31,9 +32,16 @@ directory; input files readable from the compute nodes (under the apptainer bind
    ```bash
    python3 ../common/pbs_tools.py submit   <outputdir>
    python3 ../common/pbs_tools.py status   <outputdir>
-   python3 ../common/pbs_tools.py resubmit <outputdir>     # failed jobs + a new merge
+   python3 ../common/pbs_tools.py resubmit <outputdir>     # failed jobs + the merges of their datasets
+   python3 ../common/pbs_tools.py merge    <outputdir>     # merges whose output is missing (--all: every one)
    ```
-   The merge job writes `<outputdir>/output_all.coffea`; job logs are in `<outputdir>/job/logs/`.
+   The merge runs per dataset (`merge-mode: dataset`, default): a PBS array, one `merge_group.py` per
+   dataset, writing `<outputdir>/merged/<dataset>.coffea`, each a complete output of its dataset, so a
+   merge needs the memory of one dataset (`merge-mem`). `merge-mode: all` gives the old single
+   `<outputdir>/output_all.coffea`. `pbs_tools.merged_outputs(<outputdir>)` returns the files to read.
+   Dirs prepared before the per-dataset merge have no dataset groups in `pbs_settings.json`: they are
+   read from `jobs_config.yaml` (PyYAML) at the first merge, or run `pbs_tools.py groups <outputdir>`
+   once inside the image. Job and merge logs are in `<outputdir>/job/logs/`.
 
 What a resubmission picks up: jobs re-import the modules of the analysis directory and of
 `configs/common` from disk, but the configuration (and modules registered with

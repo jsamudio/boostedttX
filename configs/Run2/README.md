@@ -26,8 +26,8 @@
    PC_JEC_VARIATION=JER pocket-coffea run --cfg inference_conf_minor.py -o outputs/JER/minor
    PC_SAMPLES=ttHTobb pocket-coffea run --cfg inference_conf_signal.py -o test --test   # quick test
    ```
-3. **b-tag SF normalization**: `python btag_norm.py -i outputs/nominal/*/output_all.coffea -o btag_norm.json`
-4. **Pickles**: `python outputToPkl.py -i outputs/nominal/*/output_all.coffea --btag-norm btag_norm.json`
+3. **b-tag SF normalization**: `python btag_norm.py -i outputs/nominal/*/merged/*.coffea -o btag_norm.json`
+4. **Pickles**: `python outputToPkl.py -i outputs/nominal/*/merged/*.coffea --btag-norm btag_norm.json`
    (jet-variation outputs: add `--variations all --skip-nominal`)
 5. **Datacards**: `python makeDatacard.py [--eft-ttbb]`
 
@@ -74,8 +74,11 @@ the current model `noOverlap_MultiWP` was trained with it.
 
 Each group / jet variation becomes a PBS job array: pocket-coffea splits the files into jobs
 (`max-events-per-job` in `run_options_pbs.yaml`), every array subjob runs the futures executor on
-8 cores inside the pocketcoffea apptainer image, and a merge job (queued after the array)
-writes `output_all.coffea`. Settings (queue, cores, memory, image, binds) are in `run_options_pbs.yaml`.
+8 cores inside the pocketcoffea apptainer image, and a merge array (queued after it) merges the
+outputs per dataset into `merged/<dataset>.coffea` (`merge-mode: dataset`; `all` = the old single
+`output_all.coffea`). Pass `<outputdir>/merged/*.coffea` to the analysis scripts; `run_pipeline.py`
+finds them itself and stops if a dir is only partly merged. Settings (queue, cores, memory, image,
+binds, merge mode) are in `run_options_pbs.yaml`.
 
 The jobs need a VOMS proxy. Create it first (inside the apptainer image if `voms-proxy-init` is
 not available on the host; it lands in `/tmp/x509up_u<uid>`, visible to both):

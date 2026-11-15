@@ -24,7 +24,7 @@ Writes a table (stdout and <outdir>/<process>_theory.csv), a bar chart of rate a
 nuisance (<process>_theory_summary.png) and the per-bin shape-only ratios of the largest nuisances
 (<process>_theory_bins.png).
 
-    python3 compare_hdamp_dctr.py --no-dctr --nominal outputs/nominal/bkg/output_all.coffea \\
+    python3 compare_hdamp_dctr.py --no-dctr --nominal outputs/nominal/bkg/merged/*.coffea \\
         --hdamp outputs_hdamp_run2/nominal/variations/output_all.coffea \\
         --edges nn_edges_disc_<model>.json --eras 2016_PreVFP 2016_PostVFP 2017 2018 --export --outdir plots/hdamp_run2
     python3 compare_ttb_theory.py datacards/datacard_nominal_disc_<model>_eftTTB_Run2.txt \\

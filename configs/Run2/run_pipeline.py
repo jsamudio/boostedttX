@@ -7,22 +7,24 @@ Driver for the analysis chain after the SPANet training:
     submit       PBS: submit the prepared dirs not submitted yet (when the queue limit stopped
                  `inference`); --every MIN keeps retrying until all are in
     status       PBS backend: state of the jobs and merges
-    resubmit     PBS backend: resubmit failed jobs (+ a new merge)
+    resubmit     PBS backend: resubmit failed jobs (+ the merges of their datasets)
     btagnorm     btag_norm.py on the nominal + variation outputs     -> btag_norm.json
     pickle       outputToPkl.py (nominal + jet-variation outputs)     -> pickled/Nominal<year>/
     norms        make_process_norms.py (nominal outputs)              -> process_norms/process_norms_<year>.json
     datacard     makeDatacard.py
 
 Outputs are organised as
-    <outdir>/nominal/<group>/output_all.coffea
-    <outdir>/<JEC variation>/<group>/output_all.coffea
+    <outdir>/nominal/<group>/merged/<dataset>.coffea          (PBS, per-dataset merge, default)
+    <outdir>/<JEC variation>/<group>/merged/<dataset>.coffea
+or <outdir>/<tag>/<group>/output_all.coffea (local runs, or PBS with merge-mode 'all'); the steps
+below read whichever is there (pbs_tools.merged_outputs) and stop if a dir is only partly merged.
 
 Backends for the inference step:
     local  pocket-coffea runs here (executor from the config / arguments after '--')
     pbs    one PBS Pro job array per group and variation (../common/executors_pbs.py, run_options_pbs.yaml):
-           jobs are prepared in the apptainer image, submitted from the host, and merged by a
-           PBS job into output_all.coffea. Follow with `status` / `resubmit`; run btagnorm,
-           pickle and datacard once everything is merged.
+           jobs are prepared in the apptainer image, submitted from the host, and merged per
+           dataset by a PBS array (merged/<dataset>.coffea). Follow with `status` / `resubmit`; run
+           btagnorm, pickle and datacard once everything is merged.
 
 Run this script on the host or inside the apptainer image: with --container auto (default),
 pocket-coffea and the python steps are wrapped in `apptainer exec` when not already in a container.
@@ -117,15 +119,24 @@ def runs(args, include_data=True):
             yield tag, group, os.path.join(args.outdir, tag, group)
 
 
-def coffea_file(outdir, tag, group):
-    return os.path.join(outdir, tag, group, "output_all.coffea")
-
-
-def existing(paths, dry):
-    found = [p for p in paths if dry or os.path.exists(p)]
-    for p in sorted(set(paths) - set(found)):
-        print(f"  [skip] {p} not found")
-    return found
+def merged_inputs(outdir, pairs, dry):
+    """Merged .coffea files of the output dirs <outdir>/<tag>/<group> for (tag, group) in pairs:
+    merged/<dataset>.coffea or output_all.coffea (pbs_tools.merged_outputs). Dirs with nothing merged
+    are skipped; a partly merged dir, or one with both kinds of output, stops the step."""
+    files = []
+    for tag, group in pairs:
+        path = os.path.join(HERE, outdir, tag, group)
+        if dry:
+            files.append(os.path.join(outdir, tag, group, "<merged outputs>"))
+            continue
+        try:
+            found = pbs_tools.merged_outputs(path)
+        except RuntimeError as err:
+            sys.exit(f"Not ready: {err}")
+        if not found:
+            print(f"  [skip] {os.path.join(outdir, tag, group)}: nothing merged")
+        files += found
+    return files
 
 
 # ---------------------------------------------------------------- steps
@@ -191,20 +202,19 @@ def step_resubmit(args):
 
 def step_btagnorm(args):
     # nominal + jet-variation outputs: r is derived per shape variation (JES-varied b-tag SF)
-    inputs = existing([coffea_file(args.outdir, tag, g) for tag, g, _ in runs(args, include_data=False)],
-                      args.dry_run)
+    inputs = merged_inputs(args.outdir, [(tag, g) for tag, g, _ in runs(args, include_data=False)], args.dry_run)
     if inputs:
         run(python("btag_norm.py", "-i", *inputs, "-o", args.btag_norm), args)
 
 
 def step_pickle(args):
     mc_groups = [g for g in args.groups if not GROUPS[g].get('is_data')]
-    nominal = existing([coffea_file(args.outdir, 'nominal', g) for g in mc_groups], args.dry_run)
+    nominal = merged_inputs(args.outdir, [('nominal', g) for g in mc_groups], args.dry_run)
     btag = ["--btag-norm", args.btag_norm] if (args.dry_run or os.path.exists(args.btag_norm)) else []
     if nominal:
         run(python("outputToPkl.py", "-i", *nominal, *btag), args)
     for tag in args.jec_variations:
-        varied = existing([coffea_file(args.outdir, tag, g) for g in mc_groups], args.dry_run)
+        varied = merged_inputs(args.outdir, [(tag, g) for g in mc_groups], args.dry_run)
         if varied:
             run(python("outputToPkl.py", "-i", *varied, *btag, "--variations", "all", "--skip-nominal"), args)
 
@@ -212,7 +222,7 @@ def step_pickle(args):
 def step_norms(args):
     # factors of the theory variations, from the full-sample sums in the nominal outputs
     mc_groups = [g for g in args.groups if not GROUPS[g].get('is_data')]
-    nominal = existing([coffea_file(args.outdir, 'nominal', g) for g in mc_groups], args.dry_run)
+    nominal = merged_inputs(args.outdir, [('nominal', g) for g in mc_groups], args.dry_run)
     if nominal:
         run(python("make_process_norms.py", "-i", *nominal), args)
 

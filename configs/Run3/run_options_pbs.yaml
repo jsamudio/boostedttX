@@ -12,7 +12,9 @@ queue: batch
 cores-per-worker: 8         # = futures workers per job
 mem-per-worker: 32gb        # memory of the whole job
 walltime: null              # no request; e.g. "12:00:00"
-merge-mem: 32gb             # merge job (1 core)
+merge-mem: 32gb             # merge job (1 core); per dataset with merge-mode dataset
+merge-mode: dataset         # dataset: one merge per dataset -> <outputdir>/merged/<dataset>.coffea
+                            # all: one merge of everything -> <outputdir>/output_all.coffea
 
 # ---- execution environment
 scratch-dir: /tmp           # job working directory (bound into the image)
