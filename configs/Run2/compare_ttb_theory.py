@@ -24,6 +24,14 @@ Writes a table (stdout and <outdir>/<process>_theory.csv), a bar chart of rate a
 nuisance (<process>_theory_summary.png) and the per-bin shape-only ratios of the largest nuisances
 (<process>_theory_bins.png).
 
+Magnitude per NN bin (needs the number of NN bins per channel: from the hdamp JSON, or --n-nn):
+mass bins summed, one common rate per variation removed, and the two-sided shape effect
+A = (up - down)/2 per NN bin (hdamp_shape_tests.py), the size of a +-1 sigma pull of the nuisance.
+For hdamp, A is the hdamp-ordered part, in which the shared nominal cancels; its error (the two
+hdamp samples' stat.) is shown, with the RMS expected from that stat. alone and chi2 of A against 0.
+Second table and <process>_theory_nn.png: A per NN bin of the largest card nuisances (lines) and of
+hdamp (points with stat. errors), per channel.
+
     python3 compare_hdamp_dctr.py --no-dctr --nominal outputs/nominal/bkg/merged/*.coffea \\
         --hdamp outputs_hdamp_run2/nominal/variations/output_all.coffea \\
         --edges nn_edges_disc_<model>.json --eras 2016_PreVFP 2016_PostVFP 2017 2018 --export --outdir plots/hdamp_run2
@@ -40,6 +48,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))
 from sum_datacards import parse_card, Templates, lnn  # noqa: E402
+import hdamp_shape_tests as hst  # noqa: E402
 
 MAX_REL_STAT = 0.2          # bins used for 'max': nominal relative stat. below this
 
@@ -56,7 +65,7 @@ def shape_metrics(nom, enom, up, eup=None):
     rel = np.divide(enom, nom, out=np.full_like(nom, np.inf), where=ok)
     good = ok & (rel < MAX_REL_STAT)
     mx = np.max(np.abs(s[good])) if good.any() else np.nan
-    out = {"rate": rate, "rms": rms, "max": mx, "s": s}
+    out = {"rate": rate, "rms": rms, "max": mx, "s": s, "h": up}
     if eup is None:
         out["chi2"] = np.sum((s[ok] / rel[ok]) ** 2)
     else:
@@ -94,6 +103,8 @@ def main():
                     help="nuisance groups to include (default: theo); empty = every nuisance on the process")
     ap.add_argument("--hdamp", default=None, help="compare_hdamp_dctr.py --export JSON (hdamp from the 4FS samples)")
     ap.add_argument("--top", type=int, default=6, help="nuisances drawn per bin (largest shape RMS)")
+    ap.add_argument("--n-nn", type=int, default=None,
+                    help="NN bins per channel for the per-NN-bin comparison (default: from the hdamp JSON)")
     ap.add_argument("--outdir", default="plots/ttb_theory")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
@@ -130,6 +141,7 @@ def main():
                 per[ud] = shape_metrics(nom, enom, np.concatenate(hs))
             row.update({f"{k}_{ud.lower()}": per[ud][k] for ud in ("Up", "Down") for k in ("rate", "rms", "max", "chi2")})
             row.update({"ndf": per["Up"]["ndf"], "s_up": per["Up"]["s"], "s_down": per["Down"]["s"], "note": ""})
+            row["templates"] = {ud: per[ud]["h"] for ud in ("Up", "Down")}
         rows.append(row)
 
     if args.hdamp:
@@ -163,15 +175,116 @@ def main():
           "chi2 with the stat. of both samples. "
           "Rate parts are absorbed if the process floats.")
 
+    n_nn = args.n_nn
+    if n_nn is None and args.hdamp and hd.get("n_nn"):
+        n_nn = hd["n_nn"]
+    if n_nn is not None:
+        n_nn = n_nn if isinstance(n_nn, dict) else {ch: n_nn for ch in channels}
+        nn_magnitudes(rows, channels, nominal, n_nn, hd if args.hdamp else None, args)
+
     with open(f"{args.outdir}/{args.process}_theory.csv", "w", newline="") as f:
-        keys = ["name", "type", "rate_up", "rate_down", "rms_up", "rms_down",
-                "max_up", "max_down", "chi2_up", "chi2_down", "ndf", "note"]
+        keys = ["name", "type", "rate_up", "rate_down", "rms_up", "rms_down", "max_up", "max_down",
+                "chi2_up", "chi2_down", "ndf", "nn_rms_A", "nn_max_A", "nn_noise_A", "nn_chi2_A", "nn_ndf_A", "note"]
         wr = csv.DictWriter(f, keys, extrasaction="ignore")
         wr.writeheader()
         wr.writerows(rows)
 
     draw(rows, nbins, args)
-    print(f"Wrote {args.outdir}/{args.process}_theory.csv, _theory_summary.png, _theory_bins.png")
+    print(f"Wrote {args.outdir}/{args.process}_theory.csv, _theory_summary.png, _theory_bins.png"
+          + (", _theory_nn.png" if n_nn is not None else ""))
+
+
+def nn_magnitudes(rows, channels, nominal, n_nn, hd, args):
+    """Two-sided shape effect A = (up - down)/2 per NN bin (mass bins summed, common rate removed)
+    of every card nuisance and of hdamp; second table and the per-NN-bin plot."""
+    def collapse_all(hs, es, chans):
+        cols = [hst.collapse(h, e, n_nn[ch]) for h, e, ch in zip(hs, es, chans)]
+        return np.concatenate([c[0] for c in cols]), np.concatenate([c[1] for c in cols])
+
+    missing = [ch for ch in channels if ch not in n_nn]
+    if missing:
+        print(f"[WARNING] no NN-bin count for {missing}: per-NN-bin comparison skipped")
+        return
+    nom_h = [nominal[ch][0] for ch in channels]
+    nom_e = [np.sqrt(nominal[ch][1]) for ch in channels]
+    hn, en = collapse_all(nom_h, nom_e, channels)
+    zeros = [np.zeros_like(h) for h in nom_h]
+    offsets = np.cumsum([0] + [n_nn[ch] for ch in channels])
+    curves = {}
+    for r in rows:
+        if r["type"] == "lnN":
+            r.update({"nn_rms_A": 0.0, "nn_max_A": 0.0})
+            continue
+        if r["type"] == "samples":
+            continue
+        t_up = r["templates"]["Up"]
+        t_dn = r["templates"]["Down"]
+        split_at = np.cumsum([len(h) for h in nom_h])[:-1]
+        hu, _ = collapse_all(np.split(t_up, split_at), zeros, channels)
+        hd_, _ = collapse_all(np.split(t_dn, split_at), zeros, channels)
+        t = hst.split(hn, en, hu, np.zeros_like(hu), hd_, np.zeros_like(hd_))
+        r.update({"nn_rms_A": hst.rms(t["A"], hn, hn > 0), "nn_max_A": float(np.max(np.abs(t["A"][hn > 0])))})
+        curves[r["name"]] = t["A"]
+    hd_pts = None
+    if hd is not None:
+        chs = [ch for ch in channels if ch in hd["channels"]]
+        if chs != channels:
+            print(f"[WARNING] hdamp JSON channels {list(hd['channels'])} differ from the card's {channels}")
+        get = lambda v, k: [np.asarray(hd["channels"][ch][v][k], float) for ch in chs]
+        cols = {v: collapse_all(get(v, 0), get(v, 1), chs) for v in ("nominal", "up", "down")}
+        t = hst.split(*cols["nominal"], *cols["up"], *cols["down"])
+        ok = t["ok"]
+        c2, n = hst.chi2(t["A"], t["eA"], ok)
+        w = np.where(ok, cols["nominal"][0], 0)
+        noise = float(np.sqrt(np.sum(w * t["eA"] ** 2) / w.sum()))
+        r = next(r for r in rows if r["type"] == "samples")
+        r.update({"nn_rms_A": hst.rms(t["A"], cols["nominal"][0], ok), "nn_max_A": float(np.max(np.abs(t["A"][ok]))),
+                  "nn_noise_A": noise, "nn_chi2_A": c2, "nn_ndf_A": n})
+        hd_pts = (t["A"], t["eA"])
+
+    ranked = sorted(rows, key=lambda r: -r.get("nn_rms_A", 0))
+    head = f"{'nuisance':24} {'A rms [%]':>10} {'max |A| [%]':>12}  note"
+    print("\nTwo-sided shape effect per NN bin, A = (up - down)/2 (mass bins summed, common rate removed):")
+    print(head + "\n" + "-" * len(head))
+    for r in ranked:
+        if "nn_rms_A" not in r:
+            continue
+        note = ""
+        if r["type"] == "samples":
+            note = (f"hdamp-ordered part, stat. of the hdamp samples alone gives {100 * r['nn_noise_A']:.1f}%; "
+                    f"chi2 of A vs 0: {r['nn_chi2_A']:.1f}/{r['nn_ndf_A']} (p={hst.pvalue(r['nn_chi2_A'], r['nn_ndf_A'])})")
+        elif r["type"] == "lnN":
+            note = "rate only"
+        print(f"{r['name']:24} {100 * r['nn_rms_A']:10.2f} {100 * r['nn_max_A']:12.2f}  {note}")
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    top = [r["name"] for r in ranked if r["name"] in curves][:args.top]
+    fig, axes = plt.subplots(1, len(channels), figsize=(4.2 * len(channels), 4.2), sharey=True, squeeze=False)
+    cmap = plt.get_cmap("tab10")
+    for j, ch in enumerate(channels):
+        ax = axes[0, j]
+        lo, hi = offsets[j], offsets[j + 1]
+        edges = np.arange(hi - lo + 1) - 0.5
+        for k, name in enumerate(top):
+            ax.stairs(100 * curves[name][lo:hi], edges, color=cmap(k), lw=1.5, label=name)
+        if hd_pts is not None:
+            ax.errorbar(np.arange(hi - lo), 100 * hd_pts[0][lo:hi], yerr=100 * hd_pts[1][lo:hi], fmt="ko", ms=4,
+                        label="hdamp (4FS samples), stat. unc.")
+        ax.axhline(0, color="gray", lw=0.8)
+        ax.set_title(ch, fontsize=9)
+        ax.set_xlabel("NN bin")
+        ax.set_xticks(np.arange(hi - lo))
+        ax.grid(alpha=0.3)
+    axes[0, 0].set_ylabel("A = (up - down)/2, shape only [%]")
+    axes[0, 0].legend(fontsize=7, frameon=False)
+    fig.suptitle(f"{args.process}: two-sided shape effect per NN bin (mass bins summed, common rate removed)",
+                 fontsize=9)
+    fig.tight_layout()
+    for ext in ("png", "pdf"):
+        fig.savefig(f"{args.outdir}/{args.process}_theory_nn.{ext}")
+    plt.close(fig)
 
 
 def draw(rows, nbins, args):

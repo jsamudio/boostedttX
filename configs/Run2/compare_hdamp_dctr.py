@@ -23,6 +23,17 @@ a 'flat' chi2 of the sample against a pure rate change (shape ratio = 1), which 
 treating hdamp as a rate-only uncertainty (as in the previous analysis).
 Plots: <outdir>/<subsample>_<observable>.png/.pdf
 
+With --edges (card binning), besides the per-bin ratios and the flat / common-rate chi2
+(<subsample>_datacard_bins*.png), the shape ratios with one common rate removed are split into
+(hdamp_shape_tests.py):
+  A = (up - down)/2      hdamp-ordered part: up and down moving in opposite directions. The shared
+                         nominal cancels, so chi2(A vs 0) tests for an hdamp shape with the stat. of the
+                         hdamp samples alone.
+  S = (up + down)/2 - 1  common part: up and down moving together, e.g. a nominal fluctuation.
+per datacard bin and per NN bin with the mass bins summed (more stat. per point; slope along the NN
+bins as a trend test), plot <subsample>_nn_bins*.png. --export also stores the NN-bin counts for
+compare_ttb_theory.py (A of hdamp next to A of the card's theory nuisances).
+
     python3 compare_hdamp_dctr.py --nominal outputs_dctr/nominal/bkg/output_all.coffea \
         --hdamp outputs_hdamp/nominal/variations/output_all.coffea [--btag-norm btag_norm_hdamp.json]
     # integrated Run 2, card binning only (no DCTR): all eras summed bin by bin, per-year rates printed
@@ -296,8 +307,13 @@ def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True, export=No
         c2 = (((r - 1) / np.maximum(re, 1e-12)) ** 2)[ok].sum()
         line += f"   {VARS[v]}: rate {rate:.4f}, flat chi2 {c2:.1f}/{ok.sum() - 1} (p={chi2_pvalue(c2, ok.sum() - 1)})"
     print(line)
+    n_nn = {ch: len(edges_y[years[0]][ch]) - 1 for ch in res}
+    if any(len(edges_y[y][ch]) - 1 != n_nn[ch] for y in years for ch in res):
+        print("    [WARNING] different numbers of NN bins between the years: per-NN-bin tests skipped")
+        n_nn = None
+    nn = split_tests(res, n_nn)
     if export:                  # per-bin yields for compare_ttb_theory.py (hdamp next to the card's theory nuisances)
-        out = {"subsample": sub, "years": years, "edges": edges_file, "channels": {
+        out = {"subsample": sub, "years": years, "edges": edges_file, "n_nn": n_nn, "channels": {
             ch: {"nominal": [r["nominal"][0].tolist(), r["nominal"][1].tolist()],
                  **{v: [r[v][0].tolist(), r[v][1].tolist()] for v in VARS}} for ch, r in res.items()}}
         with open(export, "w") as f:
@@ -306,6 +322,98 @@ def datacard_bins(nom, var, sub, edges_file, model, outdir, plot=True, export=No
     if plot:
         tag = "" if len(years) == 1 else "_" + "_".join(years)
         draw_datacard_bins(res, sub, f"{outdir}/{sub.replace('+', '')}_datacard_bins{tag}")
+        if nn:
+            draw_nn_bins(nn, sub, f"{outdir}/{sub.replace('+', '')}_nn_bins{tag}")
+
+
+def split_tests(res, n_nn):
+    """hdamp-ordered part A = (up - down)/2 and common part S = (up + down)/2 - 1 of the shape ratios
+    (one common rate over all channels, the lnN hypothesis; hdamp_shape_tests.py): per datacard bin and,
+    with n_nn ({channel: NN bins}), per NN bin with the mass bins summed. A tests for an hdamp shape
+    (the shared nominal cancels); S shows what moves up and down together (nominal fluctuations).
+    Returns the per-NN-bin results per channel (for the plot), or None."""
+    import hdamp_shape_tests as hst
+    chans = list(res)
+    cat = lambda v, k: np.concatenate([res[ch][v][k] for ch in chans])
+    hn, en = cat("nominal", 0), cat("nominal", 1)
+    rate_u = cat("up", 0).sum() / hn.sum()
+    rate_d = cat("down", 0).sum() / hn.sum()
+    print("\n  hdamp-ordered part A = (up - down)/2 [shared nominal cancels] and common part "
+          "S = (up + down)/2 - 1, shape only (one common rate):")
+    for ch in chans:
+        t = hst.split(*res[ch]["nominal"], *res[ch]["up"][:2], *res[ch]["down"][:2], rate_u, rate_d)
+        ca, n = hst.chi2(t["A"], t["eA"], t["ok"])
+        cs, _ = hst.chi2(t["S"], t["eS"], t["ok"])
+        print(f"    {ch}: {n} bins   A chi2 {ca:.1f}/{n} (p={hst.pvalue(ca, n)})   S chi2 {cs:.1f}/{n} "
+              f"(p={hst.pvalue(cs, n)})")
+    t = hst.split(hn, en, cat("up", 0), cat("up", 1), cat("down", 0), cat("down", 1), rate_u, rate_d)
+    ca, n = hst.chi2(t["A"], t["eA"], t["ok"])
+    cs, _ = hst.chi2(t["S"], t["eS"], t["ok"])
+    print(f"    all channels ({n} bins): A chi2 {ca:.1f}/{n - 1} (p={hst.pvalue(ca, n - 1)})   "
+          f"S chi2 {cs:.1f}/{n - 1} (p={hst.pvalue(cs, n - 1)})")
+    if not n_nn:
+        return None
+
+    print("\n  per NN bin (mass bins summed; shape only, one common rate); slope per NN bin index:")
+    nn, all_a, all_ea, all_s, all_es = {}, [], [], [], []
+    for ch in chans:
+        k = n_nn[ch]
+        cols = [hst.collapse(*res[ch][v][:2], k) for v in ("nominal", "up", "down")]
+        t = hst.split(*cols[0], *cols[1], *cols[2], rate_u, rate_d)
+        nn[ch] = t
+        x = np.arange(k)
+        ca, n = hst.chi2(t["A"], t["eA"], t["ok"])
+        ba, eba = hst.slope(x, t["A"], t["eA"], t["ok"])
+        bu, ebu = hst.slope(x, t["r_up"], t["e_up"], t["ok"])
+        bd, ebd = hst.slope(x, t["r_down"], t["e_down"], t["ok"])
+        print(f"    {ch}: r_up   " + " ".join(f"{v:.3f}" for v in t["r_up"]) + f"   slope {bu:+.4f} +- {ebu:.4f}")
+        print(f"    {ch}: r_down " + " ".join(f"{v:.3f}" for v in t["r_down"]) + f"   slope {bd:+.4f} +- {ebd:.4f}")
+        print(f"    {ch}: A      " + " ".join(f"{a:+.3f}({e:.3f})" for a, e in zip(t["A"], t["eA"]))
+              + f"   chi2 {ca:.1f}/{n} (p={hst.pvalue(ca, n)}), slope {ba:+.4f} +- {eba:.4f} ({ba / eba:+.1f} sigma)")
+        print(f"    {ch}: S      " + " ".join(f"{s:+.3f}({e:.3f})" for s, e in zip(t["S"], t["eS"])))
+        all_a.append(t["A"][t["ok"]]); all_ea.append(t["eA"][t["ok"]])
+        all_s.append(t["S"][t["ok"]]); all_es.append(t["eS"][t["ok"]])
+    a, ea, s, es = (np.concatenate(v) for v in (all_a, all_ea, all_s, all_es))
+    ca, n = hst.chi2(a, ea, np.ones(len(a), bool))
+    cs, _ = hst.chi2(s, es, np.ones(len(s), bool))
+    print(f"    all channels ({n} NN bins): A chi2 {ca:.1f}/{n - 1} (p={hst.pvalue(ca, n - 1)})   "
+          f"S chi2 {cs:.1f}/{n - 1} (p={hst.pvalue(cs, n - 1)})")
+    return nn
+
+
+def draw_nn_bins(nn, sub, stem):
+    """Per NN bin (mass bins summed): top row shape ratios up / down, bottom row A and S."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    chans = list(nn)
+    fig, axes = plt.subplots(2, len(chans), figsize=(4.2 * len(chans), 6.2), sharex="col", squeeze=False)
+    for j, ch in enumerate(chans):
+        t = nn[ch]
+        x = np.arange(len(t["A"]))
+        ax = axes[0, j]
+        ax.errorbar(x - 0.08, t["r_up"], yerr=t["e_up"], fmt="o", ms=4, color="#1f4e9c", label="hdampUP / nominal")
+        ax.errorbar(x + 0.08, t["r_down"], yerr=t["e_down"], fmt="s", ms=4, color="#d9730d", mfc="white",
+                    label="hdampDOWN / nominal")
+        ax.axhline(1, color="gray", lw=0.8)
+        ax.set_title(f"tt+B hdamp, {ch} (shape only, mass bins summed)", fontsize=8.5)
+        ax = axes[1, j]
+        ax.errorbar(x - 0.08, t["A"], yerr=t["eA"], fmt="o", ms=4, color="black", label="A = (up - down)/2")
+        ax.errorbar(x + 0.08, t["S"], yerr=t["eS"], fmt="^", ms=4, color="#8a8a8a", mfc="white",
+                    label="S = (up + down)/2 - 1")
+        ax.axhline(0, color="gray", lw=0.8)
+        ax.set_xlabel("NN bin")
+        ax.set_xticks(x)
+        for a in axes[:, j]:
+            a.grid(alpha=0.3)
+    axes[0, 0].set_ylabel("variation / nominal (shape only)")
+    axes[1, 0].set_ylabel("hdamp-ordered (A) / common (S)")
+    axes[0, 0].legend(fontsize=7, frameon=False)
+    axes[1, 0].legend(fontsize=7, frameon=False)
+    fig.tight_layout()
+    for ext in ("png", "pdf"):
+        fig.savefig(f"{stem}.{ext}")
+    plt.close(fig)
 
 
 def draw_datacard_bins(res, sub, stem):
