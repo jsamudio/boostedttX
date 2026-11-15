@@ -380,6 +380,7 @@ def submit(path, ids=None, tag="all"):
     refresh_proxy(settings)
     os.makedirs(os.path.join(jobs_dir, "logs"), exist_ok=True)
     ids = job_ids(jobs_dir) if ids is None else ids
+    groups = groups_of(jobs_dir, settings, ids)       # resolve first: fail before touching job states or qsub
     for i in ids:
         for state in ("failed", "running", "done"):
             p = os.path.join(jobs_dir, f"job_{i}.{state}")
@@ -387,7 +388,6 @@ def submit(path, ids=None, tag="all"):
                 os.remove(p)
         open(os.path.join(jobs_dir, f"job_{i}.idle"), "w").close()
 
-    groups = groups_of(jobs_dir, settings, ids)       # resolve before qsub: fail early, not after the array
     joblist = write_joblist(jobs_dir, f"joblist_{tag}.txt", ids, settings)
     array_id = qsub(write_array_script(jobs_dir, settings, joblist, tag))
     try:
