@@ -65,14 +65,16 @@ def files_of(name, era):
     return [f.replace("file:", "") for f in d[key]["files"]]
 
 
-def read(files, max_events, ttb=False):
+def read(files, max_events, ttb=False, theory=False):
     """Arrays of t and tbar (pt, eta, phi, mass) for events with exactly one first-copy t and tbar; with
     ttb=True only tt+B events (genTtbarId % 100 >= 51). Read in steps (GenPart is large). Also returns the
-    sign(genWeight) sums of all events and of the tt+B events (tt+B fraction)."""
+    sign(genWeight) sums of all events and of the tt+B events (tt+B fraction).
+    theory=True: also the theory weights of the kept events (theory_weights), as in the analysis."""
     cols = ["GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_mass", "GenPart_pdgId",
             "GenPart_statusFlags", "GenPart_genPartIdxMother", "genWeight",
             "GenJet_pt", "GenJet_eta", "GenJet_phi", "GenJet_mass", "GenJet_hadronFlavour"] \
-        + (["genTtbarId"] if ttb else [])
+        + (["genTtbarId"] if ttb else []) \
+        + (["GenPart_status", "LHEScaleWeight", "PSWeight", "LHEPdfWeight"] if theory else [])
     out, n, sum_all, sum_ttb = [], 0, 0.0, 0.0
     for path in files:
         if n >= max_events:
@@ -96,12 +98,44 @@ def read(files, max_events, ttb=False):
                     ev[f"{name}_{v}"] = ak.to_numpy(ak.flatten(a[f"GenPart_{v}"][sel[name]][ok]))
             ev.update(additional_b(a[ok]))
             ev.update(additional_light(a[ok]))
+            if theory:
+                ev.update(theory_weights(a[ok]))
             out.append(ev)
         n += n_file
         print(f"  {os.path.basename(path)}: {n_file} events read")
     ev = {k: np.concatenate([o[k] for o in out]) for k in out[0]}
     print(f"  -> {len(ev['w'])} events kept" + (f" (tt+B; tt+B fraction {sum_ttb / sum_all:.4f})" if ttb else ""))
     return ev, (sum_all, sum_ttb)
+
+
+def toppt_sf(pt):
+    """Per-top weight of the top pT reweighting (genmatcher.py: NNLO QCD + NLO EW fit)."""
+    pt = np.clip(pt, 0, np.inf)
+    return 0.103 * np.exp(-0.0118 * pt) - 0.000134 * pt + 0.973
+
+
+def theory_weights(a):
+    """Per event, relative to the nominal weight, as in the analysis (custom_scale_factors.py,
+    genmatcher.py): mu_r/mu_f up/down (LHEScaleWeight, 9 or 8 entries), isr/fsr up/down (PSWeight
+    [0]/[2], [1]/[3]), the LHEPdfWeight members (2D, members along axis 1), and the top pT
+    reweighting weight (sqrt of the product of the per-top weights of the two status-62 tops;
+    1 if not exactly two), which is part of the nominal analysis weight."""
+    sw = ak.to_numpy(a.LHEScaleWeight)
+    if sw.shape[1] == 9:
+        idx = {"mu_r_up": 7, "mu_r_down": 1, "mu_f_up": 5, "mu_f_down": 3}
+    elif sw.shape[1] == 8:
+        idx = {"mu_r_up": 6, "mu_r_down": 1, "mu_f_up": 4, "mu_f_down": 3}
+    else:
+        raise ValueError(f"unexpected number of LHEScaleWeights: {sw.shape[1]}")
+    out = {f"th_{k}": sw[:, i] for k, i in idx.items()}
+    ps = ak.to_numpy(a.PSWeight)
+    out.update({"th_isr_up": ps[:, 0], "th_isr_down": ps[:, 2], "th_fsr_up": ps[:, 1], "th_fsr_down": ps[:, 3]})
+    out["th_pdf"] = ak.to_numpy(a.LHEPdfWeight)
+    tops = a.GenPart_pt[(abs(a.GenPart_pdgId) == 6) & (a.GenPart_status == 62)]
+    two = ak.to_numpy(ak.num(tops) == 2)
+    padded = ak.to_numpy(ak.fill_none(ak.pad_none(tops, 2, clip=True), 0.0))
+    out["th_toppt"] = np.where(two, np.sqrt(toppt_sf(padded[:, 0]) * toppt_sf(padded[:, 1])), 1.0)
+    return out
 
 
 def additional_b(a):
