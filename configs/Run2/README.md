@@ -98,7 +98,10 @@ python run_pipeline.py btagnorm pickle datacard --jec-variations JES_ALL JER JMS
 ```
 `resubmit --include-unfinished` also resubmits jobs that never finished (e.g. killed by the batch
 system); it refuses while PBS still lists the arrays. Per directory the same is available as
-`python ../common/pbs_tools.py submit|status|resubmit|merge <outputdir>`. Job logs: `<outputdir>/job/logs/job_<id>.log`.
+`python ../common/pbs_tools.py submit|status|resubmit|merge <outputdir>`. Job logs: `<outputdir>/job/logs/job_<id>.log`
+(first line: the node; a job on a node without CVMFS stops with `CVMFS not available on <node>`).
+`python ../common/pbs_tools.py nodes <outputdir>...` groups the failed jobs by node with their last error line,
+to tell a bad node from a real failure (node from the log, or from `qstat -x` for older jobs).
 The PBS executor and tools are shared with other analyses in `../common` (see `../common/README.md`);
 `run_options_pbs.yaml` here holds this analysis' settings.
 

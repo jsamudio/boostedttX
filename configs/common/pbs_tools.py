@@ -30,6 +30,8 @@ Merge modes ('merge-mode' in run_options_pbs.yaml / pbs_settings.json):
                                                 # of their datasets
     python pbs_tools.py merge    <outputdir>    # (re)submit the merges whose output is missing
                                                 # (--all: every dataset again)
+    python pbs_tools.py nodes    <outputdir>... # failed jobs per node (qstat -x) with their last error
+                                                # line: are the failures one bad node (e.g. CVMFS)?
     python pbs_tools.py groups   <outputdir>    # store the dataset groups in pbs_settings.json; needs
                                                 # PyYAML: for dirs prepared before the per-dataset merge,
                                                 # run it once inside the image if the host has no PyYAML
@@ -269,8 +271,18 @@ mkdir -p "$WORK" && cd "$WORK" || exit 1
 cp "$JOBS_DIR/config_job_$JOBID.pkl" {SHARED_CONFIG_NAME} || exit 1
 cp "$JOBS_DIR/fileset_job_$JOBID.json" "$JOBS_DIR/job.sh" "$JOBS_DIR/{settings['inner-yaml']}" . || exit 1
 
+LOG="$JOBS_DIR/logs/job_$JOBID.log"
+echo "node: $(hostname)  PBS job: $PBS_JOBID  start: $(date)" > "$LOG"
+# CVMFS check: a node with a broken mount fails here with a clear message, job marked failed
+if ! ls {settings['apptainer-image']} > /dev/null 2>&1 || ! ls /cvmfs/cms.cern.ch/cmsset_default.sh > /dev/null 2>&1; then
+    echo "CVMFS not available on $(hostname): image or /cvmfs/cms.cern.ch not readable" >> "$LOG"
+    rm -f "$JOBS_DIR/job_$JOBID.idle" "$JOBS_DIR/job_$JOBID.running" && touch "$JOBS_DIR/job_$JOBID.failed"
+    cd / && rm -rf "$WORK"
+    exit 3
+fi
+
 {apptainer_prefix(settings, '--env _CONDOR_SCRATCH_DIR="$WORK"')} \\
-    bash job.sh "$JOBID" "fileset_job_$JOBID.json" "$CHUNKSIZE" {settings['cores-per-worker']} > "$JOBS_DIR/logs/job_$JOBID.log" 2>&1
+    bash job.sh "$JOBID" "fileset_job_$JOBID.json" "$CHUNKSIZE" {settings['cores-per-worker']} >> "$LOG" 2>&1
 STATUS=$?
 
 cd / && rm -rf "$WORK"
@@ -502,6 +514,65 @@ def status(path):
     return st
 
 
+ERROR_KEYS = ("Error", "Exception", "Killed", "cvmfs", "CVMFS", "Transport endpoint", "No such file")
+
+
+def last_error(log):
+    """Last line of a job log that looks like an error (or the last line), shortened."""
+    if not os.path.exists(log):
+        return "(no log)"
+    with open(log, errors="replace") as f:
+        lines = [ln.strip() for ln in f if ln.strip()]
+    hits = [ln for ln in lines if any(k in ln for k in ERROR_KEYS)]
+    line = (hits or lines or ["(empty log)"])[-1]
+    return line[:150]
+
+
+def _exec_host(pbs_id):
+    """Node of a (finished) PBS subjob from `qstat -x -f`; None if PBS no longer knows it."""
+    r = subprocess.run(["qstat", "-x", "-f", pbs_id], capture_output=True, text=True)
+    for ln in r.stdout.splitlines():
+        if ln.strip().startswith("exec_host"):
+            return ln.split("=", 1)[1].strip().split("/")[0]
+    return None
+
+
+def nodes(path):
+    """Failed jobs per node: the node from the job log ('node:' line, jobs submitted since it was added)
+    or else from the PBS history (qstat -x, last submission of the job), with each job's last error."""
+    jobs_dir = jobs_dir_of(path)
+    settings = load_settings(jobs_dir)
+    failed = [i for i, s in states(jobs_dir).items() if s == "failed"]
+    last_sub = {}
+    for sub in submissions(jobs_dir):
+        if sub.get("array"):
+            ids = sub.get("jobs") or job_ids(jobs_dir)
+            for k, i in enumerate(ids):
+                last_sub[int(i)] = (sub["array"], k, len(ids))
+    per_node = {}
+    for i in failed:
+        log = os.path.join(jobs_dir, "logs", f"job_{i}.log")
+        node = None
+        if os.path.exists(log):
+            with open(log, errors="replace") as f:
+                first = f.readline()
+            if first.startswith("node:"):
+                node = first.split()[1]
+        if node is None and i in last_sub and shutil.which("qstat"):
+            array, k, n = last_sub[i]
+            node = _exec_host(array.replace("[]", f"[{k}]") if n > 1 else array)
+        per_node.setdefault(node or "unknown", []).append((i, last_error(log)))
+    print(f"{settings['name']}: {len(failed)} failed job(s)")
+    for node, jobs in sorted(per_node.items(), key=lambda kv: -len(kv[1])):
+        print(f"  {node:20} {len(jobs):4} failed  jobs {[i for i, _ in jobs][:12]}{' ...' if len(jobs) > 12 else ''}")
+        errs = {}
+        for _, e in jobs:
+            errs[e] = errs.get(e, 0) + 1
+        for e, c in sorted(errs.items(), key=lambda kv: -kv[1])[:3]:
+            print(f"      {c:4} x {e}")
+    return per_node
+
+
 def _active(jobs_dir):
     """Array jobs of this directory still known to PBS as queued/running."""
     path = os.path.join(jobs_dir, SUBMISSIONS_FILE)
@@ -562,6 +633,8 @@ def _run_command(args):
             status(d)
         elif args.command == "resubmit":
             resubmit(d, args.include_unfinished)
+        elif args.command == "nodes":
+            nodes(d)
         elif args.command == "groups":
             groups = merge_groups(jobs_dir_of(d))
             print(f"{d}: {len(groups)} dataset groups stored ({sum(len(j) for j in groups.values())} jobs)")
@@ -571,7 +644,7 @@ def _run_command(args):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["submit", "pending", "status", "resubmit", "merge", "groups"])
+    ap.add_argument("command", choices=["submit", "pending", "status", "resubmit", "merge", "groups", "nodes"])
     ap.add_argument("outputdirs", nargs="+", help="pocket-coffea output dir(s) (or their job/ subdir)")
     ap.add_argument("--include-unfinished", action="store_true",
                     help="resubmit: also jobs left running/idle/missing (e.g. killed by the batch system)")

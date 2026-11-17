@@ -34,6 +34,7 @@ directory; input files readable from the compute nodes (under the apptainer bind
    python3 ../common/pbs_tools.py status   <outputdir>
    python3 ../common/pbs_tools.py resubmit <outputdir>     # failed jobs + the merges of their datasets
    python3 ../common/pbs_tools.py merge    <outputdir>     # merges whose output is missing (--all: every one)
+   python3 ../common/pbs_tools.py nodes    <outputdir>...  # failed jobs per node + last error (bad node / CVMFS?)
    ```
    The merge runs per dataset (`merge-mode: dataset`, default): a PBS array, one `merge_group.py` per
    dataset, writing `<outputdir>/merged/<dataset>.coffea`, each a complete output of its dataset, so a
