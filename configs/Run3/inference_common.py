@@ -15,6 +15,9 @@ Environment overrides:
                                  JMSJMR: fatjet mass scale/resolution -> JMSUp/Down, JMRUp/Down
                                  (../common/fatjet_mass_variations.py)
     PC_DCTR=1                    DCTR hdamp weights dctr_hdamp_up/down for DCTR_HDAMP['samples'] (dctr.py)
+    PC_TRIGEFF_MUON=pog          trigeff group only: reference muon with the MUO trigger-SF selection
+                                 (medium ID + PF isolation medium, no sip3d) instead of the analysis
+                                 muon, to check the electron trigger SF (trigeff_pog_muon below)
 
 Run 3 object definitions: PUPPI MET (pocket-coffea's default MET calibrator: type-1 PUPPI MET
 recomputed from RawPuppiMET with the recommended JECs, data and MC), UParT AK4 b tagging, GloParT
@@ -24,6 +27,7 @@ import os
 import sys
 
 import cloudpickle
+from omegaconf import open_dict
 from pocket_coffea.utils.configurator import Configurator
 from pocket_coffea.lib.columns_manager import ColOut
 from pocket_coffea.lib.cut_functions import eventFlags, goldenJson, get_JetVetoMap
@@ -191,6 +195,32 @@ def dctr_options():
     return {"samples": list(DCTR_HDAMP["samples"]), "models": dict(DCTR_HDAMP["models"])}
 
 
+# PC_TRIGEFF_MUON=pog: muon of the MUO trigger-SF denominator (CutBasedIdMedium_and_PFIsoMedium);
+# pfIsoId 3 = PFIsoMedium (PF relative isolation, dR 0.4, < 0.20); no sip3d cut (not in the MUO ID)
+TRIGEFF_POG_MUON = {"pfIsoId": 3, "sip3d": None}
+
+
+def trigeff_pog_muon(parameters, selection, eras):
+    """PC_TRIGEFF_MUON=pog: electron trigger SF check with the reference muon selected as in the MUO
+    trigger SF ('mu': 'pog'), so that SF is applied to the muons it was measured for. Changes the
+    muon object selection (MuonGood, and through it the jet cleaning) of this run only."""
+    mode = os.environ.get("PC_TRIGEFF_MUON")
+    if not mode:
+        return
+    if mode != "pog":
+        raise ValueError(f"PC_TRIGEFF_MUON={mode}: only 'pog' is supported")
+    if selection != "trigeff":
+        raise ValueError(f"PC_TRIGEFF_MUON=pog is for the trigeff group only (this group: {selection} selection)")
+    not_pog = {era: TRIGGER_SFS.get(era, {}).get("mu") for era in eras
+               if TRIGGER_SFS.get(era, {}).get("mu") != "pog"}
+    if not_pog:
+        raise ValueError(f"PC_TRIGEFF_MUON=pog needs the MUO muon trigger SF (TRIGGER_SFS[era]['mu'] = 'pog'); "
+                         f"set: {not_pog}")
+    with open_dict(parameters):
+        parameters.object_preselection.Muon.update(TRIGEFF_POG_MUON)
+    print(f"--> trigeff reference muon: MUO trigger-SF selection {TRIGEFF_POG_MUON} (mediumId kept)")
+
+
 def load_parameters(eras):
     """Default pocket-coffea parameters + params/*.yaml, with the shape variation from the environment."""
     defaults.register_configuration_dir("config_dir", LOCALDIR + "/params")
@@ -330,6 +360,7 @@ def build_config(group, eras=None, sample_list=None):
           f"SPANet models {spanet_models.ACTIVE_MODELS}")
 
     parameters, shape_calibrators = load_parameters(eras)
+    trigeff_pog_muon(parameters, selection, eras)
     _check_btag_wps(parameters)
 
     workflow = ZHbbRun3Processor

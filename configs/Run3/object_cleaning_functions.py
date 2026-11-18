@@ -5,11 +5,19 @@ from pocket_coffea.lib.jets import compute_jetId
 
 
 def lep_sel(events, lepton_flavour, params):
-    """Tight leptons: electrons MVA noIso WP90, muons medium ID; mini-isolation and sip3d for both."""
+    """Tight leptons: electrons MVA noIso WP90, muons medium ID; mini-isolation and sip3d for both.
+    Optional keys (set only by inference_common.trigeff_pog_muon, PC_TRIGEFF_MUON=pog): 'pfIsoId'
+    replaces the mini-isolation by the PF isolation ID (pfIsoId >= value), and sip3d None drops the
+    sip3d cut."""
     leptons = events[lepton_flavour]
     cuts = params.object_preselection[lepton_flavour]
-    good = (abs(leptons.eta) < cuts["eta"]) & (leptons.pt > cuts["pt"]) & (leptons.sip3d < cuts["sip3d"])
-    good = good & (leptons.miniPFRelIso_all < cuts["iso"])
+    good = (abs(leptons.eta) < cuts["eta"]) & (leptons.pt > cuts["pt"])
+    if cuts.get("sip3d") is not None:
+        good = good & (leptons.sip3d < cuts["sip3d"])
+    if cuts.get("pfIsoId") is not None:
+        good = good & (leptons.pfIsoId >= cuts["pfIsoId"])
+    else:
+        good = good & (leptons.miniPFRelIso_all < cuts["iso"])
     if lepton_flavour == "Electron":
         good = good & (leptons[cuts["id"]] == True)
     elif lepton_flavour == "Muon":

@@ -28,6 +28,13 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
    2. set `"ele"` to that file, rerun `trigeff`; muon cell -> `muon_trig_sf_2024.json.gz`
    3. set `"mu"` to that file (`inference_common.TRIGGER_SFS`) for the analysis
    Until then `ele_trig_sf` = 1 and `mu_trig_sf` = MUO reference SF.
+
+   Check of step 1 (reference-muon definition): the MUO SF is measured for medium ID + PF isolation,
+   the analysis muon has mini-isolation and sip3d. `PC_TRIGEFF_MUON=pog` (trigeff only, needs
+   `"mu": "pog"`) selects the reference muon as in the MUO SF (`pfIsoId >= 3`, no sip3d); rerun the
+   electron cell on that output and compare with `ele_trig_sf_2024.json.gz`:
+
+       PC_TRIGEFF_MUON=pog python3 run_pipeline.py inference --backend pbs --groups trigeff --outdir outputs_trigeff_pogmu
 2. **b-tag SFs**: fixed-WP SFs (BTV `UParTAK4_comb` for b/c, `UParTAK4_light`), multi-WP method 1a
    over the WPs whose information the analysis uses (`analysis_years.BTAG_SF_WPS` = L/M/T: the
    `n_bjets_<WP>` counts and the M requirement), on all `JetGood`, with our MC efficiency maps
