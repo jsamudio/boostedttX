@@ -5,7 +5,7 @@
             "sample": "TTZToQQ",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "0.5297",
+            "xsec": "0.6977",
             "nevents": "27569578",
             "size": "74784288413"
         },
@@ -242,7 +242,7 @@
             "sample": "TTZToQQ",
             "year": "2017",
             "isMC": "True",
-            "xsec": "0.5297",
+            "xsec": "0.6977",
             "nevents": "59936657",
             "size": "167789894679"
         },
@@ -614,7 +614,7 @@
             "sample": "TTZToQQ",
             "year": "2018",
             "isMC": "True",
-            "xsec": "0.5297",
+            "xsec": "0.6977",
             "nevents": "59135941",
             "size": "163272205267"
         },
@@ -1096,7 +1096,7 @@
             "sample": "TTZToQQ",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "0.5297",
+            "xsec": "0.6977",
             "nevents": "32317771",
             "size": "87981934240"
         },

@@ -5,7 +5,7 @@
             "sample": "TTLL",
             "year": "2024",
             "isMC": "True",
-            "xsec": "0.03949",
+            "xsec": "0.05425",
             "nevents": "2965000",
             "size": "11711175636"
         },
@@ -55,7 +55,7 @@
             "sample": "TTLL",
             "year": "2024",
             "isMC": "True",
-            "xsec": "0.08646",
+            "xsec": "0.1188",
             "nevents": "3952000",
             "size": "18455920890"
         },

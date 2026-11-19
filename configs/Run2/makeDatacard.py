@@ -784,14 +784,14 @@ class MakeDataCard:
                 lnN(lumi_name, all_mc, per_year, grps=('exp',))
         lnN('lep_phasespace', all_mc, LEPTON_PHASESPACE_UNC, grps=('exp',))
         lnN('tth_ggpdf', tth_sig, 1.036,        grps=('sig_rtheo',))
-        lnN('ttz_ggpdf', ttz_sig, 1.035,        grps=('sig_rtheo',))
+        lnN('ttz_ggpdf', ttz_sig, 1.020, 0.987, grps=('sig_rtheo',))   # PDF, arXiv:2410.01214 (aN3LO QCD+NLO EW, MSHT20)
         lnN('tth_qsc',   tth_sig, 1.058, 0.908, grps=('sig_rtheo',))
-        lnN('ttz_qsc',   ttz_sig, 1.081, 0.907, grps=('sig_rtheo',))
+        lnN('ttz_qsc',   ttz_sig, 1.021, 0.974, grps=('sig_rtheo',))   # scale, arXiv:2410.01214
         if 'recoeft' not in self.tag:
             lnN('tth_ggpdf0', ['ttH0'], 1.036,        grps=('antisig_rtheo',))
-            lnN('ttz_ggpdf0', ['ttZ0'], 1.035,        grps=('antisig_rtheo',))
+            lnN('ttz_ggpdf0', ['ttZ0'], 1.020, 0.987, grps=('antisig_rtheo',))
             lnN('tth_qsc0',   ['ttH0'], 1.058, 0.908, grps=('antisig_rtheo',))
-            lnN('ttz_qsc0',   ['ttZ0'], 1.081, 0.907, grps=('antisig_rtheo',))
+            lnN('ttz_qsc0',   ['ttZ0'], 1.021, 0.974, grps=('antisig_rtheo',))
         lnN('ggpdf',  ttbar_mc, 1.042, grps=('theo',))
         lnN('tt_qsc', ttbar_mc, [[1.024, 0.965] for _ in ttbar_mc], grps=('theo',))
         lnN('qgpdf',  ['SingleTop'], 1.028, grps=('theo',))

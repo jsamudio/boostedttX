@@ -46,9 +46,12 @@ PROCESSES = ['ttZ', 'ttH', 'TTBar', 'tt_B', 'QCD', 'VJets', 'SingleTop', 'ttX']
 RELABEL = {'WJetsToLNu': 'VJets', 'DYJetsToLL': 'VJets'}
 
 # 13 TeV cross sections in pb (Run 2). Run 3 years need 13.6 TeV values.
+# ttZ (2026-11-19): sigma(ttZ, 13 TeV) = 0.998 pb, aN3LO QCD + NLO EW, MSHT20 NNLO (arXiv:2410.01214),
+# times PDG Z branching fractions: hadrons 0.69911 (TTZToQQ; its Z->bb events are replaced by TTZToBB),
+# bb 0.1512 (TTZToBB), ll + invisible 0.30099 (TTZToLLNuNu, m_ll > 10 GeV: the pure-Z value).
 XSEC_DICT = {
-    "TTZToLLNuNu": 0.2529, "ttHTobb": 0.2934, "ttHToNonbb": 0.215,
-    "TTZToQQ": 0.5297, "TTZToBB": 0.1157, "TTToHadronic": 380.095,
+    "TTZToLLNuNu": 0.3004, "ttHTobb": 0.2934, "ttHToNonbb": 0.215,
+    "TTZToQQ": 0.6977, "TTZToBB": 0.1509, "TTToHadronic": 380.095,
     "TTToSemiLeptonic": 364.018, "TTTo2L2Nu": 88.29, "TTbb_Hadronic": 9.286,
     "TTbb_SemiLeptonic": 8.168, "TTbb_2L2Nu": 1.807, "TTWJetsToLNu": 0.2163,
     "TTWJetsToQQ": 0.4432, "TTTT": 0.008091, "TTGJets": 3.774,

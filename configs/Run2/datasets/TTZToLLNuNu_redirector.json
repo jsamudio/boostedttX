@@ -5,7 +5,7 @@
             "sample": "TTZToLLNuNu",
             "year": "2016_PostVFP",
             "isMC": "True",
-            "xsec": "0.2529",
+            "xsec": "0.3004",
             "nevents": "6017000",
             "size": "15297695911"
         },
@@ -60,7 +60,7 @@
             "sample": "TTZToLLNuNu",
             "year": "2017",
             "isMC": "True",
-            "xsec": "0.2529",
+            "xsec": "0.3004",
             "nevents": "14036000",
             "size": "36752549704"
         },
@@ -92,7 +92,7 @@
             "sample": "TTZToLLNuNu",
             "year": "2018",
             "isMC": "True",
-            "xsec": "0.2529",
+            "xsec": "0.3004",
             "nevents": "19608000",
             "size": "50373282365"
         },
@@ -126,7 +126,7 @@
             "sample": "TTZToLLNuNu",
             "year": "2016_PreVFP",
             "isMC": "True",
-            "xsec": "0.2529",
+            "xsec": "0.3004",
             "nevents": "5792000",
             "size": "14687369138"
         },
