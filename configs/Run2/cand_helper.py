@@ -94,7 +94,7 @@ def zh_helper(events):
     ak8 = events.FatJetGood
     bjet = events.bJetGood
     qjet = events.qJetGood
-    lep = events.LeptonGood
+    lep = events.LeptonGood[:, :1]   # leading lepton; the analysis selection has exactly one, the trigeff e-mu selection two
     met = events.MET
     events['ZH_pt'] = ZHCand.pt
     events['ZH_M'] = ZHCand.particleNet_mass
