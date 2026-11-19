@@ -8,7 +8,7 @@ max-events-per-job:
 chunksize: 100000           # events per futures task (memory: one chunk per core in flight)
 
 # ---- PBS resources (per job)
-queue: batch
+queue: hep
 cores-per-worker: 8         # = futures workers per job
 mem-per-worker: 32gb        # memory of the whole job
 walltime: null              # no request; e.g. "12:00:00"

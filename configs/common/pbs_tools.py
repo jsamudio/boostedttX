@@ -47,7 +47,7 @@ NO_SUBMIT_ENV = "PC_PBS_NO_SUBMIT"
 
 # Defaults, overridable in run_options_pbs.yaml
 DEFAULTS = {
-    "queue": "batch",
+    "queue": "hep",
     "cores-per-worker": 8,
     "mem-per-worker": "32gb",          # whole job (all cores)
     "walltime": None,                  # e.g. "12:00:00"; None = no request
