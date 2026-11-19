@@ -72,11 +72,9 @@ def lep_selTrig_Mu(events, lepton_flavour, params):
         
         # Denominator: CutBasedIdTight
         passes_id = leptons.tightId == True
-        
-        # Additional analysis-specific cut (not part of the SF, but standard for impact parameter cuts)
-        passes_sip3d = leptons.sip3d < cuts['sip3d']
 
-        good_leptons = passes_eta & passes_pt & passes_iso & passes_id & passes_sip3d
+        # No sip3d: the reference muon is exactly the MUO trigger-SF denominator (tight ID + PFIsoTight)
+        good_leptons = passes_eta & passes_pt & passes_iso & passes_id
 
     return leptons[good_leptons]
 
