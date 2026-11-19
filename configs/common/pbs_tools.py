@@ -8,7 +8,8 @@ as inside the apptainer image.
 A jobs directory <outputdir>/job is prepared by
     pocket-coffea run --cfg <config> -o <outputdir> --executor pbs \
         --executor-custom-setup ../common/executors_pbs.py -ro run_options_pbs.yaml
-and contains one pickled configurator per job, job.sh, jobs_config.yaml and pbs_settings.json.
+and contains one pickled configurator per job (config_job_N.pkl) and its fileset (fileset_job_N.json),
+job.sh, jobs_config.yaml and pbs_settings.json.
 This module turns it into a PBS job array (one subjob per pocket-coffea job, each running
 the futures executor on all cores of its node inside apptainer) plus a merge that runs after
 the array.
@@ -263,10 +264,13 @@ read JOBID CHUNKSIZE <<< "$(sed -n "$((IDX + 1))p" {joblist})"
 
 WORK={settings['scratch-dir']}/$USER/pc_{settings['name']}_${{JOBID}}_$$
 mkdir -p "$WORK" && cd "$WORK" || exit 1
-cp "$JOBS_DIR/config_job_$JOBID.pkl" "$JOBS_DIR/job.sh" "$JOBS_DIR/{settings['inner-yaml']}" .
+# pocket-coffea >= 0.9.13 job.sh: runs `--cfg {SHARED_CONFIG_NAME} --fileset "$2"`; our per-job
+# configurator (restricted to the job's samples) is copied under that name
+cp "$JOBS_DIR/config_job_$JOBID.pkl" {SHARED_CONFIG_NAME} || exit 1
+cp "$JOBS_DIR/fileset_job_$JOBID.json" "$JOBS_DIR/job.sh" "$JOBS_DIR/{settings['inner-yaml']}" . || exit 1
 
 {apptainer_prefix(settings, '--env _CONDOR_SCRATCH_DIR="$WORK"')} \\
-    bash job.sh "$JOBID" "config_job_$JOBID.pkl" "$CHUNKSIZE" {settings['cores-per-worker']} > "$JOBS_DIR/logs/job_$JOBID.log" 2>&1
+    bash job.sh "$JOBID" "fileset_job_$JOBID.json" "$CHUNKSIZE" {settings['cores-per-worker']} > "$JOBS_DIR/logs/job_$JOBID.log" 2>&1
 STATUS=$?
 
 cd / && rm -rf "$WORK"
@@ -334,6 +338,10 @@ cd {settings['analysis-dir']}
 
 # ---------------------------------------------------------------- grid proxy
 PROXY_MIN_HOURS = 1        # refuse to submit below this
+# Names used by the pocket-coffea (>= 0.9.13) job.sh: shared configurator in the work dir, and the
+# per-job fileset passed as $2 (executors_manual_jobs.SHARED_CONFIG_NAME / fileset_job_N.json)
+SHARED_CONFIG_NAME = "configurator_jobs.pkl"
+FILESET_JOB = "fileset_job_{i}.json"
 PROXY_WARN_HOURS = 24      # warn below this (jobs may queue / run long)
 
 

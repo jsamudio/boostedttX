@@ -57,8 +57,8 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
     a PBS Pro job array."""
 
     def prepare_jobs(self, splits):
-        """Same as the HTCondor executor (one pickled configurator per job + jobs_config.yaml),
-        with each job's configurator restricted to the samples of its split."""
+        """Same as the HTCondor executor (jobs_config.yaml, fileset_job_N.json per job), with one
+        pickled configurator per job restricted to the samples of its split (config_job_N.pkl)."""
         jobs_config = {
             "job_name": self.job_name,
             "job_dir": os.path.abspath(self.jobs_dir),
@@ -69,6 +69,10 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
         }
         # Postprocessing happens in the merge (per dataset: pocket-coffea scales each dataset by its own sums)
         self.config.do_postprocessing = False
+        # pocket-coffea >= 0.9.13 job.sh: `pocket-coffea run --cfg configurator_jobs.pkl --fileset "$2"`
+        # (one shared, unloaded configurator + fileset_job_N.json per job). Here each job keeps its own
+        # configurator, restricted to its samples; the PBS wrapper copies config_job_N.pkl to
+        # configurator_jobs.pkl in the job work dir and passes fileset_job_N.json as $2.
         config_files = []
         for i, split in enumerate(splits):
             partial_config = self.config.clone()
@@ -77,10 +81,14 @@ class ExecutorFactoryPBS(ExecutorFactoryCondorCERN):
             path = f"{self.jobs_dir}/config_job_{i}.pkl"
             with open(path, "wb") as f:
                 cloudpickle.dump(partial_config, f)
+            fileset_file = f"{self.jobs_dir}/{pbs_tools.FILESET_JOB.format(i=i)}"
+            with open(fileset_file, "w") as f:
+                json.dump(split, f)
             config_files.append(path)
             jobs_config["jobs_list"][f"job_{i}"] = {
                 "filesets": split,
                 "config_file": path,
+                "fileset_file": fileset_file,
                 "output_file": f"{os.path.abspath(self.outputdir)}/output_job_{i}.coffea",
             }
         with open(f"{self.jobs_dir}/jobs_config.yaml", "w") as f:
