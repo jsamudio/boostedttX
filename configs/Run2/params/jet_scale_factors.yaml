@@ -1,16 +1,26 @@
 # Overrides of pocket-coffea's jet_scale_factors defaults.
-# The defaults only provide jet veto maps for the NanoAODv15 Run 2 eras; these are the v9 (UL) ones.
+# Run 2 (UL) jet veto maps, JERC recommendation (2026-11-19): the strictest data-driven map per era,
+# plus h2hot_mc for 2016. Applied per jet (object_cleaning_functions.jet_veto_map_mask): a jet is
+# vetoed if any of `maps` is non-zero at its (eta, phi). The cvmfs jsonpog files hold the components
+# of the recommended maps as separate types (jetvetomap_<component>), so each recommended map is the
+# union of its components, e.g. h2hot_ul18_plus_hem1516_plus_hbp2m1 = hot + hem1516 + hbp2m1.
+# Note: cvmfs has tags Summer19UL16_V1 / Summer19UL17_V1, the JERC page lists Summer19UL16_V0 /
+# Summer19UL17_V2 (2018: V1 on both).
 jet_scale_factors:
   vetomaps:
-    '2016_PreVFP':
+    '2016_PreVFP':     # h2hot_ul16_plus_hbm2_hbp12_qie11 + h2hot_mc, same for APV and non-APV
       file: ${cvmfs:Run2-2016preVFP-UL-NanoAODv9,JME,jetvetomaps.json.gz}
       name: "Summer19UL16_V1"
+      maps: ["jetvetomap_hot", "jetvetomap_hbm2", "jetvetomap_hbp12", "jetvetomap_qie11", "jetvetomap_mc"]
     '2016_PostVFP':
       file: ${cvmfs:Run2-2016postVFP-UL-NanoAODv9,JME,jetvetomaps.json.gz}
       name: "Summer19UL16_V1"
-    '2017':
+      maps: ["jetvetomap_hot", "jetvetomap_hbm2", "jetvetomap_hbp12", "jetvetomap_qie11", "jetvetomap_mc"]
+    '2017':            # h2hot_ul17_plus_hep17_plus_hbpw89
       file: ${cvmfs:Run2-2017-UL-NanoAODv9,JME,jetvetomaps.json.gz}
       name: "Summer19UL17_V1"
-    '2018':
+      maps: ["jetvetomap_hot", "jetvetomap_hep17", "jetvetomap_hbpw89"]
+    '2018':            # h2hot_ul18_plus_hem1516_plus_hbp2m1 (standard, not HEM-reprocessed, samples)
       file: ${cvmfs:Run2-2018-UL-NanoAODv9,JME,jetvetomaps.json.gz}
       name: "Summer19UL18_V1"
+      maps: ["jetvetomap_hot", "jetvetomap_hem1516", "jetvetomap_hbp2m1"]

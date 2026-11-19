@@ -413,30 +413,8 @@ non_genMatch = Cut(
 )
 
 ###########################
-## Jet veto maps (https://cms-jerc.web.cern.ch/Recommendations/#jet-veto-maps)
-## Same as pocket-coffea's get_JetVetoMap, but on the analysis jet collection (JetGood)
-## instead of all NanoAOD jets.
-def get_JetVetoMap(name="JetVetoMaps"):
-    return Cut(name=name, params={}, function=get_JetVetoMap_Mask)
-
-def get_JetVetoMap_Mask(events, params, year, processor_params, sample, isMC, **kwargs):
-    # Imported here to avoid the circular import configurator -> cuts -> jets -> configurator
-    from pocket_coffea.lib.jets import compute_jetId
-    jets = ak.with_field(events["JetGood"], compute_jetId(events, "JetGood", processor_params, year), "jetId_corrected")
-    mask_for_VetoMap = (
-        (jets["jetId_corrected"] >= 6)                      # tightLepVeto
-        & (abs(jets.eta) < 5.19)                             # HCAL acceptance
-        & (jets.pt > 15.)
-        & ((jets["neEmEF"] + jets["chEmEF"]) < 0.9)          # not dominated by ECAL energy
-    )
-    jets = jets[mask_for_VetoMap]
-    vetomap = processor_params.jet_scale_factors.vetomaps[year]
-    corr = load_correction_set(vetomap["file"])[vetomap["name"]]
-    etaFlat, phiFlat, etaCounts = ak.flatten(jets.eta), ak.flatten(jets.phi), ak.num(jets.eta)
-    phiFlat = np.clip(phiFlat, -3.14159, 3.14159)    # no overflow in the phi binning
-    weight = ak.unflatten(corr.evaluate("jetvetomap", etaFlat, phiFlat), counts=etaCounts)
-    eventMask = ak.sum(weight, axis=-1) == 0         # reject the event if any jet is vetoed
-    return ak.where(ak.is_none(eventMask), False, eventMask)
+## Jet veto maps: Run 2 removes the vetoed jets (JERC Run 2 recipe), in
+## object_cleaning_functions.jet_veto_map_mask; no event-level cut.
 
 '''
 Helper function to sort jets by highest Xbb score

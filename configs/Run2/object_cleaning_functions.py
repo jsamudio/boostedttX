@@ -1,6 +1,33 @@
 import awkward as ak
 import numpy as np
 from pocket_coffea.lib.jets import compute_jetId
+from pocket_coffea.lib.correction_cache import load_correction_set
+
+
+def jet_veto_map_mask(events, jets, params, year):
+    """True for AK4 jets vetoed by the UL jet veto map (params.jet_scale_factors.vetomaps[year]).
+    JERC Run 2 recipe: the vetoed jets are removed, the event is kept (unlike Run 3). The map applies
+    to jets of the loose selection: pT > 15 GeV, tight ID, PU ID below 50 GeV, EM fraction < 0.9,
+    no PF muon within dR < 0.2. PU ID is not repeated here: the caller requires it for the good jets."""
+    vetomap = params.jet_scale_factors.vetomaps[year]
+    corr = load_correction_set(vetomap["file"])[vetomap["name"]]
+    counts = ak.num(jets.eta)
+    eta = np.clip(ak.to_numpy(ak.flatten(jets.eta)), -5.18, 5.18)        # inside the map range
+    phi = np.clip(ak.to_numpy(ak.flatten(jets.phi)), -3.14159, 3.14159)  # no overflow in phi
+    vetoed = np.zeros(len(eta), dtype=bool)
+    for map_name in vetomap.get("maps", ["jetvetomap"]):     # vetoed if any of the era's maps vetoes
+        vetoed |= np.asarray(corr.evaluate(map_name, eta, phi)) > 0
+    in_map = ak.unflatten(vetoed, counts)
+    pf_muons = events["Muon"][events["Muon"].isPFcand]
+    near_muon = ak.any(jets.metric_table(pf_muons) < 0.2, axis=2)
+    loose = (
+        ((jets.jetId_corrected & 2) == 2)                    # tight ID
+        & (jets.pt > 15.)
+        & (abs(jets.eta) < 5.19)
+        & ((jets.neEmEF + jets.chEmEF) < 0.9)                # not dominated by EM energy
+        & ~near_muon
+    )
+    return loose & in_map
 
 '''
 Custom function to remove isolation bit from WPBitmap
@@ -243,10 +270,13 @@ def jet_selection_custom(events, jet_type, params, year, leptons_collection="", 
             mask_jetpuid = (jets.puId >= params.jet_scale_factors.jet_puId[year]["working_point"][cuts["puId"]["wp"]]) | (
                 jets.pt >= cuts["puId"]["maxpt"]
             )
+            # Run 2 jet veto maps: remove the vetoed jets (JERC Run 2 recipe), keep the event
+            mask_vetomap = ~jet_veto_map_mask(events, jets, params, year)
         else:
             mask_jetpuid = True
-  
-        mask_good_jets = mask_presel & mask_lepton_cleaning & mask_jetpuid
+            mask_vetomap = True
+
+        mask_good_jets = mask_presel & mask_lepton_cleaning & mask_jetpuid & mask_vetomap
 
         if jet_tagger != "":
             if "PNet" in jet_tagger:

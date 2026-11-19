@@ -46,7 +46,7 @@ import dctr
 from analysis_years import xbb_wp_cuts, ERAS, jes_run_tags, jes_source, jes_jet_types
 from fatjet_mass_variations import FatJetMassVariations
 from jet_variation_splits import JetsCalibratorSplit
-from custom_cut_functions import (precut, hlt_cut, get_JetVetoMap, event_selection, vetoE, vetoMu,
+from custom_cut_functions import (precut, hlt_cut, event_selection, vetoE, vetoMu,
                                   HEM_veto, btag_mask, genMatch, non_genMatch, get_genTtbarId_100_eq,
                                   trig_event_selection_run2, HLT_PATHS, get_spanet_selection, get_flag_cut)
 from pocket_coffea.parameters.cuts import passthrough
@@ -335,7 +335,7 @@ def build_config(group, eras=None, sample_list=None):
     if selection == "trigeff":
         # ttbar e-mu, no trigger requirement (TrigEff.ipynb applies the reference / target triggers)
         skim = [eventFlags, goldenJson, precut]
-        preselections = [get_JetVetoMap(), trig_event_selection_run2, vetoE, vetoMu, HEM_veto]
+        preselections = [trig_event_selection_run2, vetoE, vetoMu, HEM_veto]
         categories = {"btag_mask": [passthrough]}
         columns = build_trigeff_columns(sample_list)
     elif selection == "spanet":
@@ -344,7 +344,7 @@ def build_config(group, eras=None, sample_list=None):
         if is_data or any(s in samples.DATA_SAMPLES for s in sample_list):
             raise ValueError("The SPANet training inputs need gen information, not data")
         skim = [eventFlags, goldenJson, precut, hlt_cut]
-        preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu, HEM_veto]
+        preselections = [event_selection, vetoE, vetoMu, HEM_veto]
         categories = {spanet_training.CATEGORY: [get_spanet_selection(spanet_training.SELECTION)]}
         columns = build_spanet_columns(spanet_training.CATEGORY)
         workflow = ZHbbSpanetTrainingProcessor
@@ -352,7 +352,7 @@ def build_config(group, eras=None, sample_list=None):
         subsamples = build_spanet_subsamples()
     else:
         skim = [eventFlags, goldenJson, precut, hlt_cut]
-        preselections = [get_JetVetoMap(), event_selection, vetoE, vetoMu, HEM_veto]
+        preselections = [event_selection, vetoE, vetoMu, HEM_veto]
         # The b-tag requirement is a category (not a preselection) so that the processor can
         # accumulate the b-tag SF normalization sums on the events before it.
         categories = {"btag_mask": [btag_mask]}
