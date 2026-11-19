@@ -113,9 +113,9 @@ class OutputToPkl:
         spanet_vars = [c for m in MODELS for c in score_columns(m)]
         # PDF members exist only for signal and tt+jets (outvars.pdf_vars): read when present
         self.sig_vars = (outvars.common_vars + outvars.sig_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"]
-                         + outvars.pdf_vars + outvars.ele_energy_vars)
+                         + outvars.pdf_vars + outvars.ele_energy_vars + outvars.event_id_vars)
         self.bkg_vars = (outvars.common_vars + outvars.weight_vars + spanet_vars + ["xbb_sf"] + outvars.pdf_vars
-                         + outvars.bkg_vars + outvars.ele_energy_vars)
+                         + outvars.bkg_vars + outvars.ele_energy_vars + outvars.event_id_vars)
 
     @staticmethod
     def variations_in(filein):
@@ -148,7 +148,8 @@ class OutputToPkl:
                     key = f'events_{var}'
                     if key in cols:
                         tmp[var] = cols[key].value
-                    elif var not in outvars.pdf_vars + outvars.bkg_vars:   # these exist only for some samples
+                    elif var not in outvars.pdf_vars + outvars.bkg_vars + outvars.event_id_vars:
+                        # pdf/bkg columns exist only for some samples; event ids not in older outputs
                         missing.append(var)
                 if missing:
                     print(f"  [WARNING] {sample}/{dataset}: missing {missing}")

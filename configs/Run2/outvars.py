@@ -61,6 +61,10 @@ pdf_vars = [f'pdfweight_{i}' for i in range(103)]
 # Electron_dEsigmaUp/Down (filled in MC only); 0 for events without an electron. Data and MC.
 ele_energy_vars = ['ele_pt', 'ele_dEscaleUp', 'ele_dEscaleDown', 'ele_dEsigmaUp', 'ele_dEsigmaDown']
 
+# Event identifiers (data and MC): unique event key, and event-number parity for held-out splits
+# (e.g. SPANet overtraining check / two-fold training: even vs odd `event`)
+event_id_vars = ['run', 'luminosityBlock', 'event']
+
 # common_vars that only exist for MC (dropped from the data columns)
 mc_only_vars = ['xbb_genmatch', 'n_genb_matchZH']
 

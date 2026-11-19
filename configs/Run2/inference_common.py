@@ -277,6 +277,7 @@ def build_columns(sample_list, is_data):
     else:
         event_vars = outvars.common_vars + outvars.validation_vars + outvars.weight_vars
     event_vars += [v for v in outvars.ele_energy_vars if v not in event_vars]
+    event_vars += outvars.event_id_vars
 
     bysample = {}
     for sample in sample_list:

@@ -117,6 +117,7 @@ EXPORT = {
         "n_ak4jets": "n_ak4jets", "n_b_inZH": "n_b_inZH", "n_b_outZH": "n_b_outZH", "ZH_M": "ZH_M",
         "nParton": "nParton", "nPartonMatched": "nPartonMatched",
         "nBosonPartonsInFatJet": "nBosonPartonsInFatJet",
+        "event": "event",                  # event-number parity: held-out / two-fold splits
         **{f: f for f in EVENT_FEATURES}}},
 }
 

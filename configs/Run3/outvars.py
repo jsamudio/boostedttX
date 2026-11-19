@@ -7,6 +7,10 @@ common_vars = ['process', 'ZH_pt', 'MET_pt', 'ZH_M', 'ZH_rap', 'n_ak4jets',
                'ZH_bbvLscore', 'ZH_GloParT3_Xbb', 'ZH_GloParT3_QCD', 'ZH_PNet_XbbVsQCD', 'ZH_PNetLegacy_XbbVsQCD',
                'xbb_genmatch', 'n_genb_matchZH']
 
+# Event identifiers (data and MC): unique event key, and event-number parity for held-out splits
+# (e.g. SPANet overtraining check / two-fold training: even vs odd `event`)
+event_id_vars = ['run', 'luminosityBlock', 'event']
+
 # common_vars that only exist for MC (dropped from the data columns)
 mc_only_vars = ['xbb_genmatch', 'n_genb_matchZH']
 

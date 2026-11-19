@@ -330,7 +330,7 @@ def build_columns(sample_list, category, selection):
         models = spanet_models.ACTIVE_MODELS
         spanet_vars = [c for m in models for c in spanet_models.score_columns(m) + spanet_models.encoder_columns(m)]
         data_safe = [v for v in outvars.common_vars if v not in outvars.mc_only_vars]
-        common = ([ColOut("events", data_safe + outvars.validation_vars + spanet_vars)]
+        common = ([ColOut("events", data_safe + outvars.validation_vars + spanet_vars + outvars.event_id_vars)]
                   + [ColOut(f"spanet_output_{m}", ["signal"], flatten=False) for m in models])
         mc_cols = [ColOut("events", outvars.mc_only_vars + outvars.weight_vars)]
 
