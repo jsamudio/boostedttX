@@ -84,7 +84,7 @@ DCTR_HDAMP = {
 # params/<name>.yaml merged on top of the pocket-coffea defaults (overrides only).
 # skim_params holds the lepton selection cuts read by object_cleaning_functions.lep_sel / soft_lep_sel.
 PARAMETER_FILES = ["object_preselection", "skim_params", "lepton_scale_factors", "jets_calibration",
-                   "event_flags", "jet_scale_factors"]
+                   "event_flags", "jet_scale_factors", "met_xy_correction"]
 
 # Jet types whose JES/JER variations are run (AK4CorrT1METJetchs follows AK4PFchs for the type-1 MET)
 VARIED_JET_TYPES = ["AK4PFchs", "AK8PFPuppi"]

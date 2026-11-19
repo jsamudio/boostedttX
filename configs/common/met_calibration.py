@@ -26,6 +26,12 @@ It replaces pocket-coffea's METCalibrator, which also starts from RawMET but use
 Requires the recommended JECs to be reapplied to data as well (jets_calibration.apply_jec_Data),
 so that `Jet` and `CorrT1METJet` carry the recommended payload in data and MC.
 
+MET phi (XY) correction (JME, Run 2 UL): if params.met_xy_correction.apply and a file is given for the
+year, the final type-1 MET (nominal and every variation) is corrected with the jsonpog corrections
+{pt,phi}_metphicorr_pfmet_{data,mc}(met_pt, met_phi, npvs = PV_npvs, run). The correction removes the
+phi modulation of the MET; it is a shift of the MET x/y components depending on the number of
+primary vertices (and the run period in data), applied after the type-1 recomputation.
+
 CALIBRATORS is the calibrator sequence to pass to the Configurator.
 """
 import awkward as ak
@@ -83,6 +89,14 @@ class METType1Calibrator(Calibrator):
         self.l123 = cset.compound[full] if full in cset.compound.keys() else cset[full]
         self.rho = get_rho(events, get_nano_version(events, self.params, self.year))
         self.run = events.run
+        self.xy_pt = self.xy_phi = None
+        xy = self.params.get("met_xy_correction", None)
+        if xy is not None and xy.get("apply", False) and self.year in xy.files:
+            kind = "mc" if self.isMC else "data"
+            xy_cset = load_correction_set(xy.files[self.year])
+            self.xy_pt = xy_cset[f"pt_metphicorr_pfmet_{kind}"]
+            self.xy_phi = xy_cset[f"phi_metphicorr_pfmet_{kind}"]
+            self.npvs = np.asarray(ak.to_numpy(events.PV.npvs), dtype=np.float64)
 
     def type1_sum(self, jets):
         """sum over type-1 jets of (pT_L1L2L3 - pT_L1) * (1 - muonSubtrFactor), as (px, py)."""
@@ -105,6 +119,14 @@ class METType1Calibrator(Calibrator):
             mask = mask & ((jets.chEmEF + jets.neEmEF) < T1_JET_EM_MAX)
         return _sum_xy(delta, jets.phi, mask)
 
+    def xy_correct(self, pt, phi):
+        """MET phi (XY) correction of the type-1 MET (pt, phi), per event."""
+        pt = np.minimum(np.asarray(ak.to_numpy(pt), dtype=np.float64), 6499.0)    # inside the input range
+        phi = np.clip(np.asarray(ak.to_numpy(phi), dtype=np.float64), -3.1499, 3.1499)
+        run = np.asarray(ak.to_numpy(self.run), dtype=np.float64)
+        args = (pt, phi, self.npvs, run)
+        return self.xy_pt.evaluate(*args), self.xy_phi.evaluate(*args)
+
     def calibrate(self, events, orig_colls, variation, already_applied_calibrators=None):
         raw = events["RawMET"]
         mx = raw.pt * np.cos(raw.phi)
@@ -124,7 +146,10 @@ class METType1Calibrator(Calibrator):
             met = events["MET"]
             mx = mx + sign * met.MetUnclustEnUpDeltaX
             my = my + sign * met.MetUnclustEnUpDeltaY
-        return {"MET.pt": np.hypot(mx, my), "MET.phi": np.arctan2(my, mx)}
+        pt, phi = np.hypot(mx, my), np.arctan2(my, mx)
+        if self.xy_pt is not None:                               # MET phi (XY) correction, last
+            pt, phi = self.xy_correct(pt, phi)
+        return {"MET.pt": pt, "MET.phi": phi}
 
 
 # Default pocket-coffea sequence with the Run 2 type-1 MET recomputation in place of METCalibrator,
