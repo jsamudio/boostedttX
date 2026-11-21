@@ -13,7 +13,7 @@ Outputs are organised as
     <outdir>/<JEC variation>/<group>/output_all.coffea
 
 Examples:
-    python run_pipeline.py inference --backend pbs --groups trigeff
+    python run_pipeline.py inference --backend pbs --groups trigeff_ele btageff
     python run_pipeline.py inference --backend pbs --groups signal bkg minor data
     python run_pipeline.py status --backend pbs --groups signal bkg minor data
     python run_pipeline.py inference --dry-run      # print every command without running it

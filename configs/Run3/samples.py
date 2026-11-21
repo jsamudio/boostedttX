@@ -52,7 +52,7 @@ EFT_SAMPLES = ["ttHSMEFT", "ttbbSMEFT"]
 DATA_SAMPLES = ["DATA_EGamma", "DATA_Muon"]
 # Trigger efficiency (orthogonal method in ttbar e-mu): dileptonic + semileptonic ttbar and both
 # data streams (the notebook uses one primary dataset per measurement)
-TRIGEFF_SAMPLES = ["TTTo2L2Nu", "TTToSemiLeptonic", "TTbb_2L2Nu", "TTbb_SemiLeptonic"] + DATA_SAMPLES
+TRIGEFF_MC_SAMPLES = ["TTTo2L2Nu", "TTToSemiLeptonic", "TTbb_2L2Nu", "TTbb_SemiLeptonic"]
 
 # Xbb working points (derive_xbb_wps.py): mistag rate on light-flavour fatjets of tt+LF events,
 # efficiency on H/Z -> bb fatjets of ttH(bb) / ttZ(bb)
@@ -92,6 +92,9 @@ def btag_eff_group(sample, subsample=None):
 #               (SPANet training inputs, samples and options in spanet_training.py) or "xbbwp"
 #               (all fatjets of the preselection, for the Xbb working points) or "btageff"
 #               (AK4 jets of the preselection, b-tag efficiency histograms)
+#   reference_muon - trigeff only: True = muons selected as in the MUO trigger-SF denominator
+#                    (inference_common.TRIGEFF_POG_MUON) and the MUO muon trigger SF applied,
+#                    instead of the analysis muon
 #   dump_dir  - pocket-coffea 'dump_columns_as_arrays_per_chunk' directory (None = keep in .coffea)
 GROUPS = {
     "signal":  {"samples": SIGNAL_SAMPLES},
@@ -101,7 +104,13 @@ GROUPS = {
     "qcd":     {"samples": QCD_SAMPLES},
     "EFT":     {"samples": EFT_SAMPLES},
     "data":    {"samples": DATA_SAMPLES, "is_data": True},
-    "trigeff": {"samples": TRIGEFF_SAMPLES, "selection": "trigeff"},
+    # Pass 1, electron trigger efficiency: muon trigger = reference -> Muon data, reference muon
+    "trigeff_ele": {"samples": TRIGEFF_MC_SAMPLES + ["DATA_Muon"], "selection": "trigeff",
+                    "reference_muon": True},
+    # Pass 2, muon trigger efficiency: electron trigger = reference -> EGamma data, analysis muon
+    # (the muon whose trigger SF is measured)
+    "trigeff_mu":  {"samples": TRIGEFF_MC_SAMPLES + ["DATA_EGamma"], "selection": "trigeff",
+                    "reference_muon": False},
     "spanet":  {"samples": spanet_training.sample_names(), "selection": "spanet"},
     "xbbwp":   {"samples": XBBWP_SAMPLES, "selection": "xbbwp"},
     "btageff": {"samples": BTAG_EFF_SAMPLES, "selection": "btageff"},

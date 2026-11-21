@@ -15,9 +15,6 @@ Environment overrides:
                                  JMSJMR: fatjet mass scale/resolution -> JMSUp/Down, JMRUp/Down
                                  (../common/fatjet_mass_variations.py)
     PC_DCTR=1                    DCTR hdamp weights dctr_hdamp_up/down for DCTR_HDAMP['samples'] (dctr.py)
-    PC_TRIGEFF_MUON=pog          trigeff group only: reference muon with the MUO trigger-SF selection
-                                 (medium ID + PF isolation medium, no sip3d) instead of the analysis
-                                 muon, to check the electron trigger SF (trigeff_pog_muon below)
 
 Run 3 object definitions: PUPPI MET (pocket-coffea's default MET calibrator: type-1 PUPPI MET
 recomputed from RawPuppiMET with the recommended JECs, data and MC), UParT AK4 b tagging, GloParT
@@ -91,8 +88,9 @@ VARIED_JET_TYPES = ["AK4PFPuppi", "AK8PFPuppi"]
 # Trigger SFs per era: derived files (TrigEff.ipynb: EleTrigSF / MuTrigSF, path relative to this
 # directory or absolute), "pog" (MUO reference SF, muons only) or None (= 1).
 # Derivation (orthogonal method, as in Run 2):
-#   1. run the trigeff group with these settings, electron cell of TrigEff.ipynb -> ele_trig_sf_2024.json.gz
-#   2. set "ele" to that file, rerun trigeff, muon cell -> muon_trig_sf_2024.json.gz
+#   1. run the trigeff_ele group (reference muon = MUO denominator, MUO muon trigger SF applied
+#      whatever "mu" is here), electron cell of TrigEff.ipynb -> ele_trig_sf_2024.json.gz
+#   2. set "ele" to that file, run trigeff_mu (analysis muon), muon cell -> muon_trig_sf_2024.json.gz
 #   3. set "mu" to that file for the analysis
 TRIGGER_SFS = {
     "2024": {"ele": None, "mu": "pog"},
@@ -195,30 +193,28 @@ def dctr_options():
     return {"samples": list(DCTR_HDAMP["samples"]), "models": dict(DCTR_HDAMP["models"])}
 
 
-# PC_TRIGEFF_MUON=pog: muon of the MUO trigger-SF denominator (CutBasedIdMedium_and_PFIsoMedium);
-# pfIsoId 3 = PFIsoMedium (PF relative isolation, dR 0.4, < 0.20); no sip3d cut (not in the MUO ID)
+# Reference muon of the electron trigger efficiency (group option reference_muon, trigeff_ele): the
+# muon of the MUO trigger-SF denominator (CutBasedIdMedium_and_PFIsoMedium); pfIsoId 3 = PFIsoMedium
+# (PF relative isolation, dR 0.4, < 0.20); no sip3d cut (not in the MUO ID)
 TRIGEFF_POG_MUON = {"pfIsoId": 3, "sip3d": None}
 
 
-def trigeff_pog_muon(parameters, selection, eras):
-    """PC_TRIGEFF_MUON=pog: electron trigger SF check with the reference muon selected as in the MUO
-    trigger SF ('mu': 'pog'), so that SF is applied to the muons it was measured for. Changes the
-    muon object selection (MuonGood, and through it the jet cleaning) of this run only."""
-    mode = os.environ.get("PC_TRIGEFF_MUON")
-    if not mode:
-        return
-    if mode != "pog":
-        raise ValueError(f"PC_TRIGEFF_MUON={mode}: only 'pog' is supported")
+def trigeff_reference_muon(parameters, opts, selection):
+    """Group option reference_muon (trigeff_ele): select the muon as in the MUO trigger SF, so that SF
+    (applied to it, see build_config) is used for the muons it was measured for. Changes the muon
+    object selection (MuonGood, and through it the jet cleaning) of this group only."""
+    if os.environ.get("PC_TRIGEFF_MUON"):
+        raise ValueError("PC_TRIGEFF_MUON is no longer used: the reference muon is set by the group "
+                         "(trigeff_ele: MUO denominator muon, trigeff_mu: analysis muon)")
+    if not opts.get("reference_muon"):
+        return False
     if selection != "trigeff":
-        raise ValueError(f"PC_TRIGEFF_MUON=pog is for the trigeff group only (this group: {selection} selection)")
-    not_pog = {era: TRIGGER_SFS.get(era, {}).get("mu") for era in eras
-               if TRIGGER_SFS.get(era, {}).get("mu") != "pog"}
-    if not_pog:
-        raise ValueError(f"PC_TRIGEFF_MUON=pog needs the MUO muon trigger SF (TRIGGER_SFS[era]['mu'] = 'pog'); "
-                         f"set: {not_pog}")
+        raise ValueError(f"reference_muon is a trigeff option (this group: {selection} selection)")
     with open_dict(parameters):
         parameters.object_preselection.Muon.update(TRIGEFF_POG_MUON)
-    print(f"--> trigeff reference muon: MUO trigger-SF selection {TRIGEFF_POG_MUON} (mediumId kept)")
+    print(f"--> trigeff reference muon: MUO trigger-SF selection {TRIGEFF_POG_MUON} (mediumId kept), "
+          f"MUO muon trigger SF")
+    return True
 
 
 def load_parameters(eras):
@@ -360,7 +356,7 @@ def build_config(group, eras=None, sample_list=None):
           f"SPANet models {spanet_models.ACTIVE_MODELS}")
 
     parameters, shape_calibrators = load_parameters(eras)
-    trigeff_pog_muon(parameters, selection, eras)
+    reference_muon = trigeff_reference_muon(parameters, opts, selection)
     _check_btag_wps(parameters)
 
     workflow = ZHbbRun3Processor
@@ -420,7 +416,9 @@ def build_config(group, eras=None, sample_list=None):
     workflow_options = {
         "process_labels": dict(samples.PROCESS_LABELS),
         "signal_samples": samples.SIGNAL_SAMPLES + ["ttHSMEFT"],
-        "trigger_sfs": _resolve_trigger_sfs(eras),
+        # reference muon: always the MUO trigger SF, whatever TRIGGER_SFS holds for the analysis
+        "trigger_sfs": {era: {**sfs, "mu": "pog"} if reference_muon else sfs
+                        for era, sfs in _resolve_trigger_sfs(eras).items()},
         "spanet_models": spanet_models.active_models() if selection == "analysis" else {},
         "prefilter_btag_mask": selection == "analysis",
         "dctr_hdamp": dctr_options() if selection == "analysis" else None,

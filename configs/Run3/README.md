@@ -21,20 +21,19 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
 
 ## Not derived yet (bottom-up)
 
-1. **Trigger SFs** (next): `inference_conf_trigeff.py` (ttbar e-mu, no trigger requirement) +
-   `TrigEff.ipynb` (orthogonal method, as in Run 2), two passes:
-   1. run `trigeff` with `TRIGGER_SFS["2024"] = {"ele": None, "mu": "pog"}` (MUO reference for the
-      muon trigger); electron cell -> `ele_trig_sf_2024.json.gz`
-   2. set `"ele"` to that file, rerun `trigeff`; muon cell -> `muon_trig_sf_2024.json.gz`
+1. **Trigger SFs** (next): ttbar e-mu without trigger requirement + `TrigEff.ipynb` (orthogonal
+   method), two groups as in Run 2:
+   1. `trigeff_ele` (MC + Muon data): the reference muon is the MUO trigger-SF denominator (medium ID +
+      PF isolation medium, `pfIsoId >= 3`, no sip3d) and gets the MUO muon trigger SF, whatever
+      `TRIGGER_SFS` holds; electron cell (`COFFEA_DIR = outputs/nominal/trigeff_ele/`) ->
+      `ele_trig_sf_2024.json.gz`
+   2. set `TRIGGER_SFS["2024"]["ele"]` to that file; `trigeff_mu` (MC + EGamma data, analysis muon:
+      mini-isolation, sip3d); muon cell (`outputs/nominal/trigeff_mu/`) -> `muon_trig_sf_2024.json.gz`
    3. set `"mu"` to that file (`inference_common.TRIGGER_SFS`) for the analysis
    Until then `ele_trig_sf` = 1 and `mu_trig_sf` = MUO reference SF.
 
-   Check of step 1 (reference-muon definition): the MUO SF is measured for medium ID + PF isolation,
-   the analysis muon has mini-isolation and sip3d. `PC_TRIGEFF_MUON=pog` (trigeff only, needs
-   `"mu": "pog"`) selects the reference muon as in the MUO SF (`pfIsoId >= 3`, no sip3d); rerun the
-   electron cell on that output and compare with `ele_trig_sf_2024.json.gz`:
-
-       PC_TRIGEFF_MUON=pog python3 run_pipeline.py inference --backend pbs --groups trigeff --outdir outputs_trigeff_pogmu
+       python3 run_pipeline.py inference --backend pbs --groups trigeff_ele
+       python3 run_pipeline.py inference --backend pbs --groups trigeff_mu    # after step 2
 2. **b-tag SFs**: fixed-WP SFs (BTV `UParTAK4_comb` for b/c, `UParTAK4_light`), multi-WP method 1a
    over the WPs whose information the analysis uses (`analysis_years.BTAG_SF_WPS` = L/M/T: the
    `n_bjets_<WP>` counts and the M requirement), on all `JetGood`, with our MC efficiency maps
@@ -88,9 +87,9 @@ python3 parquet_to_h5.py -c ../Run3/spanet/features_h5.yaml -i <dir>/run3_*.parq
 ## Running
 
 ```bash
-python3 run_pipeline.py inference --backend pbs --groups trigeff btageff
+python3 run_pipeline.py inference --backend pbs --groups trigeff_ele btageff
 python3 run_pipeline.py inference --backend pbs --groups signal bkg minor data
-python3 run_pipeline.py status    --backend pbs --groups trigeff signal bkg minor data
+python3 run_pipeline.py status    --backend pbs --groups trigeff_ele signal bkg minor data
 PC_SAMPLES=ttHTobb python3 run_pipeline.py inference --groups signal -- --executor futures --test
 ```
 The PBS tools are shared with Run 2 (`../common`, see `../common/README.md`); the run options of

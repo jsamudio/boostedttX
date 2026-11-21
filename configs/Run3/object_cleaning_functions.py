@@ -6,7 +6,7 @@ from pocket_coffea.lib.jets import compute_jetId
 
 def lep_sel(events, lepton_flavour, params):
     """Tight leptons: electrons MVA noIso WP90, muons medium ID; mini-isolation and sip3d for both.
-    Optional keys (set only by inference_common.trigeff_pog_muon, PC_TRIGEFF_MUON=pog): 'pfIsoId'
+    Optional keys (set only by inference_common.trigeff_reference_muon, group trigeff_ele): 'pfIsoId'
     replaces the mini-isolation by the PF isolation ID (pfIsoId >= value), and sip3d None drops the
     sip3d cut."""
     leptons = events[lepton_flavour]
