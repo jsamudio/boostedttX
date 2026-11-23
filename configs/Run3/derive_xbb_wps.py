@@ -4,7 +4,9 @@ GloParT XbbVsQCD working points of the Run 3 analysis from the mistag rate of li
 in tt+LF events (output of the xbbwp group):
 
     python3 run_pipeline.py inference --backend pbs --groups xbbwp
-    python3 derive_xbb_wps.py [-i outputs/nominal/xbbwp/output_all.coffea] [--plots plots/xbbwp]
+    python3 derive_xbb_wps.py [-i outputs/nominal/xbbwp] [--plots plots/xbbwp]
+
+-i: output directories (their merged/<dataset>.coffea, or output_all.coffea) or .coffea files.
 
 Mistag fatjets: all FatJetGood of the analysis preselection (1 lepton, >= 5 AK4, >= 1 AK8; add
 --min-bjets 2 for the btag_mask category) in tt+LF events (TTToSemiLeptonic, TTTo2L2Nu) with no B or
@@ -17,6 +19,9 @@ import os
 
 import numpy as np
 from coffea.util import load
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))
+import pbs_tools  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CATEGORY = "presel"
@@ -26,14 +31,15 @@ SIGNAL_KEYS = ["ttHTobb", "TTZToQQ__Zbb"]
 PT_BINS = [200, 300, 400, 600, np.inf]
 
 
-def fatjets(output, keys, min_bjets=0):
+def fatjets(output, keys, min_bjets=0, quiet=False):
     """Per-fatjet arrays (concatenated over keys / datasets) with the event weight normalized by the
     sum of genweights, plus the per-event leading Xbb (the ZH candidate)."""
     out = {k: [] for k in ("pt", "mass", "xbb", "flav", "n_boson_b", "weight")}
     cand = {"xbb": [], "weight": [], "light": []}
     for key in keys:
         if key not in output["columns"]:
-            print(f"  [skip] {key} not in the output")
+            if not quiet:
+                print(f"  [skip] {key} not in the output")
             continue
         for dataset, cats in output["columns"][key].items():
             c = {name: col.value for name, col in cats[CATEGORY]["nominal"].items()}
@@ -61,6 +67,35 @@ def fatjets(output, keys, min_bjets=0):
     return out, {k: np.asarray(v) for k, v in cand.items()}
 
 
+def fatjets_files(files, keys, min_bjets):
+    """fatjets() over several outputs (e.g. one per dataset; each holds its own sum_genweights)."""
+    outs, cands = [], []
+    for path in files:
+        o, c = fatjets(load(path), keys, min_bjets, quiet=True)
+        outs.append(o)
+        cands.append(c)
+    def cat(parts):        # files without these keys give empty (float) arrays: keep the others' dtype
+        full = [p for p in parts if len(p)]
+        return np.concatenate(full) if full else parts[0]
+    return ({k: cat([o[k] for o in outs]) for k in outs[0]},
+            {k: cat([c[k] for c in cands]) for k in cands[0]})
+
+
+def coffea_files(paths):
+    """.coffea files to read: a file as given; an output directory -> its merged/<dataset>.coffea
+    (PBS per-dataset merge, all datasets required) or output_all.coffea (pbs_tools.merged_outputs)."""
+    files = []
+    for p in paths:
+        if os.path.isdir(p):
+            found = pbs_tools.merged_outputs(p)
+            if not found:
+                raise SystemExit(f"{p}: no merged output (merged/*.coffea or output_all.coffea)")
+            files += found
+        else:
+            files.append(p)
+    return files
+
+
 def cut_at_rate(score, weight, rate):
     """Smallest cut with weighted fraction(score > cut) <= rate."""
     order = np.argsort(score)[::-1]
@@ -75,7 +110,8 @@ def frac_above(score, weight, cut):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("-i", "--input", default=os.path.join(HERE, "outputs/nominal/xbbwp/output_all.coffea"))
+    ap.add_argument("-i", "--input", nargs="+", default=[os.path.join(HERE, "outputs/nominal/xbbwp")],
+                    help="output dir(s) (merged/*.coffea or output_all.coffea) or .coffea file(s)")
     ap.add_argument("--era", default="2024")
     ap.add_argument("--min-bjets", type=int, default=0, help="require nbJetGood >= N (2 = btag_mask)")
     ap.add_argument("--all-flavours", action="store_true",
@@ -83,9 +119,10 @@ def main():
     ap.add_argument("--plots", default=None, help="directory for the Xbb distributions / ROC")
     args = ap.parse_args()
 
-    output = load(args.input)
-    bkg, bkg_cand = fatjets(output, MISTAG_KEYS, args.min_bjets)
-    sig, _ = fatjets(output, SIGNAL_KEYS, args.min_bjets)
+    files = coffea_files(args.input)
+    print(f"Reading {len(files)} file(s)")
+    bkg, bkg_cand = fatjets_files(files, MISTAG_KEYS, args.min_bjets)
+    sig, _ = fatjets_files(files, SIGNAL_KEYS, args.min_bjets)
     light = np.ones(len(bkg["xbb"]), dtype=bool) if args.all_flavours else (bkg["flav"] == 0)
     bb = sig["n_boson_b"] == 2
     print(f"mistag fatjets: {light.sum()} ({'all flavours' if args.all_flavours else 'light'}) of {len(light)}; "

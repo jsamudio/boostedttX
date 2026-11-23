@@ -4,7 +4,9 @@ MC b-tag efficiency maps of the Run 3 analysis, for the fixed-WP b-tag SFs (mult
 custom_scale_factors.sf_btag_multiwp), from the btag_eff histogram of the btageff group:
 
     python3 run_pipeline.py inference --backend pbs --groups btageff
-    python3 derive_btag_eff.py [-i outputs/nominal/btageff/output_all.coffea] [--plots plots/btageff]
+    python3 derive_btag_eff.py [-i outputs/nominal/btageff] [--plots plots/btageff]
+
+-i: output directories (their merged/<dataset>.coffea, or output_all.coffea) or .coffea files.
 
 Jets: JetGood of the analysis preselection, before the b-tag requirement (all jets whose b-tag
 information the analysis uses). For each group of samples.BTAG_EFF_GROUPS (with the subsamples the
@@ -28,6 +30,9 @@ import os
 
 import numpy as np
 from coffea.util import load
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))
+import pbs_tools  # noqa: E402
 
 import samples
 from analysis_years import BTAG_SF_WPS
@@ -79,6 +84,42 @@ def group_histograms(output):
     if not sums:
         raise RuntimeError(f"No histogram '{HIST}' of a b-tag efficiency group in the input")
     return sums, axes
+
+
+def group_histograms_files(files):
+    """group_histograms summed over several outputs (e.g. one per dataset), read one at a time."""
+    sums, axes = {}, None
+    for path in files:
+        output = load(path)
+        if HIST not in output.get("variables", {}):
+            print(f"  [skip] {path}: no '{HIST}' histogram")
+            continue
+        try:
+            s1, a1 = group_histograms(output)
+        except RuntimeError:
+            print(f"  [skip] {path}: no b-tag efficiency group")
+            continue
+        axes = axes or a1
+        for g, (v, e) in s1.items():
+            sums[g] = (sums[g][0] + v, sums[g][1] + e) if g in sums else (v, e)
+    if not sums:
+        raise RuntimeError(f"No histogram '{HIST}' of a b-tag efficiency group in {len(files)} input file(s)")
+    return sums, axes
+
+
+def coffea_files(paths):
+    """.coffea files to read: a file as given; an output directory -> its merged/<dataset>.coffea
+    (PBS per-dataset merge, all datasets required) or output_all.coffea (pbs_tools.merged_outputs)."""
+    files = []
+    for p in paths:
+        if os.path.isdir(p):
+            found = pbs_tools.merged_outputs(p)
+            if not found:
+                raise SystemExit(f"{p}: no merged output (merged/*.coffea or output_all.coffea)")
+            files += found
+        else:
+            files.append(p)
+    return files
 
 
 def efficiencies(vals, var):
@@ -144,7 +185,8 @@ def plot(eps, n_eff, group, flavors, eta_edges, pt_edges, outdir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("-i", "--input", default=os.path.join(HERE, "outputs/nominal/btageff/output_all.coffea"))
+    ap.add_argument("-i", "--input", nargs="+", default=[os.path.join(HERE, "outputs/nominal/btageff")],
+                    help="output dir(s) (merged/*.coffea or output_all.coffea) or .coffea file(s)")
     ap.add_argument("--era", default="2024")
     ap.add_argument("-o", "--output", default=None, help="default: btag_eff_<era>.json.gz in this directory")
     ap.add_argument("--min-entries", type=float, default=100.,
@@ -153,8 +195,9 @@ def main():
     args = ap.parse_args()
     out_path = args.output or os.path.join(HERE, f"btag_eff_{args.era}.json.gz")
 
-    output = load(args.input)
-    sums, axes = group_histograms(output)
+    files = coffea_files(args.input)
+    print(f"Reading {len(files)} file(s)")
+    sums, axes = group_histograms_files(files)
     flavors = [int(lo) for lo in axes["flavor"].edges[:-1]]       # bins [0, 4), [4, 5), [5, 6)
     pt_edges, eta_edges = np.asarray(axes["pt"].edges), np.asarray(axes["abseta"].edges)
     if len(axes["level"]) != len(BTAG_SF_WPS) + 1:

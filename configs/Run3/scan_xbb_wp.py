@@ -26,7 +26,7 @@ Modes:
               proxy for the SPANet Xbb input as WP categories instead of the continuous score.
 
 Usage (inside the image):
-    python3 scan_xbb_wp.py cut -i outputs/nominal/{signal,bkg,minor}/output_all.coffea
+    python3 scan_xbb_wp.py cut -i outputs/nominal/{signal,bkg,minor}/merged/*.coffea   (PBS per-dataset merge; else output_all.coffea)
     python3 scan_xbb_wp.py cut -i ... --cuts 0.1 0.3 0.5 0.7 0.9 --pois ttZ ttH
     python3 scan_xbb_wp.py multiwp -i ... --presel 0.3 --n-cat 3
 
@@ -243,7 +243,7 @@ def run_multiwp(ev, pois, presel, n_cat, grid, n_fine, top):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mode", choices=["cut", "multiwp"])
-    ap.add_argument("-i", "--inputs", nargs="+", required=True, help="output_all.coffea of the signal, bkg, minor groups")
+    ap.add_argument("-i", "--inputs", nargs="+", required=True, help=".coffea files of the signal, bkg, minor groups (merged/*.coffea or output_all.coffea)")
     ap.add_argument("--pois", nargs="+", default=["ttZ", "ttH", "tt_B"])
     ap.add_argument("--cuts", nargs="+", type=float, default=DEFAULT_CUTS, help="cut mode: thresholds")
     ap.add_argument("--presel", type=float, default=0.0, help="multiwp mode: preselection threshold")
