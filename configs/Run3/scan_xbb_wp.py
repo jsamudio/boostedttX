@@ -34,7 +34,7 @@ Modes:
               signal (b tagger, sqrt(s) and Xbb SFs also differ: see Run2/xbb_reference.py).
 
 Usage (inside the image):
-    python3 scan_xbb_wp.py cut -i outputs/nominal/{signal,bkg,minor}/merged/*.coffea   (PBS per-dataset merge; else output_all.coffea)
+    python3 scan_xbb_wp.py cut -i outputs/nominal/{signal,bkg,minor}   (dirs: merged/*.coffea or output_all.coffea)
     python3 scan_xbb_wp.py cut -i ... --cuts 0.1 0.3 0.5 0.7 0.9 --pois ttZ ttH
     python3 scan_xbb_wp.py multiwp -i ... --presel 0.3 --n-cat 3
     python3 scan_xbb_wp.py composition -i ... --ref ../Run2/xbb_reference_2018.json [--signal ttH]
@@ -46,11 +46,16 @@ and process normalizations beyond xsec x lumi.
 """
 import argparse
 import itertools
+import os
+import sys
 
 import numpy as np
 
 import samples
 from outvars import nominal_weight_factors
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common"))
+import pbs_tools  # noqa: E402
 
 CATEGORY = "btag_mask"
 VARIATION = "nominal"
@@ -74,6 +79,23 @@ READ = ["ZH_pt", "ZH_M", "ZH_bbvLscore", "n_ak4jets", "n_b_outZH", "MET_pt", "ge
 
 
 # ----------------------------------------------------------------------------- data
+def coffea_files(paths):
+    """.coffea files to read: a file as given; an output directory -> its merged/<dataset>.coffea
+    (PBS per-dataset merge, all datasets required) or output_all.coffea (pbs_tools.merged_outputs)."""
+    files = []
+    for p in paths:
+        if os.path.isdir(p):
+            found = pbs_tools.merged_outputs(p)
+            if not found:
+                raise SystemExit(f"{p}: no merged output (merged/*.coffea or output_all.coffea)")
+            files += found
+        elif not os.path.exists(p):
+            raise SystemExit(f"{p}: not found (pass the output directory, e.g. outputs/nominal/signal)")
+        else:
+            files.append(p)
+    return files
+
+
 def load_events(paths, pois):
     """One array per field over all selected MC events (any Xbb score): pt, M, xbb, w, proc, poi, bin."""
     from coffea.util import load
@@ -349,7 +371,7 @@ def run_multiwp(ev, pois, presel, n_cat, grid, n_fine, top):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mode", choices=["cut", "multiwp", "composition"])
-    ap.add_argument("-i", "--inputs", nargs="+", required=True, help=".coffea files of the signal, bkg, minor groups (merged/*.coffea or output_all.coffea)")
+    ap.add_argument("-i", "--inputs", nargs="+", required=True, help="output dirs of the signal, bkg, minor groups (their merged/*.coffea or output_all.coffea) or .coffea files")
     ap.add_argument("--pois", nargs="+", default=["ttZ", "ttH", "tt_B"])
     ap.add_argument("--cuts", nargs="+", type=float, default=DEFAULT_CUTS, help="cut mode: thresholds")
     ap.add_argument("--presel", type=float, default=0.0, help="multiwp mode: preselection threshold")
@@ -363,7 +385,7 @@ def main():
                     help="composition mode: signal of the ratios (ttH: independent of the ttZ cross-section update)")
     args = ap.parse_args()
 
-    ev = load_events(args.inputs, args.pois)
+    ev = load_events(coffea_files(args.inputs), args.pois)
     ev = subset(ev, ev["bin"] >= 0)
     if args.mode == "cut":
         run_cut(ev, args.pois, args.cuts)
