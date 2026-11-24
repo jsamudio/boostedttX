@@ -26,7 +26,16 @@ include leptons). Observables: their number (all events) and the leading one's p
 the extra radiation that hdamp acts on directly in both schemes.
 Also the inclusive mean weight (1 expected for a normalization-preserving reweighting).
 
+--model-4f DIR: the 4FS ttbb classifiers (DIR/model_hdamp_{up,down}_4F_13TeV.onnx, trained on the 4FS
+nominal vs hdamp samples) instead of the 5FS ttbar ones. Inputs as in their apply_hdamp_weights.py: 5
+particles (t, tbar = GenPart first copy; LHEPart[2] b, LHEPart[3] bbar, LHEPart[4] extra parton only if
+nLHEPart == 11), each log10 pT, y, phi, m / 243.95, particle id (PID2FLOAT), hdamp / mt 1.379; an absent
+particle (wrong pdgId, pT 0, or no extra parton) is a row of zeros. Weight p0/p1, 1 above pT(tt) 1000 GeV.
+Adds pT(ttbb) at LHE level (t + tbar + LHE b + bbar, the recoil against the extra parton; events with both
+LHE b quarks). Output names carry _4f.
+
     python3 dctr_gen_check.py --sample TTbb_SemiLeptonic --era 2018 --max-events 300000
+    python3 dctr_gen_check.py --sample TTbb_SemiLeptonic --era 2018 --model-4f /cms/data/store/user/moanwar/hdamp_models
 """
 import argparse
 import json
@@ -56,7 +65,15 @@ OBS = {
     "n_addj": (np.arange(-0.5, 6.5, 1.0), "N additional light jets"),
     "pt_j1": (np.array([20, 30, 40, 60, 80, 100, 150, 200, 300, 500, 1000]), r"leading additional light jet $p_T$ [GeV]"),
     "pt_ttbb": (np.array([0, 25, 50, 75, 100, 150, 200, 300, 400, 600, 1000]), r"$p_T(t\bar{t}b\bar{b})$ [GeV]"),
+    "pt_ttbb_lhe": (np.array([0, 25, 50, 75, 100, 150, 200, 300, 400, 600, 1000]),
+                    r"$p_T(t\bar{t}b\bar{b})$, LHE b [GeV]"),      # only with --model-4f (LHE read)
 }
+
+# 4FS ttbb classifiers (--model-4f): file names and the inputs of apply_hdamp_weights.py
+MODEL_4F = {"up": "model_hdamp_up_4F_13TeV.onnx", "down": "model_hdamp_down_4F_13TeV.onnx"}
+LHE_SLOTS = ((2, 5), (3, -5), (4, None))     # (LHEPart index, required pdgId); None: extra parton if nLHEPart == 11
+N_LHE_WITH_EXTRA = 11
+PID2FLOAT = {21: 0, 6: .1, -6: .2, 5: .3, -5: .4, 4: .5, -4: .6, 3: .7, -3: .8, 2: .9, -2: 1.0, 1: 1.1, -1: 1.2}
 
 
 def files_of(name, era):
@@ -65,16 +82,18 @@ def files_of(name, era):
     return [f.replace("file:", "") for f in d[key]["files"]]
 
 
-def read(files, max_events, ttb=False, theory=False):
+def read(files, max_events, ttb=False, theory=False, lhe=False):
     """Arrays of t and tbar (pt, eta, phi, mass) for events with exactly one first-copy t and tbar; with
     ttb=True only tt+B events (genTtbarId % 100 >= 51). Read in steps (GenPart is large). Also returns the
     sign(genWeight) sums of all events and of the tt+B events (tt+B fraction).
-    theory=True: also the theory weights of the kept events (theory_weights), as in the analysis."""
+    theory=True: also the theory weights of the kept events (theory_weights), as in the analysis.
+    lhe=True: also the LHE partons of LHE_SLOTS (lhe_partons), for the 4FS classifiers."""
     cols = ["GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_mass", "GenPart_pdgId",
             "GenPart_statusFlags", "GenPart_genPartIdxMother", "genWeight",
             "GenJet_pt", "GenJet_eta", "GenJet_phi", "GenJet_mass", "GenJet_hadronFlavour"] \
         + (["genTtbarId"] if ttb else []) \
-        + (["GenPart_status", "LHEScaleWeight", "PSWeight", "LHEPdfWeight"] if theory else [])
+        + (["GenPart_status", "LHEScaleWeight", "PSWeight", "LHEPdfWeight"] if theory else []) \
+        + (["nLHEPart", "LHEPart_pt", "LHEPart_eta", "LHEPart_phi", "LHEPart_mass", "LHEPart_pdgId"] if lhe else [])
     out, n, sum_all, sum_ttb = [], 0, 0.0, 0.0
     for path in files:
         if n >= max_events:
@@ -100,6 +119,8 @@ def read(files, max_events, ttb=False, theory=False):
             ev.update(additional_light(a[ok]))
             if theory:
                 ev.update(theory_weights(a[ok]))
+            if lhe:
+                ev.update(lhe_partons(a[ok]))
             out.append(ev)
         n += n_file
         print(f"  {os.path.basename(path)}: {n_file} events read")
@@ -160,6 +181,20 @@ def additional_b(a):
     return out
 
 
+def lhe_partons(a):
+    """Per LHE_SLOTS index i: lhe{i}_{pt,eta,phi,mass,pdg} (0 if the event has fewer LHE particles) and
+    lhe{i}_present (required pdgId, or nLHEPart == 11 for the extra parton, and pT > 0)."""
+    n_lhe = ak.to_numpy(a.nLHEPart)
+    out = {}
+    for i, pdg_needed in LHE_SLOTS:
+        for v in ("pt", "eta", "phi", "mass", "pdgId"):
+            out[f"lhe{i}_{v}"] = ak.to_numpy(ak.fill_none(ak.pad_none(a[f"LHEPart_{v}"], i + 1)[:, i], 0)).astype(float)
+        pdg = out[f"lhe{i}_pdgId"].astype(int)
+        req = (pdg == pdg_needed) if pdg_needed is not None else (n_lhe == N_LHE_WITH_EXTRA)
+        out[f"lhe{i}_present"] = req & (out[f"lhe{i}_pt"] > 0)
+    return out
+
+
 def min_dr(eta1, phi1, eta2, phi2):
     """Per object of collection 1, the smallest dR to collection 2 (99 if collection 2 is empty)."""
     j, b = ak.unzip(ak.cartesian([ak.zip({"eta": eta1, "phi": phi1}), ak.zip({"eta": eta2, "phi": phi2})],
@@ -210,6 +245,10 @@ def observables(ev):
     two = ev["n_addb"] >= 2
     for k in ("pt_bb", "m_bb", "dr_bb", "pt_ttbb"):
         out[k] = np.where(two, out[k], np.nan)
+    if "lhe2_present" in ev:                    # LHE read (--model-4f): t + tbar + LHE b + bbar
+        lb, lbb = (p4(ev, f"lhe{i}") for i in (2, 3))
+        both = ev["lhe2_present"] & ev["lhe3_present"]
+        out["pt_ttbb_lhe"] = np.where(both, np.hypot(px + lb[0] + lbb[0], py + lb[1] + lbb[1]), np.nan)
     return out
 
 
@@ -229,6 +268,38 @@ def dctr_ratio(ev, path, pt_tt, hdamp=dctr.HDAMP_NOMINAL):
     inputs = np.stack([features(ev, "t", 0.1, hdamp), features(ev, "tbar", 0.2, hdamp)], axis=1).astype(np.float32)
     r = np.ones(len(pt_tt))
     for i in range(0, len(r), 200000):
+        r[i:i + 200000] = dctr._ratio(path, inputs[i:i + 200000])
+    return np.where(pt_tt < dctr.MAX_TTBAR_PT, r, 1.0)
+
+
+def safe_rapidity(pz, e):
+    """Rapidity, 0 where undefined (absent particle), as in apply_hdamp_weights.py."""
+    ok = (e + pz > 0) & (e - pz > 0)
+    return np.where(ok, 0.5 * np.log(np.where(ok, e + pz, 1) / np.where(ok, e - pz, 1)), 0.0)
+
+
+def row_4f(pt, eta, phi, m, pid, present, hdamp):
+    """One particle's inputs for the 4FS classifiers; zeros where the particle is absent."""
+    pt = np.where(present, pt, 1.0)
+    px, py, pz = pt * np.cos(phi), pt * np.sin(phi), pt * np.sinh(eta)
+    e = np.sqrt(px ** 2 + py ** 2 + pz ** 2 + m ** 2)
+    row = np.stack([np.log10(pt), safe_rapidity(pz, e), phi, m / dctr.MAX_MASS, pid,
+                    np.full(len(pt), hdamp)], axis=1)
+    return np.where(present[:, None], row, 0.0)
+
+
+def dctr_ratio_4f(ev, path, pt_tt, hdamp=dctr.HDAMP_NOMINAL):
+    """p0/p1 per event of a 4FS classifier, inputs (n, 5, 6): t, tbar, LHE b, bbar, extra parton."""
+    n = len(pt_tt)
+    rows = [row_4f(ev[f"{name}_pt"], ev[f"{name}_eta"], ev[f"{name}_phi"], ev[f"{name}_mass"],
+                   np.full(n, pid), np.ones(n, bool), hdamp) for name, pid in (("t", 0.1), ("tbar", 0.2))]
+    for i, _ in LHE_SLOTS:
+        pid = np.array([PID2FLOAT.get(p, 0) for p in ev[f"lhe{i}_pdgId"].astype(int)], dtype=float)
+        rows.append(row_4f(ev[f"lhe{i}_pt"], ev[f"lhe{i}_eta"], ev[f"lhe{i}_phi"], ev[f"lhe{i}_mass"],
+                           pid, ev[f"lhe{i}_present"], hdamp))
+    inputs = np.stack(rows, axis=1).astype(np.float32)
+    r = np.ones(n)
+    for i in range(0, n, 200000):
         r[i:i + 200000] = dctr._ratio(path, inputs[i:i + 200000])
     return np.where(pt_tt < dctr.MAX_TTBAR_PT, r, 1.0)
 
@@ -255,7 +326,18 @@ if __name__ == "__main__":
                     help="6th DCTR feature: nominal hdamp/mt 1.379 for both models (as dctr.py; the TOP MLReweighting "
                          "twiki convention), or the target value of each model (up 2.305, down 0.8738; NOT the "
                          "twiki convention, kept only as a cross-check)")
+    ap.add_argument("--model-4f", metavar="DIR",
+                    help="4FS ttbb classifiers DIR/model_hdamp_{up,down}_4F_13TeV.onnx (t, tbar + LHE b, bbar, "
+                         "extra parton) instead of the 5FS ttbar ones; output names get _4f")
     args = ap.parse_args()
+    if args.model_4f and args.hdamp_feature != "nominal":
+        ap.error("--model-4f uses the nominal hdamp feature (1.379) only")
+    models = ({v: os.path.join(args.model_4f, f) for v, f in MODEL_4F.items()} if args.model_4f
+              else DCTR_HDAMP["models"])
+    for path in models.values():
+        if not os.path.isfile(path):
+            ap.error(f"model not found: {path}")
+    suffix = ("_ttB" if args.ttb else "") + ("_4f" if args.model_4f else "")
     os.makedirs(args.outdir, exist_ok=True)
     sums = {}
     store = {"sample": args.sample + (" tt+B" if args.ttb else ""), "era": args.era}       # twiki convention (p0/p1), for plot_dctr_summary.py
@@ -263,7 +345,7 @@ if __name__ == "__main__":
     evs = {}
     for tag, name in (("nominal", args.sample), ("up", f"{args.sample}_hdampUP"), ("down", f"{args.sample}_hdampDOWN")):
         print(f"Reading {name} {args.era}")
-        evs[tag], sums[tag] = read(files_of(name, args.era), args.max_events, args.ttb)
+        evs[tag], sums[tag] = read(files_of(name, args.era), args.max_events, args.ttb, lhe=bool(args.model_4f))
     if args.ttb:
         f0 = sums["nominal"][1] / sums["nominal"][0]
         for v in ("up", "down"):
@@ -279,7 +361,8 @@ if __name__ == "__main__":
 
     for var in ("up", "down"):
         hd_feat = dctr.HDAMP_NOMINAL if args.hdamp_feature == "nominal" else HDAMP_TARGET[var]
-        r = dctr_ratio(nom, DCTR_HDAMP["models"][var], obs["nominal"]["pt_tt"], hd_feat)
+        r = (dctr_ratio_4f(nom, models[var], obs["nominal"]["pt_tt"]) if args.model_4f
+             else dctr_ratio(nom, models[var], obs["nominal"]["pt_tt"], hd_feat))
         conv = {"p0/p1": r, "p1/p0": 1.0 / r}
         print(f"\n=== hdamp {var}: {len(nom['w'])} nominal, {len(evs[var]['w'])} {var} events, "
               f"hdamp feature {hd_feat}")
@@ -288,8 +371,10 @@ if __name__ == "__main__":
             print(f"  DCTR {c}: inclusive mean weight {np.sum(w0 * w) / np.sum(w0):.4f}, "
                   f"min {w.min():.3f} max {w.max():.3f}")
         for o, (bins, label) in OBS.items():
+            if o not in obs["nominal"]:          # pt_ttbb_lhe without --model-4f
+                continue
             hn, en = hist(obs["nominal"][o], w0, bins)
-            if o in ("pt_tt", "pt_ttbb", "pt_bb", "pt_j1"):      # direction of the effect: sample and DCTR ratio per bin
+            if o in ("pt_tt", "pt_ttbb", "pt_ttbb_lhe", "pt_bb", "pt_j1"):      # direction of the effect: sample and DCTR ratio per bin
                 hs_, _ = hist(obs[var][o], evs[var]["w"], bins)
                 print(f"    {o} ratio to nominal per bin  sample: " + " ".join(f"{v:.3f}" for v in hs_ / hn))
                 for c, w in conv.items():
@@ -328,10 +413,10 @@ if __name__ == "__main__":
             ax.set_title(f"{args.sample} {args.era}, gen level: hdamp {var}", fontsize=9)
             fig.tight_layout()
             for ext in ("png", "pdf"):
-                fig.savefig(f"{args.outdir}/{args.sample}_{args.era}{'_ttB' if args.ttb else ''}_{var}_{o}_hd{args.hdamp_feature}.{ext}")
+                fig.savefig(f"{args.outdir}/{args.sample}_{args.era}{suffix}_{var}_{o}_hd{args.hdamp_feature}.{ext}")
             plt.close(fig)
 
     if args.hdamp_feature == "nominal":
-        stem = f"{args.outdir}/{args.sample}_{args.era}{'_ttB' if args.ttb else ''}_dctr.npz"
+        stem = f"{args.outdir}/{args.sample}_{args.era}{suffix}_dctr.npz"
         np.savez(stem, **store)
         print(f"Wrote {stem} (for plot_dctr_summary.py)")
