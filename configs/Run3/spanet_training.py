@@ -30,9 +30,12 @@ AK4 jets get `matched` / `prov` / `dRMatchedJet` from a dR match to these parton
 #                        {name: event flag} with boolean event columns set by the workflow
 #                        (genmatcher.match_gen_sig: Zbb, Hbb, Zqq, ...)
 #   extra_b_as_boson   - label hard-process b quarks not from t/W/Z/H with provenance 1 (4F ttbb)
+# Signal as in Run 2: gen-matched events only (matchedGen_ZHbb_bb: H/Z -> bb, lepton matched, both b
+# quarks within dR 0.6 of the candidate fat jet). For TTZToQQ (no TTZ->bb sample in Run 3) the flag
+# also selects Z -> bb.
 SAMPLES = {
-    "ttHTobb":           {"subsamples": None},
-    "TTZToQQ":           {"subsamples": {"Zbb": "Zbb"}},        # no dedicated TTZ->bb sample in Run 3
+    "ttHTobb":           {"subsamples": {"genMatch": "matchedGen_ZHbb_bb"}},
+    "TTZToQQ":           {"subsamples": {"genMatch": "matchedGen_ZHbb_bb"}},
     "TTbb_SemiLeptonic": {"subsamples": "ttbar", "extra_b_as_boson": True},
     "TTToSemiLeptonic":  {"subsamples": "ttbar"},
 }
@@ -42,8 +45,8 @@ SAMPLES = {
 # The converter writes one parquet per (sub)sample, named <output>_<sample>__<subsample>.parquet; each
 # key must match exactly one of those names.
 CLASSES = {
-    "ttHTobb":      ("tthbb", 0),
-    "TTZToQQ__Zbb": ("ttzbb", 1),
+    "ttHTobb__genMatch": ("tthbb", 0),
+    "TTZToQQ__genMatch": ("ttzbb", 1),
     "tt+B":         ("ttbb", 2),
     "tt+C":         ("ttlf", 3),
     "tt+LF":        ("ttlf", 3),
@@ -71,13 +74,16 @@ SELECTION = {
 #                   preselection); None = no cut
 # A model trained with flags records XBB_WPS in its spanet_models.py entry ("xbb_wps"), from which the
 # inference builds the same flags (make_spanet_configs.py prints the entry).
-XBB_WPS = None
-TRAIN_MIN_XBB = None
+# PROVISIONAL (2026-11-24): L = Run 3 cut with the Run 2 LP's tt+LF / signal (scan_xbb_wp.py composition),
+# M / T = best multiwp set of the stat-only scan; to be fixed with analysis_years.XBB_WP_DICT. Training
+# cut = L, as Run 2 (candidate >= LP). Changing them needs only a new h5, not a new export.
+XBB_WPS = {"L": 0.25, "M": 0.877, "T": 0.975}
+TRAIN_MIN_XBB = XBB_WPS["L"]
 XBB_SCORE = ("FatJetSorted", "bbtag")       # (collection, feature) of the continuous score
 
 # AK4 jets used by SPANet: False = all JetGood, True = only jets with dR > 0.8 from the ZH candidate.
 # Must agree with the model's "clean_jets" in spanet_models.py.
-CLEAN_JETS = False
+CLEAN_JETS = True                   # as the Run 2 model refactor_noOverlap_MultiWP
 
 # Event-level inputs (../common/event_variables.py): sphericity, aplanarity, centrality over the
 # lepton, the candidate fat jet and the AK4 jets outside it; jet / b-jet counts.
@@ -145,7 +151,7 @@ SPANET_INPUTS = {
     "Jet":    ("JetGood",      ["MASK", "pt", "eta", "sin_phi", "cos_phi", "btagB"]),
     "Lepton": ("LeptonGood",   ["pt", "eta", "sin_phi", "cos_phi"]),
     "Met":    ("PuppiMET",     ["pt", "sin_phi", "cos_phi"]),
-    "FatJet": ("FatJetSorted", ["pt", "eta", "sin_phi", "cos_phi", "bbtag"]),
+    "FatJet": ("FatJetSorted", ["pt", "eta", "sin_phi", "cos_phi", "xbb_wp_L", "xbb_wp_M", "xbb_wp_T"]),
     "Event":  ("events",       list(EVENT_FEATURES)),
 }
 PARTICLES = ["t1", "t2", "h"]       # assignment targets (h5.py: t1 = hadronic top, t2 = leptonic b, h = prov 1)

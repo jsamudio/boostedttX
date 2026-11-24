@@ -3,12 +3,20 @@ input:
   Jet: [MASK, pt, eta, sin_phi, cos_phi, btagB]
   Lepton: [pt, eta, sin_phi, cos_phi]
   Met: [pt, sin_phi, cos_phi]
-  FatJet: [pt, eta, sin_phi, cos_phi, bbtag]
-collection: {Jet: JetGood, Lepton: LeptonGood, Met: PuppiMET, FatJet: FatJetSorted}
+  FatJet: [pt, eta, sin_phi, cos_phi, xbb_wp_L, xbb_wp_M, xbb_wp_T]
+  Event: [sphericity, aplanarity, centrality, n_jets, n_bjets_L, n_bjets_M, n_bjets_T]
+collection: {Jet: JetGood, Lepton: LeptonGood, Met: PuppiMET, FatJet: FatJetSorted,
+  Event: events}
 particles: [t1, t2, h]
-mapping_sample: {ttHTobb: tthbb, TTZToQQ__Zbb: ttzbb, tt+B: ttbb, tt+C: ttlf, tt+LF: ttlf}
+mapping_sample: {ttHTobb__genMatch: tthbb, TTZToQQ__genMatch: ttzbb, tt+B: ttbb, tt+C: ttlf,
+  tt+LF: ttlf}
 mapping_encoding:
-  signal: {ttHTobb: 1, TTZToQQ__Zbb: 2, tt+B: 3, tt+C: 4, tt+LF: 4}
+  signal: {ttHTobb__genMatch: 0, TTZToQQ__genMatch: 1, tt+B: 2, tt+C: 3, tt+LF: 3}
 classification:
   EVENT: [tthbb, ttzbb, ttbb, ttlf, signal]
 frac_train: 0.8
+xbb:
+  collection: FatJetSorted
+  score: bbtag
+  wps: {L: 0.25, M: 0.877, T: 0.975}
+  min: 0.25

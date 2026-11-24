@@ -83,6 +83,10 @@ python3 parquet_to_h5.py -c ../Run3/spanet/features_h5.yaml -i <dir>/run3_*.parq
 - `make_spanet_configs.py` also writes `spanet/event_info_inputs.yaml` (the INPUTS section of the
   SPANet event-info file), warns if `SPANET_INPUTS` uses inputs the inference does not feed, and prints
   the `spanet_models.py` entry for the trained model.
+- Aligned with the Run 2 model `refactor_noOverlap_MultiWP` (2026-11-24): signal = gen-matched
+  `ttHTobb` / `TTZToQQ` (`matchedGen_ZHbb_bb`, the Run 2 flag; it also selects Z -> bb in TTZToQQ), AK4
+  inputs only outside the candidate (`CLEAN_JETS = True`), fat-jet inputs `xbb_wp_L/M/T`, training cut
+  candidate >= L. Intended differences: UParT, PUPPI MET, GloParT, no TTZ->bb sample.
 - Xbb working points are not in the export: the parquet keeps the continuous `FatJetSorted.bbtag` and no
   Xbb cut (`SELECTION["min_xbb"] = None`). The training's WPs (`XBB_WPS`, inputs `xbb_wp_L/M/T` =
   bbtag >= cut) and candidate cut (`TRAIN_MIN_XBB`) are applied by `parquet_to_h5.py` (section `xbb` of

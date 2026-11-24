@@ -13,7 +13,9 @@ features:
     LeptonParton: {pt: pt, eta: eta, phi: phi, mass: mass, pdgId: pdgId}
     Generator: {x1: x1, x2: x2, pdgid1: id1, pdgid2: id2}
     events: {n_ak4jets: n_ak4jets, n_b_inZH: n_b_inZH, n_b_outZH: n_b_outZH, ZH_M: ZH_M,
-      nParton: nParton, nPartonMatched: nPartonMatched, nBosonPartonsInFatJet: nBosonPartonsInFatJet}
+      nParton: nParton, nPartonMatched: nPartonMatched, nBosonPartonsInFatJet: nBosonPartonsInFatJet,
+      event: event, sphericity: sphericity, aplanarity: aplanarity, centrality: centrality,
+      n_jets: n_jets, n_bjets_L: n_bjets_L, n_bjets_M: n_bjets_M, n_bjets_T: n_bjets_T}
   by_sample: {}
 features_pad:
   common:
