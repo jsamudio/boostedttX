@@ -9,7 +9,7 @@ Reads one .npz written by dctr_gen_check.py (p0/p1 convention; 5FS model, or the
 = distribution (unit area / bin width; the last bin includes the overflow) + ratio to nominal.
 Points: dedicated samples (stat.); dashed lines: reweighted nominal (stat. band in the ratio); grey band:
 nominal stat. chi2/ndf of each
-sample against its reweighted nominal (stat. of both) and the inclusive mean weight in the legend.
+sample against its reweighted nominal (stat. of both) and the inclusive mean weight in the legend with --stats.
 
     python3 dctr_gen_check.py --sample TTbb_SemiLeptonic --era 2018 --model-4f <dir>
     python3 plot_dctr_closure.py plots/hdamp_dctr_gen/TTbb_SemiLeptonic_2018_4f_dctr.npz
@@ -36,7 +36,7 @@ COLOR = {"up": "#d62728", "down": "#1f77b4"}
 MARKER = {"up": "^", "down": "v"}
 
 
-def quadrant(fig, spec, run, obs, logy, ylim):
+def quadrant(fig, spec, run, obs, logy, ylim, stats=False):
     """Distribution (top) and ratio to nominal (bottom) of one observable in the given subplot spec."""
     gs = spec.subgridspec(2, 1, height_ratios=[3, 1.3], hspace=0.05)
     ax, rax = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
@@ -55,8 +55,8 @@ def quadrant(fig, spec, run, obs, logy, ylim):
         ax.errorbar(x, hs / width, yerr=es / width, fmt=MARKER[var], color=c, ms=4, lw=1,
                     label=f"hdamp {var} sample")
         ax.stairs(rd * hn / width, bins, color=c, lw=1.6, ls="--", baseline=None,
-                  label=rf"reweighted {var} ($\chi^2$/ndf {chi2:.0f}/{ndf}, $\langle w\rangle$ "
-                        f"{float(run[f'{var}_meanw']):.3f})")
+                  label=f"reweighted nominal, {var}" + (rf" ($\chi^2$/ndf {chi2:.0f}/{ndf}, $\langle w\rangle$ "
+                                                         f"{float(run[f'{var}_meanw']):.3f})" if stats else ""))
         rax.errorbar(x, run[f"{var}_{obs}_rs"], yerr=run[f"{var}_{obs}_es"], fmt=MARKER[var], color=c, ms=4, lw=1)
         rax.stairs(rd, bins, color=c, lw=1.6, ls="--", baseline=None)
         rax.fill_between(bins, np.append(rd - ed, rd[-1] - ed[-1]), np.append(rd + ed, rd[-1] + ed[-1]),
@@ -85,6 +85,7 @@ if __name__ == "__main__":
     ap.add_argument("--obs", nargs="+", default=["pt_ttbb", "pt_ttbb_lhe", "pt_tt", "pt_bb"], choices=list(OBS),
                     help="observables, four per figure (quadrants); missing ones are skipped")
     ap.add_argument("--logy", action="store_true", help="log scale for the distributions")
+    ap.add_argument("--stats", action="store_true", help="chi2/ndf and mean weight in the legend")
     ap.add_argument("--ylim", nargs=2, type=float, help="ratio panel range (default: from the data)")
     ap.add_argument("--outdir", default="plots/hdamp_dctr_gen")
     ap.add_argument("--model-label", help="title label of the reweighting (default from the file name: 4FS "
@@ -106,7 +107,7 @@ if __name__ == "__main__":
         fig = plt.figure(figsize=(6.2 * ncol, 5.6 * nrow))
         outer = fig.add_gridspec(nrow, ncol, hspace=0.3, wspace=0.28)
         for i, o in enumerate(group):
-            quadrant(fig, outer[i // ncol, i % ncol], run, o, args.logy, args.ylim)
+            quadrant(fig, outer[i // ncol, i % ncol], run, o, args.logy, args.ylim, args.stats)
         fig.suptitle(f"hdamp reweighting closure, generator level: {LABEL.get(sample, sample)} "
                      f"{str(run['era'])}, {model} (p0/p1)", fontsize=11)
         name = f"{args.outdir}/{stem}_closure_{'_'.join(group)}"
