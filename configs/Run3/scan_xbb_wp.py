@@ -25,10 +25,19 @@ Modes:
               background quantiles): close to the upper bound of what the score can add. This is the
               proxy for the SPANet Xbb input as WP categories instead of the continuous score.
 
+    composition : process composition after the selection vs the cut: yields of ttZ / ttH (gen pT >=
+              200 GeV), sig_lowpt, tt_B, tt+C, tt+LF, minor, total and per pT channel, and the ratios
+              tt+LF / S, tt+C / S, tt_B / S (S = ttZ + ttH, or ttH with --signal ttH). With --ref
+              <Run2/xbb_reference_<year>.json> (Run 2 after Xbb >= LP): the Run 3 cut at which each Run 3
+              ratio equals the Run 2 one, with the efficiencies of each class there (relative to no cut).
+              The cut matching tt+LF / S is the Run 3 cut with the Run 2 light rejection relative to the
+              signal (b tagger, sqrt(s) and Xbb SFs also differ: see Run2/xbb_reference.py).
+
 Usage (inside the image):
     python3 scan_xbb_wp.py cut -i outputs/nominal/{signal,bkg,minor}/merged/*.coffea   (PBS per-dataset merge; else output_all.coffea)
     python3 scan_xbb_wp.py cut -i ... --cuts 0.1 0.3 0.5 0.7 0.9 --pois ttZ ttH
     python3 scan_xbb_wp.py multiwp -i ... --presel 0.3 --n-cat 3
+    python3 scan_xbb_wp.py composition -i ... --ref ../Run2/xbb_reference_2018.json [--signal ttH]
 
 Not included: systematics other than tt_B floating (the Xbb SF uncertainty grows with a tighter WP and
 is not measured yet), the SPANet (the optimum moves once the network exists, since it uses the Xbb
@@ -49,6 +58,8 @@ PT_EDGES = [200, 300, 450, np.inf]
 MASS_EDGES = [[50, 80, 105, 200], [50, 80, 105, 145, 200], [50, 80, 105, 145, 200]]
 SIG_GENPT = 200.0
 DEFAULT_CUTS = [0.0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.98]
+# composition mode: also the light-mistag cuts of derive_xbb_wps.py (10/5/1%) and the multiwp best set
+COMP_CUTS = [0.0, 0.0026, 0.0068, 0.0542, 0.1, 0.2, 0.3, 0.5, 0.7, 0.877, 0.9, 0.95, 0.975]
 
 # Output keys -> process (as in the Run 2 pickles: tt+B from the TTbb samples, tt+LF / tt+C from the
 # inclusive ttbar samples)
@@ -66,7 +77,7 @@ READ = ["ZH_pt", "ZH_M", "ZH_bbvLscore", "n_ak4jets", "n_b_outZH", "MET_pt", "ge
 def load_events(paths, pois):
     """One array per field over all selected MC events (any Xbb score): pt, M, xbb, w, proc, poi, bin."""
     from coffea.util import load
-    out = {k: [] for k in ("pt", "M", "xbb", "w", "proc", "poi")}
+    out = {k: [] for k in ("pt", "M", "xbb", "w", "proc", "poi", "cls")}
     missing_factors = set()
     for path in paths:
         print(f"Reading {path}")
@@ -89,14 +100,17 @@ def load_events(paths, pois):
                 if key in SIGNAL_KEYS:
                     genpt = np.asarray(cols["events_genZHpt"].value)
                     poi = np.where(genpt >= SIG_GENPT, proc, "bkg") if proc in pois else np.full(len(w), "bkg")
+                    cls = np.where(genpt >= SIG_GENPT, proc, "sig_lowpt")
                 else:
                     poi = np.full(len(w), proc if proc in pois else "bkg")
+                    cls = np.full(len(w), composition_class(key, proc))
                 out["pt"].append(c["ZH_pt"][sel])
                 out["M"].append(c["ZH_M"][sel])
                 out["xbb"].append(c["ZH_bbvLscore"][sel])
                 out["w"].append(w[sel])
                 out["proc"].append(np.full(int(sel.sum()), proc))
                 out["poi"].append(poi[sel])
+                out["cls"].append(cls[sel])
         del filein
     if not out["w"]:
         raise RuntimeError(f"No events of the {CATEGORY} category in {paths}")
@@ -105,6 +119,15 @@ def load_events(paths, pois):
     ev = {k: np.concatenate(v) for k, v in out.items()}
     ev["bin"] = mass_pt_bin(ev["pt"], ev["M"])
     return ev
+
+
+def composition_class(key, proc):
+    """Background class of an output key, as Run2/xbb_reference.py: tt_B, tt+C, tt+LF or minor."""
+    if proc == "tt_B":
+        return "tt_B"
+    if proc == "TTBar":
+        return "tt+C" if key.endswith("__tt+C") else "tt+LF"
+    return "minor"
 
 
 def mass_pt_bin(pt, M):
@@ -201,6 +224,89 @@ def run_cut(ev, pois, cuts):
     print("sig X = expected sigma(mu_X), stat + MC stat only; rel = sigma / sigma at the loosest cut")
 
 
+COMP_CLASSES = ["ttZ", "ttH", "sig_lowpt", "tt_B", "tt+C", "tt+LF", "minor"]
+RATIOS = {"tt+LF": "LF", "tt+C": "C", "tt_B": "B"}
+
+
+def yields_above(ev, cuts):
+    """{class: yields of the events with xbb >= cut, per cut}, total and per pT channel."""
+    order = np.argsort(ev["xbb"])
+    x = ev["xbb"][order]
+    pos = np.searchsorted(x, cuts, side="left")
+    ch = np.digitize(ev["pt"][order], PT_EDGES) - 1
+
+    def above(mask):
+        w = np.where(mask, ev["w"][order], 0.0)
+        tail = np.concatenate([np.cumsum(w[::-1])[::-1], [0.0]])     # tail[i] = sum of w[i:]
+        return tail[pos]
+    tot = {c: above(ev["cls"][order] == c) for c in COMP_CLASSES}
+    chans = [{c: above((ev["cls"][order] == c) & (ch == i)) for c in COMP_CLASSES} for i in range(len(PT_EDGES) - 1)]
+    return tot, chans
+
+
+def ratios(y, signal):
+    s = y["ttH"] if signal == "ttH" else y["ttZ"] + y["ttH"]
+    return {c: np.divide(y[c], s, out=np.full_like(np.asarray(s, dtype=float), np.nan), where=np.asarray(s) > 0)
+            for c in RATIOS}
+
+
+def composition_table(rows, signal, title):
+    print(f"\n{title}")
+    sname = "ttH" if signal == "ttH" else "S"
+    print(f"{'':>13} " + " ".join(f"{c:>10}" for c in COMP_CLASSES)
+          + " " + " ".join(f"{v + '/' + sname:>8}" for v in RATIOS.values()))
+    for name, y in rows:
+        r = ratios(y, signal)
+        print(f"{name:>13} " + " ".join(f"{float(y[c]):10.1f}" for c in COMP_CLASSES)
+              + " " + " ".join(f"{float(r[c]):8.2f}" for c in RATIOS))
+
+
+def run_composition(ev, cuts, ref_path, signal):
+    cuts = sorted(cuts)
+    tot, chans = yields_above(ev, np.array(cuts))
+    at = lambda y, i: {c: y[c][i] for c in COMP_CLASSES}
+    composition_table([(f"cut {c:.4f}", at(tot, i)) for i, c in enumerate(cuts)], signal,
+                      "Run 3 composition after the selection vs the cut on ZH_bbvLscore (all pT channels)")
+    for k in range(len(PT_EDGES) - 1):
+        composition_table([(f"cut {c:.4f}", at(chans[k], i)) for i, c in enumerate(cuts)], signal,
+                          f"pT channel {PT_EDGES[k]:.0f}-{PT_EDGES[k + 1]:.0f} GeV")
+    if ref_path is None:
+        return
+
+    import json
+    ref = json.load(open(ref_path))
+    rows = [("total", ref["total"])] + [(f"{ref['pt_edges'][k]:.0f}-{ref['pt_edges'][k + 1] or np.inf:.0f}", c)
+                                         for k, c in enumerate(ref["channels"])]
+    composition_table(rows, signal, f"Run 2 reference {ref['year']} (after Xbb >= LP), {ref_path}")
+
+    # fine grid: every 0.1% quantile of the score plus a linear grid
+    grid = np.unique(np.concatenate([np.quantile(ev["xbb"], np.linspace(0, 1, 1001)), np.linspace(0, 1, 1001)]))
+    gtot, gch = yields_above(ev, grid)
+    none_ = {c: float(ev["w"][ev["cls"] == c].sum()) for c in COMP_CLASSES}      # no Xbb cut
+    print(f"\nRun 3 cut matching each Run 2 ratio ({'ttH' if signal == 'ttH' else 'S = ttZ + ttH'}, all pT "
+          f"channels); efficiencies relative to no Xbb cut:")
+    print(f"{'ratio':>8} {'Run 2':>7} {'cut':>8} " + " ".join(f"{'eff ' + c:>11}" for c in COMP_CLASSES)
+          + "   per-channel ratio Run 3 / Run 2")
+    rref = ratios(ref["total"], signal)
+    for c, short in RATIOS.items():
+        r3 = ratios(gtot, signal)[c]
+        ok = np.where(np.isfinite(r3) & (r3 <= rref[c]))[0]
+        if not len(ok):
+            print(f"{short + '/S':>8} {rref[c]:7.2f}   not reached (Run 3 min {np.nanmin(r3):.2f})")
+            continue
+        i = ok[0]
+        eff = " ".join(f"{gtot[k][i] / none_[k] if none_[k] > 0 else np.nan:11.3f}" for k in COMP_CLASSES)
+        per = []
+        for j in range(len(PT_EDGES) - 1):
+            r3j = float(ratios({k: gch[j][k][i] for k in COMP_CLASSES}, signal)[c])
+            r2j = float(ratios(ref["channels"][j], signal)[c])
+            per.append(f"{r3j / r2j:.2f}" if r2j > 0 else "n/a")
+        per = " ".join(per)
+        print(f"{short + '/S':>8} {rref[c]:7.2f} {grid[i]:8.4f} {eff}   {per}")
+    print("(first cut from below where the Run 3 ratio is at or below the Run 2 one; the ratios need not be "
+          "monotonic in the cut)")
+
+
 def run_multiwp(ev, pois, presel, n_cat, grid, n_fine, top):
     sub = subset(ev, ev["xbb"] >= presel)
     if grid is None:
@@ -242,7 +348,7 @@ def run_multiwp(ev, pois, presel, n_cat, grid, n_fine, top):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("mode", choices=["cut", "multiwp"])
+    ap.add_argument("mode", choices=["cut", "multiwp", "composition"])
     ap.add_argument("-i", "--inputs", nargs="+", required=True, help=".coffea files of the signal, bkg, minor groups (merged/*.coffea or output_all.coffea)")
     ap.add_argument("--pois", nargs="+", default=["ttZ", "ttH", "tt_B"])
     ap.add_argument("--cuts", nargs="+", type=float, default=DEFAULT_CUTS, help="cut mode: thresholds")
@@ -252,12 +358,18 @@ def main():
                     help="multiwp mode: candidate thresholds (default: signal and background deciles above --presel)")
     ap.add_argument("--n-fine", type=int, default=20, help="multiwp mode: quantile bins of the continuous reference")
     ap.add_argument("--top", type=int, default=10)
+    ap.add_argument("--ref", help="composition mode: Run 2 reference JSON (Run2/xbb_reference.py)")
+    ap.add_argument("--signal", choices=["ttZ+ttH", "ttH"], default="ttZ+ttH",
+                    help="composition mode: signal of the ratios (ttH: independent of the ttZ cross-section update)")
     args = ap.parse_args()
 
     ev = load_events(args.inputs, args.pois)
     ev = subset(ev, ev["bin"] >= 0)
     if args.mode == "cut":
         run_cut(ev, args.pois, args.cuts)
+    elif args.mode == "composition":
+        cuts = args.cuts if args.cuts is not DEFAULT_CUTS else COMP_CUTS
+        run_composition(ev, cuts, args.ref, args.signal)
     else:
         if args.n_cat < 2:
             ap.error("--n-cat must be >= 2")
