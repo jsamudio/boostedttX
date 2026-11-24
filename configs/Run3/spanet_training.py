@@ -58,8 +58,22 @@ SELECTION = {
     "min_ak4_jets": 5,          # n_ak4jets >= (all AK4 jets, as in the analysis)
     "n_b_outZH":   2,           # b jets outside the candidate cone ==
     "zh_mass":     (50, 200),   # GloParT regressed mass window of the candidate [GeV]
-    "min_xbb":     None,        # candidate GloParT XbbVsQCD >= (no Run 3 WP yet)
+    "min_xbb":     None,        # candidate GloParT XbbVsQCD >= ; keep None so the export does not depend
+                                #  on a WP: the training cut is TRAIN_MIN_XBB, applied at the h5 conversion
 }
+
+# Xbb working points of the training, applied by the h5 converter (parquet_to_h5.py) to the continuous
+# score FatJetSorted.bbtag, so the exported parquet does not depend on them (retraining with other WPs
+# = new h5 from the same parquet):
+#   XBB_WPS       - {"L": cut, "M": cut, "T": cut}: SPANet inputs xbb_wp_<WP> = bbtag >= cut (list them in
+#                   SPANET_INPUTS["FatJet"] to use them); None = no flags
+#   TRAIN_MIN_XBB - events with candidate bbtag < cut are dropped from the training (the analysis Xbb
+#                   preselection); None = no cut
+# A model trained with flags records XBB_WPS in its spanet_models.py entry ("xbb_wps"), from which the
+# inference builds the same flags (make_spanet_configs.py prints the entry).
+XBB_WPS = None
+TRAIN_MIN_XBB = None
+XBB_SCORE = ("FatJetSorted", "bbtag")       # (collection, feature) of the continuous score
 
 # AK4 jets used by SPANet: False = all JetGood, True = only jets with dR > 0.8 from the ZH candidate.
 # Must agree with the model's "clean_jets" in spanet_models.py.
@@ -142,7 +156,7 @@ FRAC_TRAIN = 0.8
 # needs the inference extended (../common/make_spanet_configs.py warns)
 INFERENCE_FEATURES = {
     "Jet": ["MASK", "pt", "eta", "sin_phi", "cos_phi", "btagB"],
-    "FatJet": ["pt", "eta", "sin_phi", "cos_phi", "bbtag"],
+    "FatJet": ["pt", "eta", "sin_phi", "cos_phi", "bbtag", "xbb_wp_L", "xbb_wp_M", "xbb_wp_T"],
     "Event": list(EVENT_FEATURES),
     "Lepton": ["pt", "eta", "sin_phi", "cos_phi"],
     "Met": ["pt", "sin_phi", "cos_phi"],
@@ -166,7 +180,11 @@ def validate():
         if collection not in EXPORT:
             raise ValueError(f"SPANET_INPUTS[{name}] uses {collection}, which is not in EXPORT")
         derived = {"MASK": "pt", "sin_phi": "phi", "cos_phi": "phi", "is_electron": "pdgId"}
+        if collection == XBB_SCORE[0]:          # xbb_wp_<WP>: built from the score at the h5 conversion
+            derived.update({f"xbb_wp_{wp}": XBB_SCORE[1] for wp in (XBB_WPS or {})})
         for feature in features:
+            if feature.startswith("xbb_wp_") and feature[7:] not in (XBB_WPS or {}):
+                raise ValueError(f"SPANet input {name}.{feature} needs XBB_WPS['{feature[7:]}']")
             needed = derived.get(feature, feature)
             if needed not in EXPORT[collection]["fields"]:
                 raise ValueError(f"SPANet input {name}.{feature} needs feature '{needed}' of {collection} in EXPORT")

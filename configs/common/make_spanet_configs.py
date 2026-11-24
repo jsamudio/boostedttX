@@ -58,7 +58,21 @@ def h5_config():
         "mapping_encoding": {"signal": {key: index for key, (_, index) in st.CLASSES.items()}},
         "classification": {"EVENT": classes + ["signal"]},
         "frac_train": st.FRAC_TRAIN,
+        **xbb_config(),
     }
+
+
+def xbb_config():
+    """'xbb' section of the h5 config (spanet_training.XBB_WPS / TRAIN_MIN_XBB; Run 2 has neither: the
+    flags come from the workflow there): the converter builds xbb_wp_<WP> = score >= cut and cuts on the
+    candidate score."""
+    wps, cut = getattr(st, "XBB_WPS", None), getattr(st, "TRAIN_MIN_XBB", None)
+    if not wps and cut is None:
+        return {}
+    collection, score = st.XBB_SCORE
+    return {"xbb": {"collection": collection, "score": score,
+                    "wps": {k: float(v) for k, v in wps.items()} if wps else None,
+                    "min": float(cut) if cut is not None else None}}
 
 
 def event_info_inputs():
@@ -140,9 +154,17 @@ def main():
     event = list(st.SPANET_INPUTS["Event"][1]) if "Event" in st.SPANET_INPUTS else []
     print("\n(Sub)samples -> one parquet each:", ", ".join(names))
     print("spanet_models.py entry for a model trained on these inputs:")
+    xbb_wps = getattr(st, "XBB_WPS", None)
+    if any(f.startswith("xbb_wp_") for f in fatjet) and xbb_wps:
+        fatjet_line = (f'               "fatjet_features": {fatjet},\n'
+                       f'               "xbb_wps": {dict(xbb_wps)},\n')
+    else:
+        fatjet_line = f'               "fatjet_features": {fatjet},\n'
+    if getattr(st, "TRAIN_MIN_XBB", None) is not None:
+        print(f"Training Xbb cut (h5 conversion): candidate {'.'.join(st.XBB_SCORE)} >= {st.TRAIN_MIN_XBB}")
     print(f'    "<name>": {{"path": "<model>.onnx",\n'
           f'               "jet_features": {jet},\n'
-          f'               "fatjet_features": {fatjet},\n'
+          f'{fatjet_line}'
           f'               "event_features": {event},\n'
           f'               "count_clean_jets": {st.COUNT_CLEAN_JETS},\n'
           f'               "clean_jets": {st.CLEAN_JETS}}},')

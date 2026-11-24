@@ -126,6 +126,7 @@ class H5Dataset:
         # If shuffle is True, the events are randomly shuffled
         print(dfs)
         df_concat = ak.concatenate(dfs)
+        df_concat = self.apply_min_xbb(df_concat)
         if self.shuffle:
             df_concat = df_concat[np.random.permutation(len(df_concat))]
         if self.entrystop:
@@ -148,6 +149,25 @@ class H5Dataset:
             self.mapping_encoding = self.cfg["mapping_encoding"]
         if "weights_scale" in self.cfg:
             self.weights_scale = self.cfg["weights_scale"]
+        # Optional Xbb settings of this training (make_spanet_configs.py from spanet_training.XBB_WPS /
+        # TRAIN_MIN_XBB): xbb_wp_<WP> inputs = score >= cut, built here from the continuous score, and a
+        # cut on the candidate (first fat jet of the collection). The parquet does not depend on them.
+        xbb = self.cfg["xbb"] if "xbb" in self.cfg else None
+        self.xbb_collection = xbb["collection"] if xbb else None
+        self.xbb_score = xbb["score"] if xbb else None
+        self.xbb_wps = dict(xbb["wps"]) if xbb and xbb.get("wps") else {}
+        self.min_xbb = xbb.get("min") if xbb else None
+
+    def apply_min_xbb(self, df):
+        """Keep the events whose candidate (first fat jet of the xbb collection) has score >= min (cfg "xbb")."""
+        if self.min_xbb is None:
+            return df
+        score = df[self.xbb_collection][self.xbb_score]
+        if score.ndim > 1:
+            score = ak.firsts(score)
+        keep = ak.to_numpy(ak.fill_none(score >= self.min_xbb, False))
+        print(f"Xbb cut {self.xbb_collection}.{self.xbb_score} >= {self.min_xbb}: {keep.sum()} of {len(keep)} events kept")
+        return df[keep]
 
     def check_output(self):
         '''Check the output file extension and if it already exists.'''
@@ -299,6 +319,9 @@ class H5Dataset:
                             values = np.cos(phi)
                     elif feat == "is_electron":
                         values = ak.values_astype(abs(objects["pdgId"]) == 11, int)
+                    elif feat.startswith("xbb_wp_") and collection == self.xbb_collection and feat[7:] in self.xbb_wps:
+                        # from the continuous score with this training's working point (cfg "xbb")
+                        values = ak.values_astype(objects[self.xbb_score] >= self.xbb_wps[feat[7:]], int)
                     else:
                         values = objects[feat]
                     if objects.ndim == 1:

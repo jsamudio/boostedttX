@@ -8,7 +8,10 @@ SPANet. Add the new model below and list it in ACTIVE_MODELS.
 Model options (inputs as in the Run 2 registry):
   path            - ONNX file
   jet_features    - AK4 inputs, subset of pt, eta, sin_phi, cos_phi, btagB (UParT B)
-  fatjet_features - AK8 inputs, subset of pt, eta, sin_phi, cos_phi, bbtag (GloParT XbbVsQCD)
+  fatjet_features - AK8 inputs, subset of pt, eta, sin_phi, cos_phi, bbtag (GloParT XbbVsQCD),
+                    xbb_wp_L, xbb_wp_M, xbb_wp_T (bbtag >= the model's xbb_wps)
+  xbb_wps         - {"L": cut, "M": cut, "T": cut} the model was trained with (spanet_training.XBB_WPS);
+                    required for xbb_wp_* inputs. Per model, so models with different WPs can run together
   clean_jets      - True if trained on AK4 jets with dR > 0.8 from the ZH candidate
   event_features  - optional event-level inputs (SPANet input "Event"), subset in order of
                     sphericity, aplanarity, centrality, n_jets, n_bjets_<WP> (../common/event_variables.py)

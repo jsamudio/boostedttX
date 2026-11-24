@@ -275,12 +275,19 @@ class ZHbbRun3Processor(BaseProcessorABC):
         mask_global = np.ones((n, 1), dtype=bool)
 
         for model_name, info in models.items():
-            missing = [f for f in info["fatjet_features"] if f not in fatjet_vars]
+            model_fatjet = dict(fatjet_vars)
+            # xbb_wp_<WP> = bbtag >= the cut the model was trained with (spanet_training.XBB_WPS, as the
+            # h5 converter builds them)
+            for wp, cut in (info.get("xbb_wps") or {}).items():
+                model_fatjet[f"xbb_wp_{wp}"] = (fatjet_vars["bbtag"] >= cut).astype(np.float32)
+            missing = [f for f in info["fatjet_features"] if f not in model_fatjet]
             if missing:
-                raise ValueError(f"SPANet model {model_name}: fatjet features {missing} not available in Run 3")
+                hint = " (xbb_wp_* need the model's 'xbb_wps' in spanet_models.py)" if any(
+                    f.startswith("xbb_wp_") for f in missing) else ""
+                raise ValueError(f"SPANet model {model_name}: fatjet features {missing} not available in Run 3{hint}")
             jet_vars, jet_mask = jet_inputs[info.get("clean_jets", False)]
             jet_data = np.stack([jet_vars[f] for f in info["jet_features"]], axis=-1).astype(np.float32)
-            fatjet_data = np.stack([fatjet_vars[f] for f in info["fatjet_features"]], axis=1)[:, None, :].astype(np.float32)
+            fatjet_data = np.stack([model_fatjet[f] for f in info["fatjet_features"]], axis=1)[:, None, :].astype(np.float32)
             inputs = {"Jet_data": jet_data, "Jet_mask": jet_mask,
                       "Met_data": met_data, "Met_mask": mask_global,
                       "Lepton_data": lep_data, "Lepton_mask": mask_global,

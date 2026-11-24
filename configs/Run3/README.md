@@ -83,6 +83,11 @@ python3 parquet_to_h5.py -c ../Run3/spanet/features_h5.yaml -i <dir>/run3_*.parq
 - `make_spanet_configs.py` also writes `spanet/event_info_inputs.yaml` (the INPUTS section of the
   SPANet event-info file), warns if `SPANET_INPUTS` uses inputs the inference does not feed, and prints
   the `spanet_models.py` entry for the trained model.
+- Xbb working points are not in the export: the parquet keeps the continuous `FatJetSorted.bbtag` and no
+  Xbb cut (`SELECTION["min_xbb"] = None`). The training's WPs (`XBB_WPS`, inputs `xbb_wp_L/M/T` =
+  bbtag >= cut) and candidate cut (`TRAIN_MIN_XBB`) are applied by `parquet_to_h5.py` (section `xbb` of
+  `features_h5.yaml`). Another WP set = edit them, rerun `make_spanet_configs.py` and `parquet_to_h5.py`
+  on the same parquet. The model entry records its `xbb_wps`; the inference builds the flags per model.
 
 ## Running
 
