@@ -21,8 +21,14 @@ shows as train vs test clearly worse than validation vs test, not as a small p-v
     python3 ../configs/spanet_inputs/overtraining_check.py -l spanet_output/version_0 \
         -t <dir>/run3_test_<N>.h5 [--max-events 300000] [--gpu] [-o plots/overtraining]
 
-Outputs: <outdir>/overtraining_<score>.png/.pdf (2 x 2 panels, one per true class) and
-<outdir>/overtraining_summary.csv; the table is also printed.
+Panels: each true class, the merged signal (--signal-classes, e.g. ttH + ttZ, same disc shape: twice the
+statistics) and the merged background. Threshold table: weighted fraction of each group with
+--threshold-score (disc) >= --thresholds, train / validation / test, with uncertainties, train/test
+ratio and pull: a training-specific gain in high-score efficiency (what would bias the templates)
+shows as positive pulls for train and not for validation.
+
+Outputs: <outdir>/overtraining_<score>.png/.pdf (one panel per group), overtraining_summary.csv
+(chi2, KS) and overtraining_thresholds.csv; both tables are also printed.
 """
 import argparse
 import csv
@@ -73,6 +79,17 @@ def hist(x, w, bins):
     return (h / s, np.sqrt(e2) / s) if s > 0 else (h, np.sqrt(e2))
 
 
+def efficiency(passed, w):
+    """Weighted fraction passing and its uncertainty (independent events: the variance of
+    sum_pass w / sum w is (sum_pass w^2 (1 - e)^2 + sum_fail w^2 e^2) / (sum w)^2)."""
+    tot = w.sum()
+    if tot <= 0:
+        return np.nan, np.nan
+    e = w[passed].sum() / tot
+    var = ((w[passed] ** 2).sum() * (1 - e) ** 2 + (w[~passed] ** 2).sum() * e ** 2) / tot ** 2
+    return float(e), float(np.sqrt(var))
+
+
 def chi2(a, b):
     (ha, ea), (hb, eb) = a, b
     den = ea ** 2 + eb ** 2
@@ -90,6 +107,8 @@ def main():
     ap.add_argument("--classes", nargs="+", default=CLASS_NAMES, help="class names by index")
     ap.add_argument("--bins", type=int, default=20)
     ap.add_argument("--ratio-range", nargs=2, type=float, default=[0.7, 1.3])
+    ap.add_argument("--threshold-score", default="disc", help="score of the threshold table")
+    ap.add_argument("--thresholds", nargs="+", type=float, default=[0.5, 0.7, 0.8, 0.9, 0.95])
     ap.add_argument("--gpu", action="store_true")
     ap.add_argument("-o", "--outdir", default="plots/overtraining")
     args = ap.parse_args()
@@ -130,18 +149,28 @@ def main():
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     os.makedirs(args.outdir, exist_ok=True)
+    # panels: each true class, then the merged signal (--signal-classes) and the merged background
+    others = [i for i in range(n_cls) if i not in args.signal_classes]
+    groups = [(f"true {names[c]}", [c]) for c in range(n_cls)]
+    groups += [("signal (" + " + ".join(names[i] for i in args.signal_classes) + ")", list(args.signal_classes)),
+               ("background (" + " + ".join(names[i] for i in others) + ")", others)]
+    ncol = 3
+    nrow = (len(groups) + ncol - 1) // ncol
     rows = []
     for score in values["test"][0]:
-        fig = plt.figure(figsize=(10, 9.5))
-        gs = fig.add_gridspec(5, 2, height_ratios=[3, 1, 0.55, 3, 1], hspace=0.06, wspace=0.22)
-        for c in range(min(n_cls, 4)):
-            row = 0 if c < 2 else 3
-            ax = fig.add_subplot(gs[row, c % 2])
-            rax = fig.add_subplot(gs[row + 1, c % 2], sharex=ax)
+        fig = plt.figure(figsize=(4.9 * ncol, 4.75 * nrow))
+        ratios = []
+        for r in range(nrow):
+            ratios += [3, 1] + ([0.55] if r < nrow - 1 else [])
+        gs = fig.add_gridspec(len(ratios), ncol, height_ratios=ratios, hspace=0.06, wspace=0.24)
+        for g, (gname, gcls) in enumerate(groups):
+            row = 3 * (g // ncol)
+            ax = fig.add_subplot(gs[row, g % ncol])
+            rax = fig.add_subplot(gs[row + 1, g % ncol], sharex=ax)
             ax.tick_params(labelbottom=False)
             h = {}
             for k, (v, y, w) in values.items():
-                m = y == c
+                m = np.isin(y, gcls)
                 h[k] = hist(v[score][m], w[m], bins)
             x = 0.5 * (bins[1:] + bins[:-1])
             ax.stairs(h["train"][0], bins, fill=True, alpha=0.35, color="#1f77b4", label="train")
@@ -163,12 +192,13 @@ def main():
                     continue
                 c2, ndf = chi2(h[k], h["test"])
                 (vk, yk, _), (vt, yt, _) = values[k], values["test"]
-                p = ks_2samp(vk[score][yk == c], vt[score][yt == c]).pvalue
+                mk, mt = np.isin(yk, gcls), np.isin(yt, gcls)
+                p = ks_2samp(vk[score][mk], vt[score][mt]).pvalue
                 text.append(f"{k} vs test: $\\chi^2$/ndf {c2:.0f}/{ndf}, KS p {p:.2g}")
-                rows.append({"score": score, "true_class": names[c], "comparison": f"{k}_vs_test",
+                rows.append({"score": score, "true_class": gname.replace("true ", ""), "comparison": f"{k}_vs_test",
                              "chi2": round(c2, 2), "ndf": ndf, "ks_p": p,
-                             "n_" + k: int((yk == c).sum()), "n_test": int((yt == c).sum())})
-            ax.set_title(f"true {names[c]}", fontsize=9)
+                             "n_" + k: int(mk.sum()), "n_test": int(mt.sum())})
+            ax.set_title(gname, fontsize=9)
             ax.text(0.02, 0.97, "\n".join(text), transform=ax.transAxes, va="top", fontsize=7,
                     bbox={"facecolor": "white", "alpha": 0.7, "lw": 0})
             ax.set_yscale("log")
@@ -177,7 +207,7 @@ def main():
                 ax.set_ylim(0.3 * pos.min(), 30 * pos.max())
             ax.set_ylabel("unit area", fontsize=8)
             rax.set_xlabel(score)
-            if c == 0:
+            if g == 0:
                 handles, labels = ax.get_legend_handles_labels()
         fig.legend(handles, labels, loc="upper right", ncol=3, fontsize=8, frameon=False)
         fig.suptitle(f"SPANet overtraining check: {score} ({os.path.basename(os.path.normpath(args.log_dir))})",
@@ -186,9 +216,42 @@ def main():
             fig.savefig(os.path.join(args.outdir, f"overtraining_{score}.{ext}"))
         plt.close(fig)
 
-    print(f"\n{'score':>12} {'true':>7} {'comparison':>20} {'chi2/ndf':>12} {'KS p':>9}")
+    # fraction of events above thresholds of --threshold-score, train / validation / test, per group
+    trows = []
+    for gname, gcls in groups:
+        for t in args.thresholds:
+            row = {"group": gname.replace("true ", ""), "score": args.threshold_score, "threshold": t}
+            for k, (v, y, w) in values.items():
+                m = np.isin(y, gcls)
+                e, de = efficiency(v[args.threshold_score][m] >= t, w[m])
+                row[f"eff_{k}"], row[f"err_{k}"] = e, de
+            et, dt = row["eff_test"], row["err_test"]
+            for k in ("train", "validation"):
+                if f"eff_{k}" not in row:
+                    continue
+                ek, dk = row[f"eff_{k}"], row[f"err_{k}"]
+                row[f"{k}_over_test"] = ek / et if et > 0 else np.nan
+                row[f"pull_{k}"] = (ek - et) / np.hypot(dk, dt) if np.hypot(dk, dt) > 0 else np.nan
+            trows.append(row)
+    has_val = "validation" in values
+    print(f"\nFraction with {args.threshold_score} >= threshold (weighted; pull = (eff - eff_test) / combined error)")
+    print(f"{'group':>32} {'cut':>5} {'train':>15} " + (f"{'validation':>15} " if has_val else "")
+          + f"{'test':>15} {'train/test':>10} {'pull':>6}" + (f" {'val pull':>8}" if has_val else ""))
+    for r in trows:
+        fmt = lambda k: f"{r['eff_' + k]:.4f}+-{r['err_' + k]:.4f}"
+        print(f"{r['group']:>32} {r['threshold']:5.2f} {fmt('train'):>15} " + (f"{fmt('validation'):>15} " if has_val else "")
+              + f"{fmt('test'):>15} {r['train_over_test']:10.3f} {r['pull_train']:6.2f}"
+              + (f" {r['pull_validation']:8.2f}" if has_val else ""))
+    tpath = os.path.join(args.outdir, "overtraining_thresholds.csv")
+    with open(tpath, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(trows[0]))
+        writer.writeheader()
+        writer.writerows(trows)
+    print(f"Wrote {tpath}")
+
+    print(f"\n{'score':>12} {'true':>26} {'comparison':>20} {'chi2/ndf':>12} {'KS p':>9}")
     for r in rows:
-        print(f"{r['score']:>12} {r['true_class']:>7} {r['comparison']:>20} {r['chi2']:>7.1f}/{r['ndf']:<4} {r['ks_p']:9.2g}")
+        print(f"{r['score']:>12} {r['true_class']:>26} {r['comparison']:>20} {r['chi2']:>7.1f}/{r['ndf']:<4} {r['ks_p']:9.2g}")
     path = os.path.join(args.outdir, "overtraining_summary.csv")
     with open(path, "w", newline="") as f:
         fields = sorted({k for r in rows for k in r}, key=lambda k: list(rows[0]).index(k) if k in rows[0] else 99)
