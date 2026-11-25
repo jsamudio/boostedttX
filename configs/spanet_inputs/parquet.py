@@ -353,10 +353,9 @@ class ParquetDataset:
             df_out = ak.zip(self.zipped_dict[sample], depth_limit=1)
             print(df_out.fields)
 
-            if len(self.samples) > 1:
-                output_file = self.output_file.replace(".parquet", f"_{sample}.parquet")
-            else:
-                output_file = self.output_file
+            # always with the (sub)sample name: parquet_to_h5.py finds the class from it (a per-dataset
+            # input file holds a single (sub)sample, e.g. ttHTobb__genMatch)
+            output_file = self.output_file.replace(".parquet", f"_{sample}.parquet")
             print(f"Saving the output dataset to file: {output_file}")
             # In your save_parquet method, right before ak.to_parquet
             print("\n--- Debugging df_out type ---")
