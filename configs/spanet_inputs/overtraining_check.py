@@ -22,7 +22,7 @@ shows as train vs test clearly worse than validation vs test, not as a small p-v
         -t <dir>/run3_test_<N>.h5 [--max-events 300000] [--gpu] [-o plots/overtraining]
 
 Panels: each true class, the merged signal (--signal-classes, e.g. ttH + ttZ, same disc shape: twice the
-statistics) and the merged background. Threshold table: weighted fraction of each group with
+statistics) and the merged background; in a merged group each class has the same total weight. Threshold table: weighted fraction of each group with
 --threshold-score (disc) >= --thresholds, train / validation / test, with uncertainties, train/test
 ratio and pull: a training-specific gain in high-score efficiency (what would bias the templates)
 shows as positive pulls for train and not for validation.
@@ -77,6 +77,22 @@ def hist(x, w, bins):
     e2, _ = np.histogram(np.clip(x, bins[0], bins[-1] - 1e-9), bins, weights=w ** 2)
     s = h.sum()
     return (h / s, np.sqrt(e2) / s) if s > 0 else (h, np.sqrt(e2))
+
+
+def group_weights(y, w, classes):
+    """Mask and weights of the events of a group of true classes. A merged group gives each class the same
+    total weight (each class normalized to 1): the check is about the score shape of each class, and with
+    the physics weights one class can dominate (e.g. tt+LF in the background)."""
+    m = np.isin(y, classes)
+    if len(classes) == 1:
+        return m, w[m]
+    wg = w.astype(float).copy()
+    for c in classes:
+        mc = y == c
+        tot = wg[mc].sum()
+        if tot != 0:
+            wg[mc] = wg[mc] / tot
+    return m, wg[m]
 
 
 def efficiency(passed, w):
@@ -170,8 +186,8 @@ def main():
             ax.tick_params(labelbottom=False)
             h = {}
             for k, (v, y, w) in values.items():
-                m = np.isin(y, gcls)
-                h[k] = hist(v[score][m], w[m], bins)
+                m, wg = group_weights(y, w, gcls)
+                h[k] = hist(v[score][m], wg, bins)
             x = 0.5 * (bins[1:] + bins[:-1])
             ax.stairs(h["train"][0], bins, fill=True, alpha=0.35, color="#1f77b4", label="train")
             if "validation" in h:
@@ -222,8 +238,8 @@ def main():
         for t in args.thresholds:
             row = {"group": gname.replace("true ", ""), "score": args.threshold_score, "threshold": t}
             for k, (v, y, w) in values.items():
-                m = np.isin(y, gcls)
-                e, de = efficiency(v[args.threshold_score][m] >= t, w[m])
+                m, wg = group_weights(y, w, gcls)
+                e, de = efficiency(v[args.threshold_score][m] >= t, wg)
                 row[f"eff_{k}"], row[f"err_{k}"] = e, de
             et, dt = row["eff_test"], row["err_test"]
             for k in ("train", "validation"):
