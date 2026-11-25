@@ -154,7 +154,15 @@ SPANET_INPUTS = {
     "FatJet": ("FatJetSorted", ["pt", "eta", "sin_phi", "cos_phi", "xbb_wp_L", "xbb_wp_M", "xbb_wp_T"]),
     "Event":  ("events",       list(EVENT_FEATURES)),
 }
-PARTICLES = ["t1", "t2", "h"]       # assignment targets (h5.py: t1 = hadronic top, t2 = leptonic b, h = prov 1)
+PARTICLES = ["t1", "t2", "h"]
+
+# SPANet event topology of the event-info file (make_spanet_configs.py -> spanet/event_info.yaml):
+# assignment targets among the Jet inputs and their permutations, and the classification target. The
+# H/Z b jets are not targets (inside the candidate, removed by CLEAN_JETS; the h targets the h5 writes
+# are unused), as in the Run 2 event file spanet_inputs/event_files/trainingfile.yaml.
+EVENT_TOPOLOGY = {"t1": ["q1", "q2", "b"], "t2": ["b"]}
+EVENT_PERMUTATIONS = {"t1": [["q1", "q2"]]}
+EVENT_CLASSIFICATIONS = ["signal"]       # assignment targets (h5.py: t1 = hadronic top, t2 = leptonic b, h = prov 1)
 FRAC_TRAIN = 0.8
 
 # What the inference (spanet_inference.onnx_inference) can feed: Jet / FatJet / Event any subset (the

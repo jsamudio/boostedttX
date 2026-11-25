@@ -87,6 +87,11 @@ python3 parquet_to_h5.py -c ../Run3/spanet/features_h5.yaml -i <dir>/run3_*.parq
   `ttHTobb` / `TTZToQQ` (`matchedGen_ZHbb_bb`, the Run 2 flag; it also selects Z -> bb in TTZToQQ), AK4
   inputs only outside the candidate (`CLEAN_JETS = True`), fat-jet inputs `xbb_wp_L/M/T`, training cut
   candidate >= L. Intended differences: UParT, PUPPI MET, GloParT, no TTZ->bb sample.
+- Training: `make_spanet_configs.py` also writes the complete event-info file `spanet/event_info.yaml`
+  (`EVENT_TOPOLOGY`); options `../spanet_inputs/options_files/options_run3.json` (Run 2 hyperparameters,
+  no file paths: SPANet's options file would override the command line). Validation = last 5% of the
+  training h5 (`train_validation_split`), so the converter's test h5 stays independent for
+  `../spanet_inputs/overtraining_check.py` (train vs test and validation vs test, per class).
 - Xbb working points are not in the export: the parquet keeps the continuous `FatJetSorted.bbtag` and no
   Xbb cut (`SELECTION["min_xbb"] = None`). The training's WPs (`XBB_WPS`, inputs `xbb_wp_L/M/T` =
   bbtag >= cut) and candidate cut (`TRAIN_MIN_XBB`) are applied by `parquet_to_h5.py` (section `xbb` of

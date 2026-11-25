@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+"""
+SPANet overtraining check: classification scores of a trained model on its training events against
+events it never saw (the test h5 of parquet_to_h5.py), per true class.
+
+Three sets, all from the files of the run (log directory options.json):
+    train       training file, range [0, split)           (split = dataset_limit x train_validation_split)
+    validation  training file, range [split, dataset_limit) (selects the checkpoint and stops the training)
+    test        --test (the h5 converter's test file; must not be the run's validation_file)
+The ranges are those SPANet used (contiguous, dataset_randomization must be 0).
+
+Per true class (CLASSIFICATIONS/EVENT/<target>) and per score (each class probability and the analysis
+discriminant disc = (p0 + p1) / sum, signal = classes --signal-classes): unit-area weighted
+distributions (WEIGHTS/weight), train (filled) vs test (points) and validation (line), ratio to test;
+weighted chi2/ndf over --bins bins (stat. of both) and the unweighted two-sample KS p-value, for
+train vs test and for validation vs test. Validation vs test is the reference of two sets the model
+was not trained on: with millions of events a KS p-value is small for tiny differences, so overtraining
+shows as train vs test clearly worse than validation vs test, not as a small p-value alone.
+
+    cd SPANet   (environment with torch and spanet)
+    python3 ../configs/spanet_inputs/overtraining_check.py -l spanet_output/version_0 \
+        -t <dir>/run3_test_<N>.h5 [--max-events 300000] [--gpu] [-o plots/overtraining]
+
+Outputs: <outdir>/overtraining_<score>.png/.pdf (2 x 2 panels, one per true class) and
+<outdir>/overtraining_summary.csv; the table is also printed.
+"""
+import argparse
+import csv
+import json
+import os
+
+import h5py
+import numpy as np
+
+CLASS_NAMES = ["tthbb", "ttzbb", "ttbb", "ttlf"]      # spanet_training.CLASSES order (index 0..3)
+
+
+def evaluate(model, path, lo, hi, max_events, gpu):
+    """Softmax scores (n, n_classes), true class (n,) and weights (n,) of the events [lo, hi) of an h5
+    file, as SPANet indexes them (fractions of the file; contiguous). At most max_events events."""
+    import torch
+    from spanet.evaluation import evaluate_on_test_dataset
+
+    with h5py.File(path, "r") as f:
+        n_file = len(f["WEIGHTS/weight"])
+        lower, upper = int(round(lo * n_file)), int(round(hi * n_file))
+        if max_events and upper - lower > max_events:
+            upper = lower + max_events
+        weights = f["WEIGHTS/weight"][lower:upper].astype(float)
+    model.testing_dataset = model.dataset(
+        data_file=path, event_info=model.options.event_info_file,
+        limit_index=(lower / n_file, upper / n_file), vector_limit=model.options.limit_to_num_jets)
+    ds = model.testing_dataset
+    if len(ds) != upper - lower:
+        raise RuntimeError(f"{path}: SPANet selected {len(ds)} events, expected {upper - lower}")
+    keys = [k for k in ds.classifications if k.endswith("signal")] or list(ds.classifications)
+    labels = ds.classifications[keys[0]].numpy().astype(int)
+    if gpu:
+        model = model.cuda()
+    with torch.no_grad():
+        evaluation = evaluate_on_test_dataset(model, progress=None)
+    cls = evaluation.classifications
+    key = [k for k in cls if k.endswith("signal")] or list(cls)
+    scores = np.asarray(cls[key[0]])
+    print(f"  {os.path.basename(path)} [{lower}, {upper}): {len(scores)} events")
+    return scores, labels, weights
+
+
+def hist(x, w, bins):
+    h, _ = np.histogram(np.clip(x, bins[0], bins[-1] - 1e-9), bins, weights=w)
+    e2, _ = np.histogram(np.clip(x, bins[0], bins[-1] - 1e-9), bins, weights=w ** 2)
+    s = h.sum()
+    return (h / s, np.sqrt(e2) / s) if s > 0 else (h, np.sqrt(e2))
+
+
+def chi2(a, b):
+    (ha, ea), (hb, eb) = a, b
+    den = ea ** 2 + eb ** 2
+    ok = den > 0
+    return float((((ha - hb) ** 2)[ok] / den[ok]).sum()), int(ok.sum()) - 1
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("-l", "--log-dir", required=True, help="SPANet run directory (options.json, checkpoints)")
+    ap.add_argument("-t", "--test", required=True, help="held-out h5 (parquet_to_h5.py test file)")
+    ap.add_argument("-c", "--checkpoint", default=None, help="default: the run's best checkpoint")
+    ap.add_argument("--max-events", type=int, default=300000, help="per set (0 = all)")
+    ap.add_argument("--signal-classes", nargs="+", type=int, default=[0, 1], help="class indices of the disc numerator")
+    ap.add_argument("--classes", nargs="+", default=CLASS_NAMES, help="class names by index")
+    ap.add_argument("--bins", type=int, default=20)
+    ap.add_argument("--ratio-range", nargs=2, type=float, default=[0.7, 1.3])
+    ap.add_argument("--gpu", action="store_true")
+    ap.add_argument("-o", "--outdir", default="plots/overtraining")
+    args = ap.parse_args()
+
+    from scipy.stats import ks_2samp
+    from spanet.evaluation import load_model
+
+    opts = json.load(open(os.path.join(args.log_dir, "options.json")))
+    if opts.get("validation_file"):
+        print(f"[warning] the run used validation_file = {opts['validation_file']}: if that is --test, the test set "
+              "also selected the checkpoint (biased check); train with validation from the training file")
+        if os.path.abspath(opts["validation_file"]) == os.path.abspath(args.test):
+            print("[warning] --test IS the run's validation file")
+    if int(opts.get("dataset_randomization", 0)) != 0:
+        raise SystemExit("dataset_randomization != 0: the training range is not contiguous, not supported")
+    split = float(opts.get("dataset_limit", 1.0)) * float(opts.get("train_validation_split", 0.95))
+    limit = float(opts.get("dataset_limit", 1.0))
+    train_file = opts["training_file"]
+
+    model = load_model(args.log_dir, testing_file=args.test, checkpoint=args.checkpoint, cuda=args.gpu)
+    sets = {"train": evaluate(model, train_file, 0.0, split, args.max_events, args.gpu)}
+    if not opts.get("validation_file"):
+        sets["validation"] = evaluate(model, train_file, split, limit, args.max_events, args.gpu)
+    sets["test"] = evaluate(model, args.test, 0.0, 1.0, args.max_events, args.gpu)
+
+    n_cls = sets["test"][0].shape[1]
+    names = (list(args.classes) + [f"class{i}" for i in range(n_cls)])[:n_cls]
+
+    def score_values(s):
+        out = {f"p_{names[i]}": s[:, i] for i in range(n_cls)}
+        tot = s.sum(axis=1)
+        out["disc"] = np.divide(s[:, args.signal_classes].sum(axis=1), tot, out=np.zeros(len(s)), where=tot > 0)
+        return out
+    values = {k: (score_values(s), y, w) for k, (s, y, w) in sets.items()}
+    bins = np.linspace(0, 1, args.bins + 1)
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    os.makedirs(args.outdir, exist_ok=True)
+    rows = []
+    for score in values["test"][0]:
+        fig = plt.figure(figsize=(10, 9.5))
+        gs = fig.add_gridspec(5, 2, height_ratios=[3, 1, 0.55, 3, 1], hspace=0.06, wspace=0.22)
+        for c in range(min(n_cls, 4)):
+            row = 0 if c < 2 else 3
+            ax = fig.add_subplot(gs[row, c % 2])
+            rax = fig.add_subplot(gs[row + 1, c % 2], sharex=ax)
+            ax.tick_params(labelbottom=False)
+            h = {}
+            for k, (v, y, w) in values.items():
+                m = y == c
+                h[k] = hist(v[score][m], w[m], bins)
+            x = 0.5 * (bins[1:] + bins[:-1])
+            ax.stairs(h["train"][0], bins, fill=True, alpha=0.35, color="#1f77b4", label="train")
+            if "validation" in h:
+                ax.stairs(h["validation"][0], bins, color="#2ca02c", lw=1.4, label="validation")
+            ax.errorbar(x, h["test"][0], yerr=h["test"][1], fmt="ko", ms=3, label="test")
+            ht = h["test"][0]
+            ok = ht > 0
+            for k, color in (("train", "#1f77b4"), ("validation", "#2ca02c")):
+                if k in h:
+                    r = np.divide(h[k][0], ht, out=np.full_like(ht, np.nan), where=ok)
+                    rax.stairs(r, bins, baseline=None, color=color, lw=1.4)
+            rax.axhline(1, color="gray", lw=0.8)
+            rax.set_ylim(*args.ratio_range)
+            rax.set_ylabel("/ test", fontsize=8)
+            text = []
+            for k in ("train", "validation"):
+                if k not in h:
+                    continue
+                c2, ndf = chi2(h[k], h["test"])
+                (vk, yk, _), (vt, yt, _) = values[k], values["test"]
+                p = ks_2samp(vk[score][yk == c], vt[score][yt == c]).pvalue
+                text.append(f"{k} vs test: $\\chi^2$/ndf {c2:.0f}/{ndf}, KS p {p:.2g}")
+                rows.append({"score": score, "true_class": names[c], "comparison": f"{k}_vs_test",
+                             "chi2": round(c2, 2), "ndf": ndf, "ks_p": p,
+                             "n_" + k: int((yk == c).sum()), "n_test": int((yt == c).sum())})
+            ax.set_title(f"true {names[c]}", fontsize=9)
+            ax.text(0.02, 0.97, "\n".join(text), transform=ax.transAxes, va="top", fontsize=7,
+                    bbox={"facecolor": "white", "alpha": 0.7, "lw": 0})
+            ax.set_yscale("log")
+            pos = ht[ht > 0]
+            if len(pos):
+                ax.set_ylim(0.3 * pos.min(), 30 * pos.max())
+            ax.set_ylabel("unit area", fontsize=8)
+            rax.set_xlabel(score)
+            if c == 0:
+                handles, labels = ax.get_legend_handles_labels()
+        fig.legend(handles, labels, loc="upper right", ncol=3, fontsize=8, frameon=False)
+        fig.suptitle(f"SPANet overtraining check: {score} ({os.path.basename(os.path.normpath(args.log_dir))})",
+                     fontsize=10, x=0.02, ha="left")
+        for ext in ("png", "pdf"):
+            fig.savefig(os.path.join(args.outdir, f"overtraining_{score}.{ext}"))
+        plt.close(fig)
+
+    print(f"\n{'score':>12} {'true':>7} {'comparison':>20} {'chi2/ndf':>12} {'KS p':>9}")
+    for r in rows:
+        print(f"{r['score']:>12} {r['true_class']:>7} {r['comparison']:>20} {r['chi2']:>7.1f}/{r['ndf']:<4} {r['ks_p']:9.2g}")
+    path = os.path.join(args.outdir, "overtraining_summary.csv")
+    with open(path, "w", newline="") as f:
+        fields = sorted({k for r in rows for k in r}, key=lambda k: list(rows[0]).index(k) if k in rows[0] else 99)
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"\nWrote {args.outdir}/overtraining_<score>.png/.pdf and {path}")
+
+
+if __name__ == "__main__":
+    main()
