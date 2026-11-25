@@ -161,7 +161,9 @@ class ParquetDataset:
                     weight = self.get_weight(sample, dataset)
                     if self.schema == "coffea":
                         weight_new = column_accumulator(weight / self.sum_genweights[dataset])
-                        self.columns[sample][dataset][self.cat]["weight"] = weight_new
+                        # where get_weight / build_arrays_from_accumulator read it (the 'nominal' variation
+                        # level); it was written one level up, so the h5 weights were not normalized
+                        self.columns[sample][dataset][self.cat]['nominal']["weight"] = weight_new
                     elif self.schema == "parquet":
                         self.events = ak.with_field(self.events, weight / self.sum_genweights[dataset], "weight")
 

@@ -11,7 +11,7 @@ The ranges are those SPANet used (contiguous, dataset_randomization must be 0).
 
 Per true class (CLASSIFICATIONS/EVENT/<target>) and per score (each class probability and the analysis
 discriminant disc = (p0 + p1) / sum, signal = classes --signal-classes): unit-area weighted
-distributions (WEIGHTS/weight), train (filled) vs test (points) and validation (line), ratio to test;
+distributions (unit weights as in the training; --weights physics for WEIGHTS/weight), train (filled) vs test (points) and validation (line), ratio to test;
 weighted chi2/ndf over --bins bins (stat. of both) and the unweighted two-sample KS p-value, for
 train vs test and for validation vs test. Validation vs test is the reference of two sets the model
 was not trained on: with millions of events a KS p-value is small for tiny differences, so overtraining
@@ -123,6 +123,10 @@ def main():
     ap.add_argument("--classes", nargs="+", default=CLASS_NAMES, help="class names by index")
     ap.add_argument("--bins", type=int, default=20)
     ap.add_argument("--ratio-range", nargs=2, type=float, default=[0.7, 1.3])
+    ap.add_argument("--weights", choices=["unit", "physics"], default="unit",
+                    help="unit: every event 1, as the training (SPANet does not read WEIGHTS/weight); "
+                         "physics: WEIGHTS/weight of the h5 (normalized only for h5 files made after the "
+                         "parquet.py fix)")
     ap.add_argument("--threshold-score", default="disc", help="score of the threshold table")
     ap.add_argument("--thresholds", nargs="+", type=float, default=[0.5, 0.7, 0.8, 0.9, 0.95])
     ap.add_argument("--gpu", action="store_true")
@@ -158,7 +162,8 @@ def main():
         tot = s.sum(axis=1)
         out["disc"] = np.divide(s[:, args.signal_classes].sum(axis=1), tot, out=np.zeros(len(s)), where=tot > 0)
         return out
-    values = {k: (score_values(s), y, w) for k, (s, y, w) in sets.items()}
+    values = {k: (score_values(s), y, (w if args.weights == "physics" else np.ones_like(w)))
+              for k, (s, y, w) in sets.items()}
     bins = np.linspace(0, 1, args.bins + 1)
 
     import matplotlib
