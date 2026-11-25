@@ -54,8 +54,9 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
    pT x mass bins) per cut (`cut` mode), and ranks sets of WP categories above a preselection against
    the continuous score (`multiwp` mode, for the SPANet multi-WP Xbb input).
    Then the multi-WP Xbb SFs as in Run 2.
-4. **SPANet**: retrain on these definitions (`spanet_models.py`; inference runs without SPANet
-   while `ACTIVE_MODELS` is empty), then pickling / datacards.
+4. **SPANet**: retrained on these definitions (`spanet_models.py`: `run3_refactor`, ONNX in
+   `spanet/models/`; the inference runs without SPANet if `ACTIVE_MODELS` is empty), then pickling /
+   datacards.
 
 ## SPANet training inputs
 

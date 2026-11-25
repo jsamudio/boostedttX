@@ -1,9 +1,9 @@
 """
 Registry of the SPANet ONNX models of the Run 3 analysis (pure Python).
 
-ACTIVE_MODELS is empty until a model trained on the Run 3 object definitions (PUPPI MET,
-UParT b tagging, GloParT XbbVsQCD and regressed mass) exists: the inference then runs without
-SPANet. Add the new model below and list it in ACTIVE_MODELS.
+Models trained on the Run 3 object definitions (PUPPI MET, UParT b tagging, GloParT XbbVsQCD and
+regressed mass) are listed in ACTIVE_MODELS (empty list: the inference runs without SPANet). Their
+ONNX files go to configs/Run3/spanet/models/ (MODEL_DIR) of the checkout that runs the jobs.
 
 Model options (inputs as in the Run 2 registry):
   path            - ONNX file
@@ -19,9 +19,23 @@ Model options (inputs as in the Run 2 registry):
 The entry for a newly trained model is printed by ../common/make_spanet_configs.py.
 """
 
+import os
+
 SPANET_DIR = "/cms/data/jsamudio/boosted/boostedttX/configs"
+# models trained in this setup: configs/Run3/spanet/models/ of the checkout running the jobs
+MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spanet", "models")
 
 SPANET_MODELS = {
+    # first Run 3 training (2026-11-25), aligned with the Run 2 refactor_noOverlap_MultiWP model;
+    # options_run3.json, provisional Xbb WPs (spanet_training.XBB_WPS at training time)
+    "run3_refactor": {
+        "path": f"{MODEL_DIR}/run3_refactor.onnx",
+        "jet_features": ["pt", "eta", "sin_phi", "cos_phi", "btagB"],
+        "fatjet_features": ["pt", "eta", "sin_phi", "cos_phi", "xbb_wp_L", "xbb_wp_M", "xbb_wp_T"],
+        "xbb_wps": {"L": 0.25, "M": 0.877, "T": 0.975},
+        "event_features": ["sphericity", "aplanarity", "centrality", "n_jets", "n_bjets_L", "n_bjets_M", "n_bjets_T"],
+        "count_clean_jets": False,
+        "clean_jets": True},
     # model of the previous 2024 setup (SemiLeptonic_2024): all AK4 jets, GloParT Xbb, PUPPI MET
     "spanet2024": {
         "path": f"{SPANET_DIR}/spanet2024_encoderFeatures.onnx",
@@ -30,7 +44,7 @@ SPANET_MODELS = {
         "clean_jets": False},
 }
 
-ACTIVE_MODELS = []
+ACTIVE_MODELS = ["run3_refactor"]
 
 N_ENCODER_FEATURES = 32
 
