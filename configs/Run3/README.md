@@ -68,13 +68,26 @@ Same chain as Run 2 without `btag_norm.py` (the fixed-WP SFs need no normalizati
 
 | Script | Run 3 differences from Run 2 |
 |---|---|
-| `outputToPkl.py` | 13.6 TeV `XSEC_DICT` by dataset name (variation samples: the nominal dataset, `VARIATION_NOMINAL`); no `--btag-norm`; no tH SM reweighting (2024 THQ / THW taken as SM); `VV` process |
+| `outputToPkl.py` | 13.6 TeV `XSEC_DICT` by dataset name (variation samples: the nominal dataset, `VARIATION_NOMINAL`); no `--btag-norm`; tH SM reweighting as Run 2 (see below); `VV` process |
 | `make_process_norms.py`, `theory_norms.py` | ttZ = TTZToQQ (with its Z -> bb events) + TTLL + TTNuNu; ttX sample `TTX`. The processor fills `theory_sums` before the skim (`process_extra_before_skim`) |
 | `makeDatacard.py` | VV background; b-tag nuisances `btag_{bc,light}_correlated` and `btag_{bc,light}_uncorrelated_<year>`; muon ID / iso total per year (no stat / syst split, no reco SF); no Xbb SF, L1 prefiring or PU jet ID; jet nuisances found from the varied pickles (`jet_systematics`: JES correlated, `jes_<source>_ak4` / `_ak8` separately since pocket-coffea varies AK4 and AK8 jets as separate variations; JER, JMS, JMR per year) |
 | `datacard_shapes.py`, `pdf_uncertainty.py`, `TH1.py`, `plot_nn_edges.py` | copies of the Run 2 files |
 
 The processor writes for this: `pdfweight_0..102` (signal and tt+jets), `tt_2b` / `tt_C`
 (tt+2b / tt+C cross-section nuisances) and `theory_sums`.
+
+tH SM reweighting: the 2024 THQ / THW ctcvcp samples are generated at kappa_t = -1 with the Run 2
+reweight card (SM = `rwgt_12`), but NanoAODv15 has no `LHEReweightingWeight`. The SM weight is taken
+from MiniAOD, once, in a CMSSW environment with a grid proxy. The inference does not need it (any time
+before the pickling):
+
+    python3 extract_th_sm_weights.py --jobs 16     # per MiniAOD file -> th_sm_weights/<dataset>/ (reruns skip done files)
+    python3 extract_th_sm_weights.py --merge       # -> th_sm_weights/THQ_2024.npz, THW_2024.npz (not in git)
+
+`outputToPkl.py` matches the exported (run, lumi, event) to the table (`th_reweighting.th_sm_weights`, fails if
+an event is missing), adds `th_sm_weight` (in the nominal weight) and scales the tH normalization by
+sum(sign) / sum(sign x w) over all generated events, so the SM cross section is kept. Without the tables:
+`outputToPkl.py --th-as-is` (kappa_t = -1 kinematics, for checks only).
 
 4FS ttbb scale choice: the Summer24 TTBB samples are generated at (muR, muF) = (mu0, 2 mu0), but their scale
 weights vary both scales around (mu0, mu0). As in Run 2, the analysis nominal is (mu0, mu0): the event weight

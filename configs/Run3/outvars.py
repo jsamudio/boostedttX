@@ -59,7 +59,8 @@ weight_vars = ['genWeight', 'norm_weight',
 # Per-event factors that enter the nominal event weight on top of norm_weight * sign(genWeight)
 nominal_weight_factors = ['topptWeight', 'ele_reco_sf', 'ele_id_sf', 'ele_trig_sf',
                           'mu_id_sf', 'mu_iso_sf', 'mu_trig_sf', 'btag_sf', 'puWeight',
-                          'ttbb_scale_ref']   # 4FS ttbb nominal at (mu0, mu0), 1 for other MC
+                          'ttbb_scale_ref',   # 4FS ttbb nominal at (mu0, mu0), 1 for other MC
+                          'th_sm_weight']     # tH SM reweighting, added by outputToPkl (th_reweighting.py)
 
 # Trigger-efficiency columns (TrigEff.ipynb): lepton kinematics, event variables, weights; the
 # HLT bits are exported from the HLT collection (custom_cut_functions.hlt_paths)

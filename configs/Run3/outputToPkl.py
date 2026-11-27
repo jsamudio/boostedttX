@@ -14,7 +14,9 @@ Differences from Run 2:
   * 13.6 TeV cross sections (XSEC_DICT, by dataset name), Run 3 lumi (analysis_years.LUMI_FB)
   * no --btag-norm: the fixed-WP b-tag SFs (method 1a, with our own efficiency maps) need no
     normalization factor, unlike the Run 2 shape SFs (btag_norm.py)
-  * no tH SM reweighting (th_reweighting.py): the 2024 THQ / THW samples are taken as SM
+  * tH SM reweighting applied here, not in the processor: NanoAODv15 has no LHEReweightingWeight, so the
+    SM weight comes from MiniAOD lookup tables (extract_th_sm_weights.py, th_reweighting.py), matched by
+    (run, lumi, event). Without the tables: --th-as-is (kappa_t = -1 kinematics, SM rate; not for results)
   * VV is its own process (no diboson sample in Run 2)
 
 Shape variations (e.g. a PC_JEC_VARIATION run) are exported as <process>_<variation>.pkl,
@@ -33,6 +35,7 @@ import outvars
 from analysis_years import ERA_RE, find_era, ERA_TO_YEAR, LUMI_FB, PICKLE_DIR
 from samples import PICKLE_SIGNAL, PICKLE_BACKGROUND
 from spanet_models import ACTIVE_MODELS, score_columns
+from th_reweighting import is_th, th_sm_weights, th_norm_factor
 
 TTBB_SCALE_FIX_PREFIX = "TTbb_"      # = custom_scale_factors.TTBB_SCALE_FIX_PREFIX (no coffea import here)
 
@@ -108,7 +111,7 @@ def get_norm(sample, dataset, genweight_df, era, theory_sums=None):
     """Per-event normalization: lumi(era) * xsec / sum of sign(genWeight). Fails loudly.
     4FS ttbb (nominal moved to (mu0, mu0), custom_scale_factors.ttbb_scale_ref): the denominator is
     sum sign(genWeight) * ttbb_scale_ref over all generated events (theory_sums[sample][dataset]['all']
-    ['nominal']), so the yield keeps the cross section of XSEC_DICT (as the tH SM reweighting of Run 2)."""
+    ['nominal']), so the yield keeps the cross section of XSEC_DICT. tH: see OutputToPkl.th_reweight."""
     key = xsec_key(sample, dataset)
     if era not in LUMI_FB:
         raise KeyError(f"No luminosity configured for {era} (LUMI_FB in analysis_years.py)")
@@ -130,10 +133,11 @@ class OutputToPkl:
     (as DataFrames, per variation) and the file is freed before the next one is opened, so the
     peak memory is the largest single .coffea file plus the exported columns."""
 
-    def __init__(self, input_files):
+    def __init__(self, input_files, th_as_is=False):
         if isinstance(input_files, str):
             input_files = [input_files]
         self.input_files = list(input_files)
+        self.th_as_is = th_as_is
 
         spanet_vars = [c for m in MODELS for c in score_columns(m)]
         # PDF members exist only for signal and tt+jets (outvars.pdf_vars): read when present
@@ -150,6 +154,24 @@ class OutputToPkl:
             for cats in datasets.values():
                 found.update(cats.get(CATEGORY, {}).keys())
         return sorted(found, key=lambda v: (v != 'nominal', v))
+
+    def th_reweight(self, df, dataset, norm):
+        """tH (generated at kappa_t = -1): add th_sm_weight from the MiniAOD table (by run, lumi, event) and
+        return the normalization that keeps the SM cross section: L sigma / [sum_signOf_genweights x
+        sum_table(sign w) / sum_table(sign)] = norm x sum_table(sign) / sum_table(sign w), exact when every
+        generated event was processed (a missing file only costs the table-average assumption)."""
+        if self.th_as_is:
+            print(f"  [WARNING] {dataset}: NOT reweighted to the SM (--th-as-is): kappa_t = -1 kinematics, "
+                  f"selected yield ~1.5-2x too high, up to ~4x in the highest NN bins. Not for results.")
+            return norm
+        missing = [c for c in ('run', 'luminosityBlock', 'event') if c not in df]
+        if missing:
+            raise KeyError(f"{dataset}: no {missing} columns, cannot match the tH SM weights")
+        df['th_sm_weight'] = th_sm_weights(dataset, df['run'], df['luminosityBlock'], df['event'])
+        factor = th_norm_factor(dataset)
+        print(f"  {dataset}: SM reweighting, mean th_sm_weight {df['th_sm_weight'].mean():.4f}, "
+              f"normalization x {factor:.3f}")
+        return norm * factor
 
     def read_samples(self, filein, genweight_df, samples, variables, variation='nominal'):
         """Read every dataset of the given samples in one input, with per-dataset year and normalization."""
@@ -180,6 +202,10 @@ class OutputToPkl:
                     print(f"  [WARNING] {sample}/{dataset}: missing {missing}")
                 if tmp:
                     df = pd.DataFrame(tmp)
+                    if is_th(dataset):
+                        norm = self.th_reweight(df, dataset, norm)
+                    if 'th_sm_weight' not in df:        # 1 for every non-tH event (no NaN after the concat)
+                        df['th_sm_weight'] = 1.0
                     df['norm_weight'] = norm
                     df['era'] = era
                     df['year'] = year
@@ -257,5 +283,7 @@ if __name__ == '__main__':
                         help="shape variations to export: 'nominal' (default), 'all', or explicit names")
     parser.add_argument('--skip-nominal', action='store_true',
                         help='do not (re)export the nominal pickles, e.g. for the output of a JEC-variation run')
+    parser.add_argument('--th-as-is', action='store_true',
+                        help='tH without the SM reweighting (no th_sm_weights tables yet); not for results')
     args = parser.parse_args()
-    OutputToPkl(args.input).run(args.variations, skip_nominal=args.skip_nominal)
+    OutputToPkl(args.input, th_as_is=args.th_as_is).run(args.variations, skip_nominal=args.skip_nominal)
