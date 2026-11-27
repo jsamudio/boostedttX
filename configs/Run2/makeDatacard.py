@@ -76,11 +76,12 @@ BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets']
 # (ttX, VJets and SingleTop have their own nuisances in add_Systematics: ttx_qsc, v_qsc, st_qsc, qqpdf, qgpdf)
 BKG_XSEC_UNC = {'QCD': 1.50}
 
-# Inclusive cross-section uncertainties (lnN; up, or (up, down)): the 13 TeV rows of the AN tables
+# Inclusive cross-section uncertainties (lnN; up, or (up, down)): the 13 TeV rows of the AN tables, except ttZ
 # (AN-26-037 08_systematics.tex, tab:systematics:inclxs:scales / :pdf); Run3/makeDatacard.py has the 13.6 TeV rows
 THEORY_LNN = {
     'tth_qsc': (1.017, 0.977), 'tth_ggpdf': 1.028,   # NNLO+NNLL+EW, mH = 125.00 (Balsach:2025jcw)
-    'ttz_qsc': (1.067, 0.923), 'ttz_ggpdf': 1.026,   # Kulesza:2018tqz
+    'ttz_qsc': (1.021, 0.974), 'ttz_ggpdf': (1.020, 0.987),   # aN3LO QCD + NLO EW, MSHT20 NNLO (arXiv:2410.01214, Table 2):
+                                                           # 998 +21 -26 (scale) +20 -13 (PDF) fb, the central value of XSEC_DICT
     'tt_qsc': (1.025, 0.964),  'ggpdf': 1.025,       # ttbar (TTBar and tt_B): 833.9 +20.5 -30.0 (scale) +-21.0 (PDF+alpha_s) pb
     'st_qsc': (1.014, 0.988),  'qgpdf': 1.019,       # single top t+tW+s 304.573 pb: scale +4.383 -3.529, PDF+alpha_s +5.674 -4.374 pb (larger side)
 }

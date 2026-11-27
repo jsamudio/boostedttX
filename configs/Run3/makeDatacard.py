@@ -85,11 +85,12 @@ BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets', 'VV']
 # (ttX, VJets and SingleTop have their own nuisances in add_Systematics: ttx_qsc, v_qsc, st_qsc, qqpdf, qgpdf)
 BKG_XSEC_UNC = {'QCD': 1.50, 'VV': 1.10}
 
-# 13.6 TeV cross-section uncertainties (lnN; up, or (up, down)): the 13.6 TeV rows of the AN
+# 13.6 TeV cross-section uncertainties (lnN; up, or (up, down)): the 13.6 TeV rows of the AN, except ttZ
 # systematics tables (AN-26-037, 08_systematics.tex, tab:systematics:inclxs:scales / :pdf)
 THEORY_LNN = {
     'tth_qsc': (1.014, 0.979), 'tth_ggpdf': 1.028,   # NNLO+NNLL+EW, mH = 125.00 (Balsach:2025jcw)
-    'ttz_qsc': (1.067, 0.923), 'ttz_ggpdf': 1.025,   # Kulesza:2018tqz (PDF 2.04 (+) alpha_s 1.52)
+    'ttz_qsc': (1.021, 0.973), 'ttz_ggpdf': (1.020, 0.988),   # aN3LO QCD + NLO EW, MSHT20 NNLO (arXiv:2410.01214, Table 2):
+                                                           # 1125 +24 -30 (scale) +22 -14 (PDF) fb, the central value of XSEC_DICT
     'tt_qsc': (1.024, 0.964),  'ggpdf': 1.025,       # ttbar (TTBar and tt_B): 923.6 +22.6 -33.4 (scale) +-22.8 (PDF+alpha_s) pb
     'st_qsc': (1.014, 0.988),  'qgpdf': 1.018,       # single top t+tW+s 331.878 pb: scale +4.670 -3.849, PDF+alpha_s +5.981 -4.781 pb (larger side)
 }
