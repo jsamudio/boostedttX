@@ -81,9 +81,9 @@ ARGMAX = False
 # Add 'QCD' only if a QCD pickle is produced (the pickling script does not export it yet).
 BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets', 'VV']
 
-# Normalization uncertainties of the minor backgrounds (lnN).
-# (ttX and VJets have their own nuisances in add_Systematics: ttx_qsc, v_qsc, qqpdf)
-BKG_XSEC_UNC = {'SingleTop': 1.10, 'QCD': 1.50, 'VV': 1.10}
+# Normalization uncertainties of the minor backgrounds without a theory reference (lnN).
+# (ttX, VJets and SingleTop have their own nuisances in add_Systematics: ttx_qsc, v_qsc, st_qsc, qqpdf, qgpdf)
+BKG_XSEC_UNC = {'QCD': 1.50, 'VV': 1.10}
 
 # 13.6 TeV cross-section uncertainties (lnN; up, or (up, down)): the 13.6 TeV rows of the AN
 # systematics tables (AN-26-037, 08_systematics.tex, tab:systematics:inclxs:scales / :pdf)
@@ -91,7 +91,7 @@ THEORY_LNN = {
     'tth_qsc': (1.014, 0.979), 'tth_ggpdf': 1.028,   # NNLO+NNLL+EW, mH = 125.00 (Balsach:2025jcw)
     'ttz_qsc': (1.067, 0.923), 'ttz_ggpdf': 1.025,   # Kulesza:2018tqz (PDF 2.04 (+) alpha_s 1.52)
     'tt_qsc': (1.024, 0.964),  'ggpdf': 1.025,       # ttbar (TTBar and tt_B): 923.6 +22.6 -33.4 (scale) +-22.8 (PDF+alpha_s) pb
-    'qgpdf': 1.018,                                  # single top PDF+alpha_s (larger side of +5.981 -4.781 pb on 331.878 pb)
+    'st_qsc': (1.014, 0.988),  'qgpdf': 1.018,       # single top t+tW+s 331.878 pb: scale +4.670 -3.849, PDF+alpha_s +5.981 -4.781 pb (larger side)
 }
 # ttbar modelling (lnN). PLACEHOLDERS: Run 2 values. In Run 3, hdamp of TTBar from the dedicated
 # Hdamp-418 / -158 samples and UE from the TuneCP5up / down samples; there are no ttbb hdamp
@@ -100,8 +100,8 @@ TTBAR_MODELLING_LNN = {'UE': ('TTBar', 1.01, 0.99), 'hdamp': ('TTBar', 1.049, 0.
                        'hdamp_ttbb': ('tt_B', 1.027, 0.974)}
 # Numbers still to be set for Run 3 (printed at every run)
 PLACEHOLDERS = ['TTBAR_MODELLING_LNN (UE, hdamp, hdamp_ttbb)',
-                "BKG_XSEC_UNC['VV'], ['SingleTop'] (AN 13.6 TeV single-top scale: +1.4% / -1.2%)",
-                'VJETS_SCALE_UNC / VJETS_PDF_UNC (13.6 TeV W cross section)',
+                "BKG_XSEC_UNC['VV'] (not in the AN)",
+                'VJETS_SCALE_UNC / VJETS_PDF_UNC (13 TeV values: the AN has no 13.6 TeV V+jets row yet)',
                 'analysis_years.LUMI_UNCERTAINTIES (2024 luminosity uncertainty)']
 
 # tt+2b (in tt_B) and tt+C (in TTBar) cross sections: events of the category scaled by these
@@ -831,6 +831,7 @@ class MakeDataCard:
             lnN('ttz_qsc0',   ['ttZ0'], *th['ttz_qsc'],   grps=('antisig_rtheo',))
         lnN('ggpdf',  ttbar_mc, *th['ggpdf'], grps=('theo',))
         lnN('tt_qsc', ttbar_mc, [list(th['tt_qsc']) for _ in ttbar_mc], grps=('theo',))
+        lnN('st_qsc', ['SingleTop'], *th['st_qsc'], grps=('theo',))
         lnN('qgpdf',  ['SingleTop'], *th['qgpdf'], grps=('theo',))
         for p in minor_bkg:
             if p in BKG_XSEC_UNC:

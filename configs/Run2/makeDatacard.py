@@ -72,10 +72,18 @@ ARGMAX = False
 # Add 'QCD' only if a QCD pickle is produced (the pickling script does not export it yet).
 BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets']
 
-# Normalization uncertainties of the minor backgrounds (lnN).
-# PLACEHOLDERS -- set these to the values used in the previous analysis.
-# (ttX and VJets have their own nuisances in add_Systematics: ttx_qsc, v_qsc, qqpdf)
-BKG_XSEC_UNC = {'SingleTop': 1.10, 'QCD': 1.50}
+# Normalization uncertainties of the minor backgrounds without a theory reference (lnN).
+# (ttX, VJets and SingleTop have their own nuisances in add_Systematics: ttx_qsc, v_qsc, st_qsc, qqpdf, qgpdf)
+BKG_XSEC_UNC = {'QCD': 1.50}
+
+# Inclusive cross-section uncertainties (lnN; up, or (up, down)): the 13 TeV rows of the AN tables
+# (AN-26-037 08_systematics.tex, tab:systematics:inclxs:scales / :pdf); Run3/makeDatacard.py has the 13.6 TeV rows
+THEORY_LNN = {
+    'tth_qsc': (1.017, 0.977), 'tth_ggpdf': 1.028,   # NNLO+NNLL+EW, mH = 125.00 (Balsach:2025jcw)
+    'ttz_qsc': (1.067, 0.923), 'ttz_ggpdf': 1.026,   # Kulesza:2018tqz
+    'tt_qsc': (1.025, 0.964),  'ggpdf': 1.025,       # ttbar (TTBar and tt_B): 833.9 +20.5 -30.0 (scale) +-21.0 (PDF+alpha_s) pb
+    'st_qsc': (1.014, 0.988),  'qgpdf': 1.019,       # single top t+tW+s 304.573 pb: scale +4.383 -3.529, PDF+alpha_s +5.674 -4.374 pb (larger side)
+}
 
 # tt+2b (in tt_B) and tt+C (in TTBar) cross sections: events of the category scaled by these
 # factors (up, down), as in the previous analysis. Categories: outvars.bkg_vars (tt_2b, tt_C).
@@ -783,18 +791,20 @@ class MakeDataCard:
             if per_year:
                 lnN(lumi_name, all_mc, per_year, grps=('exp',))
         lnN('lep_phasespace', all_mc, LEPTON_PHASESPACE_UNC, grps=('exp',))
-        lnN('tth_ggpdf', tth_sig, 1.036,        grps=('sig_rtheo',))
-        lnN('ttz_ggpdf', ttz_sig, 1.020, 0.987, grps=('sig_rtheo',))   # PDF, arXiv:2410.01214 (aN3LO QCD+NLO EW, MSHT20)
-        lnN('tth_qsc',   tth_sig, 1.058, 0.908, grps=('sig_rtheo',))
-        lnN('ttz_qsc',   ttz_sig, 1.021, 0.974, grps=('sig_rtheo',))   # scale, arXiv:2410.01214
+        th = {k: (v if isinstance(v, tuple) else (v,)) for k, v in THEORY_LNN.items()}
+        lnN('tth_ggpdf', tth_sig, *th['tth_ggpdf'], grps=('sig_rtheo',))
+        lnN('ttz_ggpdf', ttz_sig, *th['ttz_ggpdf'], grps=('sig_rtheo',))
+        lnN('tth_qsc',   tth_sig, *th['tth_qsc'],   grps=('sig_rtheo',))
+        lnN('ttz_qsc',   ttz_sig, *th['ttz_qsc'],   grps=('sig_rtheo',))
         if 'recoeft' not in self.tag:
-            lnN('tth_ggpdf0', ['ttH0'], 1.036,        grps=('antisig_rtheo',))
-            lnN('ttz_ggpdf0', ['ttZ0'], 1.020, 0.987, grps=('antisig_rtheo',))
-            lnN('tth_qsc0',   ['ttH0'], 1.058, 0.908, grps=('antisig_rtheo',))
-            lnN('ttz_qsc0',   ['ttZ0'], 1.021, 0.974, grps=('antisig_rtheo',))
-        lnN('ggpdf',  ttbar_mc, 1.042, grps=('theo',))
-        lnN('tt_qsc', ttbar_mc, [[1.024, 0.965] for _ in ttbar_mc], grps=('theo',))
-        lnN('qgpdf',  ['SingleTop'], 1.028, grps=('theo',))
+            lnN('tth_ggpdf0', ['ttH0'], *th['tth_ggpdf'], grps=('antisig_rtheo',))
+            lnN('ttz_ggpdf0', ['ttZ0'], *th['ttz_ggpdf'], grps=('antisig_rtheo',))
+            lnN('tth_qsc0',   ['ttH0'], *th['tth_qsc'],   grps=('antisig_rtheo',))
+            lnN('ttz_qsc0',   ['ttZ0'], *th['ttz_qsc'],   grps=('antisig_rtheo',))
+        lnN('ggpdf',  ttbar_mc, *th['ggpdf'], grps=('theo',))
+        lnN('tt_qsc', ttbar_mc, [list(th['tt_qsc']) for _ in ttbar_mc], grps=('theo',))
+        lnN('st_qsc', ['SingleTop'], *th['st_qsc'], grps=('theo',))
+        lnN('qgpdf',  ['SingleTop'], *th['qgpdf'], grps=('theo',))
         for p in minor_bkg:
             if p in BKG_XSEC_UNC:
                 lnN(f'{p.lower()}_xsec', [p], BKG_XSEC_UNC[p], grps=('theo',))
