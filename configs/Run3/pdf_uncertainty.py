@@ -6,19 +6,19 @@ normalization factors remove exactly the rate part of the template variations.
 `values` is an array whose first axis runs over the members (one entry per LHEPdfWeight member):
 the sum of weights (or a histogram) obtained with each member's weight.
 
-Copied from Run 2. The PDF set is identified by the number of members. These are the UL
-(Run 2) sets; the Summer24 samples have NOT been checked yet: if a set has another number of members
-pdf_set raises, and PDF_SETS / the functions below have to be extended for it:
-    103  NNPDF31_nnlo_hessian_pdfas (LHA 306000-306102): 0 central, 1-100 Hessian eigenvectors,
-         101 / 102 alpha_s = 0.116 / 0.120          (5FS samples: ttH, ttZ, TTTo, ttX)
-    101  NNPDF31_nnlo_as_0118_nf_4 (LHA 320900-321000): 0 central, 1-100 replicas
-                                                     (4FS TTbb)
-Check the set of a sample with the LHEPdfWeight branch title, e.g.
-    uproot.open(file)["Events"]["LHEPdfWeight"].title
+Run 3 version of Run2/pdf_uncertainty.py. The PDF set is identified by the number of members; the
+Summer24 sets (check_lhe_weights.py, LHEPdfWeight titles, 2026-11-27) are both Hessian:
+    103  NNPDF31_nnlo_as_0118_mc_hessian_pdfas (LHA 325300-325402): 0 central, 1-100 Hessian eigenvectors,
+         101 / 102 alpha_s = 0.116 / 0.120     (5FS: ttH, ttZ, TTTo, TTW, TTTT, tW, THW, V+jets, QCD, SMEFT)
+    101  NNPDF31_nnlo_as_0118_nf_4_mc_hessian (LHA 325500-325600): 0 central, 1-100 Hessian eigenvectors,
+         no alpha_s members                    (4FS: TTbb, THQ, tZq, single top s / t channel)
+Run 2 differs for the 101-member set: the UL 4FS TTbb used the replica set NNPDF31_nnlo_as_0118_nf_4
+(320900), with the 16-84% replica interval. Another member count raises in pdf_set.
+Check the set of a sample with check_lhe_weights.py.
 """
 import numpy as np
 
-PDF_SETS = {103: "hessian", 101: "replicas"}
+PDF_SETS = {103: "hessian_pdfas", 101: "hessian"}
 
 
 def pdf_set(n_members):
@@ -32,30 +32,26 @@ def _relative(err, central):
 
 
 def pdf_up_down(values):
-    """(up, down) = central member x (1 +- relative PDF uncertainty).
-    hessian : sqrt(sum over the 100 eigenvectors of (member - central)^2)
-    replicas: half the 16-84% interval of the 100 replicas, relative to its midpoint"""
+    """(up, down) = central member x (1 +- relative PDF uncertainty): sqrt of the sum over the 100
+    Hessian eigenvectors (members 1-100) of (member - central)^2, for both Summer24 sets."""
     values = np.asarray(values, dtype=float)
+    pdf_set(len(values))
     central = values[0]
-    if pdf_set(len(values)) == "hessian":
-        rel = _relative(np.sqrt(np.sum((values[1:101] - central) ** 2, axis=0)), central)
-    else:
-        q16, q84 = np.quantile(values[1:101], 0.16, axis=0), np.quantile(values[1:101], 0.84, axis=0)
-        rel = _relative((q84 - q16) / 2, (q84 + q16) / 2)
+    rel = _relative(np.sqrt(np.sum((values[1:101] - central) ** 2, axis=0)), central)
     return central * (1 + rel), central * (1 - rel)
 
 
 def alphas_up_down(values):
     """(up, down) = central member x (1 +- relative alpha_s uncertainty), with
     relative uncertainty = (member 102 [alpha_s 0.120] - member 101 [0.116]) / 2 / central.
-    Only for the Hessian set (the 4FS replica set has no alpha_s members)."""
+    Only for the 103-member set (the 4FS set has no alpha_s members)."""
     values = np.asarray(values, dtype=float)
-    if pdf_set(len(values)) != "hessian":
-        raise ValueError("alpha_s variations exist only for the 103-member Hessian set")
+    if pdf_set(len(values)) != "hessian_pdfas":
+        raise ValueError("alpha_s variations exist only for the 103-member set")
     central = values[0]
     rel = _relative((values[102] - values[101]) / 2, central)
     return central * (1 + rel), central * (1 - rel)
 
 
 def has_alphas(n_members):
-    return pdf_set(n_members) == "hessian"
+    return pdf_set(n_members) == "hessian_pdfas"

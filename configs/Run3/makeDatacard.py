@@ -162,8 +162,8 @@ def jet_systematics(years):
 
 # PDF / alpha_s shape uncertainties (requires the pdfweight_<i> columns in the pickles and the
 # pdf/alphas factors in process_norms_<year>.json). The PDF set of a process follows from its number
-# of members (pdf_uncertainty.py): 'pdf' for the 5FS Hessian set (signal, TTBar), 'pdf_ttbb' for the
-# 4FS replica set (tt_B), uncorrelated as before; 'alphas' only for the Hessian set.
+# of members (pdf_uncertainty.py): 'pdf' for the 5FS set with alpha_s members (signal, TTBar), 'pdf_ttbb'
+# for the 4FS set (tt_B; Hessian in Summer24, replicas in UL), uncorrelated as before; 'alphas' only for the 5FS set.
 USE_PDF = True
 
 # b-tag fixed-WP scale-factor sources (custom_scale_factors.btag_sf_columns): columns
@@ -917,8 +917,8 @@ class MakeDataCard:
 
         if USE_PDF:
             n_members = self.pdf_member_counts(self.accepted_sig + ttbar_mc)
-            hessian  = [p for p, n in n_members.items() if has_alphas(n)]
-            replicas = [p for p, n in n_members.items() if not has_alphas(n)]
+            hessian  = [p for p, n in n_members.items() if has_alphas(n)]          # 5FS set (with alpha_s)
+            replicas = [p for p, n in n_members.items() if not has_alphas(n)]      # 4FS set (tt_B)
             for name, procs, up, down in [('pdf',      hessian,  'pdf_up',    'pdf_down'),
                                           ('pdf_ttbb', replicas, 'pdf_up',    'pdf_down'),
                                           ('alphas',   hessian,  'alphas_up', 'alphas_down')]:
