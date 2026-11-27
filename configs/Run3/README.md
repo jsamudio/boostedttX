@@ -76,8 +76,8 @@ Same chain as Run 2 without `btag_norm.py` (the fixed-WP SFs need no normalizati
 The processor writes for this: `pdfweight_0..102` (signal and tt+jets), `tt_2b` / `tt_C`
 (tt+2b / tt+C cross-section nuisances) and `theory_sums`.
 
-Placeholders (printed by `makeDatacard.py` at every run, `PLACEHOLDERS`): `THEORY_LNN` (signal and
-ttbar cross-section uncertainties, 13 TeV values), `TTBAR_MODELLING_LNN` (UE, hdamp, hdamp_ttbb),
+`THEORY_LNN` (ttH, ttZ, ttbar scale and PDF, single-top PDF) holds the 13.6 TeV rows of the AN
+systematics tables. Placeholders (printed by `makeDatacard.py` at every run, `PLACEHOLDERS`): `TTBAR_MODELLING_LNN` (UE, hdamp, hdamp_ttbb),
 `BKG_XSEC_UNC` (VV, single top), `VJETS_*_UNC`, `analysis_years.LUMI_UNCERTAINTIES` (empty: no lumi
 nuisance yet). `outputToPkl.XSEC_DICT` holds the values of the dataset definitions, to be checked
 against their references. `pdf_uncertainty.py` knows the UL PDF sets (103 / 101 members); a Summer24

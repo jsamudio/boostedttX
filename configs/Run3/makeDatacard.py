@@ -85,13 +85,13 @@ BACKGROUNDS = ['TTBar', 'tt_B', 'SingleTop', 'ttX', 'VJets', 'VV']
 # (ttX and VJets have their own nuisances in add_Systematics: ttx_qsc, v_qsc, qqpdf)
 BKG_XSEC_UNC = {'SingleTop': 1.10, 'QCD': 1.50, 'VV': 1.10}
 
-# Cross-section uncertainties of signal and ttbar (lnN; up, or (up, down)). PLACEHOLDERS: the 13 TeV
-# values of Run 2, to be replaced by the 13.6 TeV ones (and their references)
+# 13.6 TeV cross-section uncertainties (lnN; up, or (up, down)): the 13.6 TeV rows of the AN
+# systematics tables (AN-26-037, 08_systematics.tex, tab:systematics:inclxs:scales / :pdf)
 THEORY_LNN = {
-    'tth_ggpdf': 1.036,          'tth_qsc': (1.058, 0.908),
-    'ttz_ggpdf': (1.020, 0.987), 'ttz_qsc': (1.021, 0.974),
-    'ggpdf': 1.042,              'tt_qsc': (1.024, 0.965),       # ttbar (TTBar and tt_B)
-    'qgpdf': 1.028,                                              # single top
+    'tth_qsc': (1.014, 0.979), 'tth_ggpdf': 1.028,   # NNLO+NNLL+EW, mH = 125.00 (Balsach:2025jcw)
+    'ttz_qsc': (1.067, 0.923), 'ttz_ggpdf': 1.025,   # Kulesza:2018tqz (PDF 2.04 (+) alpha_s 1.52)
+    'tt_qsc': (1.024, 0.964),  'ggpdf': 1.025,       # ttbar (TTBar and tt_B): 923.6 +22.6 -33.4 (scale) +-22.8 (PDF+alpha_s) pb
+    'qgpdf': 1.018,                                  # single top PDF+alpha_s (larger side of +5.981 -4.781 pb on 331.878 pb)
 }
 # ttbar modelling (lnN). PLACEHOLDERS: Run 2 values. In Run 3, hdamp of TTBar from the dedicated
 # Hdamp-418 / -158 samples and UE from the TuneCP5up / down samples; there are no ttbb hdamp
@@ -99,9 +99,8 @@ THEORY_LNN = {
 TTBAR_MODELLING_LNN = {'UE': ('TTBar', 1.01, 0.99), 'hdamp': ('TTBar', 1.049, 0.954),
                        'hdamp_ttbb': ('tt_B', 1.027, 0.974)}
 # Numbers still to be set for Run 3 (printed at every run)
-PLACEHOLDERS = ['THEORY_LNN (13.6 TeV signal / ttbar cross-section uncertainties)',
-                'TTBAR_MODELLING_LNN (UE, hdamp, hdamp_ttbb)',
-                "BKG_XSEC_UNC['VV'], ['SingleTop']",
+PLACEHOLDERS = ['TTBAR_MODELLING_LNN (UE, hdamp, hdamp_ttbb)',
+                "BKG_XSEC_UNC['VV'], ['SingleTop'] (AN 13.6 TeV single-top scale: +1.4% / -1.2%)",
                 'VJETS_SCALE_UNC / VJETS_PDF_UNC (13.6 TeV W cross section)',
                 'analysis_years.LUMI_UNCERTAINTIES (2024 luminosity uncertainty)']
 
