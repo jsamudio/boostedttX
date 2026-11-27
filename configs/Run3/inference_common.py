@@ -93,7 +93,7 @@ VARIED_JET_TYPES = ["AK4PFPuppi", "AK8PFPuppi"]
 #   2. set "ele" to that file, run trigeff_mu (analysis muon), muon cell -> muon_trig_sf_2024.json.gz
 #   3. set "mu" to that file for the analysis
 TRIGGER_SFS = {
-    "2024": {"ele": None, "mu": "pog"},
+    "2024": {"ele": "ele_trig_sf_2024.json.gz", "mu": "muon_trig_sf_2024.json.gz"},
 }
 
 # b-tag SFs per era: fixed-WP SFs (BTV UParTAK4_comb / _light, multi-WP method 1a over
@@ -102,7 +102,7 @@ TRIGGER_SFS = {
 #   1. run_pipeline.py inference --groups btageff
 #   2. python3 derive_btag_eff.py -> btag_eff_2024.json.gz; set "eff" to that file
 BTAG_SFS = {
-    "2024": {"eff": None},
+    "2024": {"eff": "btag_eff_2024.json.gz"},
 }
 
 # Efficiency-map histogram of the btageff group (AK4 jets of the preselection, btag_eff_workflow.py)
