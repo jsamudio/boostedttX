@@ -34,6 +34,12 @@ from analysis_years import ERA_RE, find_era, ERA_TO_YEAR, LUMI_FB, PICKLE_DIR
 from samples import PICKLE_SIGNAL, PICKLE_BACKGROUND
 from spanet_models import ACTIVE_MODELS, score_columns
 
+TTBB_SCALE_FIX_PREFIX = "TTbb_"      # = custom_scale_factors.TTBB_SCALE_FIX_PREFIX (no coffea import here)
+
+
+def is_ttbb_scale_fix(sample):
+    return sample.startswith(TTBB_SCALE_FIX_PREFIX)
+
 ERA_SUFFIX = re.compile(rf'_{ERA_RE}$')
 # ttbar / ttbb modelling-variation samples (samples.TTBAR_VARIATION_SAMPLES): nominal cross section
 VARIATION_SUFFIX = re.compile(r'_(hdampUP|hdampDOWN|TuneCP5up|TuneCP5down)$')
@@ -98,11 +104,22 @@ def xsec_key(sample, dataset):
 MODELS = ACTIVE_MODELS       # see spanet_models.py
 
 
-def get_norm(sample, dataset, genweight_df, era):
-    """Per-event normalization: lumi(era) * xsec / sum of sign(genWeight). Fails loudly."""
+def get_norm(sample, dataset, genweight_df, era, theory_sums=None):
+    """Per-event normalization: lumi(era) * xsec / sum of sign(genWeight). Fails loudly.
+    4FS ttbb (nominal moved to (mu0, mu0), custom_scale_factors.ttbb_scale_ref): the denominator is
+    sum sign(genWeight) * ttbb_scale_ref over all generated events (theory_sums[sample][dataset]['all']
+    ['nominal']), so the yield keeps the cross section of XSEC_DICT (as the tH SM reweighting of Run 2)."""
     key = xsec_key(sample, dataset)
     if era not in LUMI_FB:
         raise KeyError(f"No luminosity configured for {era} (LUMI_FB in analysis_years.py)")
+    base = sample.split('__')[0]
+    if is_ttbb_scale_fix(base):
+        try:
+            denominator = theory_sums[base][dataset]['all']['nominal']
+        except (KeyError, TypeError):
+            raise KeyError(f"No theory_sums for ttbb dataset '{dataset}' (sample '{base}'): needed for the "
+                           f"(mu0, mu0) normalization (custom_scale_factors.ttbb_scale_ref)") from None
+        return LUMI_FB[era] * 1000.0 * XSEC_DICT[key] / denominator
     if dataset not in genweight_df.index:
         raise KeyError(f"No sum_signOf_genweights for dataset '{dataset}'")
     return LUMI_FB[era] * 1000.0 * XSEC_DICT[key] / genweight_df.loc[dataset, 0]
@@ -147,7 +164,7 @@ class OutputToPkl:
                 cols = by_var[variation]
                 era = find_era(dataset)
                 year = ERA_TO_YEAR[era]
-                norm = get_norm(sample, dataset, genweight_df, era)
+                norm = get_norm(sample, dataset, genweight_df, era, filein.get('theory_sums'))
 
                 tmp, missing = {}, []
                 for var in variables:

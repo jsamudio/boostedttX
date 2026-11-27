@@ -12,7 +12,7 @@ from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
 from weight_handler import calc_weight
 from custom_scale_factors import (set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr,
-                                  sf_scaleweights, pdfweight_columns, sf_ele_trig, sf_mu_trig, sf_btag_multiwp,
+                                  scale_ratios, ttbb_scale_ref, pdfweight_columns, sf_ele_trig, sf_mu_trig, sf_btag_multiwp,
                                   btag_sf_columns)
 from get_controlvars import get_controlvars
 from spanet_models import SPANET_CLASSES
@@ -91,6 +91,10 @@ class ZHbbRun3Processor(BaseProcessorABC):
 
     def process_extra_before_skim(self):
         if self._isMC:
+            # 4FS ttbb: analysis nominal at (mu0, mu0) instead of the sample's (mu0, 2 mu0), 1 for other MC
+            # (custom_scale_factors.ttbb_scale_ref); set before the theory sums, whose 'nominal' then
+            # carries it (normalization in outputToPkl.get_norm)
+            self.events["ttbb_scale_ref"] = ttbb_scale_ref(self.events, self._sample)
             # Theory-weight sums over ALL generated events, for the process norms (theory_norms.py,
             # make_process_norms.py). Runs before the skim, so no event selection is applied.
             fill_theory_sums(self.events, self.output, self._sample, self._dataset)
@@ -211,7 +215,7 @@ class ZHbbRun3Processor(BaseProcessorABC):
         ev['isr'], ev['isr_up'], ev['isr_down'] = sf_partonshower_isr(ev)
         ev['fsr'], ev['fsr_up'], ev['fsr_down'] = sf_partonshower_fsr(ev)
         set_default_dctr_columns(ev)          # 1 where no DCTR weights were computed before the skim
-        scale = sf_scaleweights(ev)
+        scale = scale_ratios(ev, self._sample)          # ttbb: relative to (mu0, mu0)
         if scale is None:
             scale = (_ones(ev),) * 6
         ev['mu_r_up'], ev['mu_r_down'], ev['mu_f_up'], ev['mu_f_down'], ev['mu_rf_up'], ev['mu_rf_down'] = scale

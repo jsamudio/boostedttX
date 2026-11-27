@@ -6,9 +6,11 @@ Generator weights of the Run 3 MC samples, from the first file of each dataset (
     pdf_uncertainty.py knows 103 (NNPDF31_nnlo_hessian_pdfas, 306000) and 101 (NNPDF31_nnlo_as_0118_nf_4,
     320900); the processor writes at most 103 members (custom_scale_factors.N_PDF_COLUMNS).
   * LHEScaleWeight / PSWeight: number of entries (sf_scaleweights expects 8 or 9, the PS weights 4).
-  * mean |LHEWeight_originalXWGTUP|: for MadGraph samples the generated cross section (pb); tells whether
-    the tH ctcvcp samples were generated at the SM point or at kappa_t = -1.
-  * mean LHEScaleWeight[4]: the centre of the 3x3 scale grid, which sf_scaleweights takes as the nominal.
+  * mean |LHEWeight_originalXWGTUP|: the cross section per event only if the gridpack used event_norm =
+    average; with event_norm = sum it is sigma / N (not usable as a cross section).
+  * LHEScaleWeight grid: mean of each of the 9 weights and the fraction of events where it is 1 (the
+    sample nominal); for the 4FS ttbb samples the nominal must sit at custom_scale_factors.
+    TTBB_SAMPLE_NOMINAL_INDEX (5) and the analysis nominal (mu0, mu0) at TTBB_SCALE_REF_INDEX (4).
   * LHEReweightingWeight (with --reweighting, e.g. the tH ctcvcp samples): number of points and, per
     point, the mean weight = sigma(point) / sigma(generated). In Run 2 the tH samples were generated at
     kappa_t = -1 and the SM point (index 11 of 69) gave 0.074 (tHq) and 0.105 (tHW); if the 2024 samples
@@ -55,7 +57,8 @@ def check(path, n_events, reweighting):
         sw = tree["LHEScaleWeight"].array(entry_stop=n_events)
         import awkward as ak
         if len(sw) and len(counts(sw)) == 1 and counts(sw)[0] == 9:
-            out["scale_center"] = float(np.mean(ak.to_numpy(sw)[:, 4]))
+            w = ak.to_numpy(sw)
+            out["scale_grid"] = [(float(np.mean(w[:, i])), float(np.mean(np.abs(w[:, i] - 1) < 5e-3))) for i in range(9)]
     for branch in ("LHEPdfWeight", "LHEScaleWeight", "PSWeight", "LHEReweightingWeight"):
         if branch not in tree:
             out[branch] = None
@@ -100,10 +103,12 @@ def main():
                 print(f"    cannot read: {err}")
                 continue
             if "xwgtup" in res:
-                print(f"    mean |LHEWeight_originalXWGTUP| = {res.pop('xwgtup'):.5g}  (MadGraph: the generated "
-                      f"cross section in pb; tH at kappa_t = -1 would be ~13x (tHq) / ~10x (tHW) the SM)")
-            if "scale_center" in res:
-                print(f"    mean LHEScaleWeight[4] = {res.pop('scale_center'):.4f}  (the nominal: should be 1)")
+                print(f"    mean |LHEWeight_originalXWGTUP| = {res.pop('xwgtup'):.5g}  (sigma per event only with "
+                      f"event_norm = average)")
+            if "scale_grid" in res:
+                grid = res.pop("scale_grid")
+                print("    LHEScaleWeight [i] mean (fraction of events = 1):")
+                print("        " + "  ".join(f"[{i}] {m:.4f} ({f:.2f})" for i, (m, f) in enumerate(grid)))
             for branch, info in res.items():
                 if info is None:
                     print(f"    {branch:22s} absent")

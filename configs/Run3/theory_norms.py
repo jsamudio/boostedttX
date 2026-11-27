@@ -25,7 +25,7 @@ The ratios are taken with the SAME functions as the event weights in the process
 import awkward as ak
 import numpy as np
 
-from custom_scale_factors import sf_scaleweights, sf_partonshower_isr, sf_partonshower_fsr, sf_pdfweights
+from custom_scale_factors import scale_ratios, sf_partonshower_isr, sf_partonshower_fsr, sf_pdfweights
 
 # Generator-level Z/H pT bins of the signal processes (ttH0..ttH3, ttZ0..ttZ3), in GeV
 GEN_PT_BINS = [0, 200, 300, 450, np.inf]
@@ -36,11 +36,12 @@ SIGNAL_SAMPLES = ["ttHTobb", "ttHToNonbb", "TTZToQQ", "TTLL", "TTNuNu"]      # s
 TTBAR_SAMPLES_PREFIX = ("TTTo", "TTbb")
 
 
-def theory_ratios(events):
-    """{variation: per-event ratio to the nominal weight}; 'nominal' is 1."""
+def theory_ratios(events, sample):
+    """{variation: per-event ratio to the nominal weight}; 'nominal' is 1. 4FS ttbb: scale ratios relative
+    to the analysis nominal (mu0, mu0) (custom_scale_factors.scale_ratios)."""
     n = len(events)
     ratios = {"nominal": np.ones(n)}
-    scale = sf_scaleweights(events)          # None if the sample has no LHEScaleWeight
+    scale = scale_ratios(events, sample)     # None if the sample has no LHEScaleWeight
     if scale is not None:
         names = ["mu_r_up", "mu_r_down", "mu_f_up", "mu_f_down", "mu_rf_up", "mu_rf_down"]
         for name, values in zip(names, scale):
@@ -97,7 +98,9 @@ def fill_theory_sums(events, output, sample, dataset):
     if len(events) == 0:
         return
     sign = np.sign(ak.to_numpy(events.genWeight))
-    ratios = theory_ratios(events)
+    if "ttbb_scale_ref" in events.fields:        # 4FS ttbb nominal at (mu0, mu0), 1 for other MC
+        sign = sign * ak.to_numpy(events.ttbb_scale_ref)
+    ratios = theory_ratios(events, sample)
     out = output.setdefault("theory_sums", {}).setdefault(sample, {}).setdefault(dataset, {})
     for region, mask in region_masks(events, sample).items():
         sums = out.setdefault(region, {})

@@ -76,6 +76,14 @@ Same chain as Run 2 without `btag_norm.py` (the fixed-WP SFs need no normalizati
 The processor writes for this: `pdfweight_0..102` (signal and tt+jets), `tt_2b` / `tt_C`
 (tt+2b / tt+C cross-section nuisances) and `theory_sums`.
 
+4FS ttbb scale choice: the Summer24 TTBB samples are generated at (muR, muF) = (mu0, 2 mu0), but their scale
+weights vary both scales around (mu0, mu0). As in Run 2, the analysis nominal is (mu0, mu0): the event weight
+gets `ttbb_scale_ref` = LHEScaleWeight[4] (relative to the sample nominal at [5], checked per chunk; the job
+stops on samples with another layout) and the scale variations are taken relative to it
+(`custom_scale_factors.ttbb_scale_ref` / `scale_ratios`); the normalization keeps the TTbb cross section
+(`outputToPkl.get_norm` divides by the sum of sign(genWeight) x `ttbb_scale_ref` in `theory_sums`). The PDF
+and PS weights stay relative to the sample nominal. `check_lhe_weights.py TTbb_SemiLeptonic` prints the grid.
+
 `THEORY_LNN` (ttH, ttZ, ttbar scale and PDF, single-top PDF) holds the 13.6 TeV rows of the AN
 systematics tables. Placeholders (printed by `makeDatacard.py` at every run, `PLACEHOLDERS`): `TTBAR_MODELLING_LNN` (UE, hdamp, hdamp_ttbb),
 `BKG_XSEC_UNC` (VV). V+jets: 13.6 TeV MATRIX W -> l nu (NNLO QCD). Luminosity: 1.6% (`lumi_13p6TeV_2024`, LUM POG 2024 preliminary; 109.82 fb^-1 = brilcalc, eras C-I). `outputToPkl.XSEC_DICT` holds the values of the dataset definitions, to be checked

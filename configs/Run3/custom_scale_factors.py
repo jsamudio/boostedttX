@@ -49,6 +49,52 @@ def sf_scaleweights(events):
 
     return mu_r_up, mu_r_down, mu_f_up, mu_f_down, mu_rf_up, mu_rf_down
 
+# 4FS ttbb (Powheg, Summer24): the nominal of the samples is (muR, muF) = (mu0, 2 mu0) (TMG choice for
+# Run 3), but the reweighting grid varies both scales by 0.5 / 1 / 2 around (mu0, mu0) (ttH(bb) report on the
+# TTBB theory weights). Following the Run 2 central scale (option 2 of that discussion), the analysis
+# nominal of these samples is (mu0, mu0): the event weight gets ttbb_scale_ref = w(mu0, mu0) / w(nominal),
+# and the scale variations are taken relative to it. LHEScaleWeight is ordered (muR, muF) in {0.5, 1, 2}^2
+# relative to mu0, so (mu0, 2 mu0) = the sample nominal sits at TTBB_SAMPLE_NOMINAL_INDEX (weight 1 by
+# construction, checked) and (mu0, mu0) at TTBB_SCALE_REF_INDEX; the standard indices of sf_scaleweights
+# then give the 7-point variations around (mu0, mu0) (mu_f_up = the sample nominal).
+TTBB_SCALE_FIX_PREFIX = "TTbb_"         # TTbb_Hadronic / _SemiLeptonic / _2L2Nu and their variation samples
+TTBB_SCALE_REF_INDEX = 4
+TTBB_SAMPLE_NOMINAL_INDEX = 5
+
+
+def is_ttbb_scale_fix(sample):
+    return sample.startswith(TTBB_SCALE_FIX_PREFIX)
+
+
+def ttbb_scale_ref(events, sample):
+    """Per-event factor from the sample nominal to the analysis nominal (mu0, mu0) for the 4FS ttbb samples,
+    1 otherwise (numpy). Raises if the scale weights do not have the expected layout."""
+    n = len(events)
+    if not is_ttbb_scale_fix(sample) or n == 0:
+        return np.ones(n)
+    if "LHEScaleWeight" not in events.fields:
+        raise KeyError(f"{sample}: no LHEScaleWeight, cannot move the ttbb nominal to (mu0, mu0)")
+    w = events.LHEScaleWeight
+    if not np.all(ak.to_numpy(ak.num(w)) == 9):
+        raise ValueError(f"{sample}: expected 9 LHEScaleWeight entries for the ttbb scale fix")
+    w = ak.to_numpy(w)
+    if not np.allclose(w[:, TTBB_SAMPLE_NOMINAL_INDEX], 1.0, atol=5e-3):
+        raise ValueError(f"{sample}: LHEScaleWeight[{TTBB_SAMPLE_NOMINAL_INDEX}] is not the sample nominal "
+                         f"(mean {np.mean(w[:, TTBB_SAMPLE_NOMINAL_INDEX]):.4f}): not the scale layout of the "
+                         f"remade TTBB samples (check_lhe_weights.py); see custom_scale_factors.TTBB_SCALE_REF_INDEX")
+    return w[:, TTBB_SCALE_REF_INDEX]
+
+
+def scale_ratios(events, sample):
+    """sf_scaleweights relative to the analysis nominal: for the 4FS ttbb samples divided by ttbb_scale_ref
+    (variations around (mu0, mu0)), otherwise unchanged. None if the sample has no scale weights."""
+    scale = sf_scaleweights(events)
+    if scale is None or not is_ttbb_scale_fix(sample) or len(events) == 0:
+        return scale
+    ref = ttbb_scale_ref(events, sample)
+    return tuple(ak.to_numpy(x) / ref for x in scale)
+
+
 # Number of pdfweight_<i> columns written for every MC event (the largest PDF set used, see
 # pdf_uncertainty.py); members a sample does not have are NaN. As in Run 2.
 N_PDF_COLUMNS = 103

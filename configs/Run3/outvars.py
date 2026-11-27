@@ -38,6 +38,7 @@ pdf_vars = [f'pdfweight_{i}' for i in range(103)]
 # Per-event weights (MC). Trigger SFs and b-tag SFs are 1 until they are derived (see README).
 # b-tag: btag_sf and its variations per source (custom_scale_factors.btag_sf_columns, BTAG_SF_SOURCES)
 weight_vars = ['genWeight', 'norm_weight',
+               'ttbb_scale_ref',
                'topptWeight', 'topptWeight_Up', 'topptWeight_Down',
                'ele_reco_sf', 'ele_reco_sfup', 'ele_reco_sfdown',
                'ele_id_sf', 'ele_id_sfup', 'ele_id_sfdown',
@@ -57,7 +58,8 @@ weight_vars = ['genWeight', 'norm_weight',
 
 # Per-event factors that enter the nominal event weight on top of norm_weight * sign(genWeight)
 nominal_weight_factors = ['topptWeight', 'ele_reco_sf', 'ele_id_sf', 'ele_trig_sf',
-                          'mu_id_sf', 'mu_iso_sf', 'mu_trig_sf', 'btag_sf', 'puWeight']
+                          'mu_id_sf', 'mu_iso_sf', 'mu_trig_sf', 'btag_sf', 'puWeight',
+                          'ttbb_scale_ref']   # 4FS ttbb nominal at (mu0, mu0), 1 for other MC
 
 # Trigger-efficiency columns (TrigEff.ipynb): lepton kinematics, event variables, weights; the
 # HLT bits are exported from the HLT collection (custom_cut_functions.hlt_paths)
