@@ -57,6 +57,32 @@ ttH = ttHTobb, ttHToNonbb); ttbar samples are split by genTtbarId.
 4. **SPANet**: retrained on these definitions (`spanet_models.py`: `run3_refactor`, ONNX in
    `spanet/models/`; the inference runs without SPANet if `ACTIVE_MODELS` is empty), then pickling /
    datacards.
+5. **Pickling and datacards**: ported from Run 2 (see below); the 13.6 TeV inputs listed there are
+   still placeholders.
+
+## Pickling and datacards (ported from Run 2)
+
+Same chain as Run 2 without `btag_norm.py` (the fixed-WP SFs need no normalization factor):
+
+    python3 run_pipeline.py pickle norms datacard --groups signal bkg minor [--jec-variations JMSJMR ...]
+
+| Script | Run 3 differences from Run 2 |
+|---|---|
+| `outputToPkl.py` | 13.6 TeV `XSEC_DICT` by dataset name (variation samples: the nominal dataset, `VARIATION_NOMINAL`); no `--btag-norm`; no tH SM reweighting (2024 THQ / THW taken as SM); `VV` process |
+| `make_process_norms.py`, `theory_norms.py` | ttZ = TTZToQQ (with its Z -> bb events) + TTLL + TTNuNu; ttX sample `TTX`. The processor fills `theory_sums` before the skim (`process_extra_before_skim`) |
+| `makeDatacard.py` | VV background; b-tag nuisances `btag_{bc,light}_correlated` and `btag_{bc,light}_uncorrelated_<year>`; muon ID / iso total per year (no stat / syst split, no reco SF); no Xbb SF, L1 prefiring or PU jet ID; jet nuisances found from the varied pickles (`jet_systematics`: JES correlated, `jes_<source>_ak4` / `_ak8` separately since pocket-coffea varies AK4 and AK8 jets as separate variations; JER, JMS, JMR per year) |
+| `datacard_shapes.py`, `pdf_uncertainty.py`, `TH1.py`, `plot_nn_edges.py` | copies of the Run 2 files |
+
+The processor writes for this: `pdfweight_0..102` (signal and tt+jets), `tt_2b` / `tt_C`
+(tt+2b / tt+C cross-section nuisances) and `theory_sums`.
+
+Placeholders (printed by `makeDatacard.py` at every run, `PLACEHOLDERS`): `THEORY_LNN` (signal and
+ttbar cross-section uncertainties, 13 TeV values), `TTBAR_MODELLING_LNN` (UE, hdamp, hdamp_ttbb),
+`BKG_XSEC_UNC` (VV, single top), `VJETS_*_UNC`, `analysis_years.LUMI_UNCERTAINTIES` (empty: no lumi
+nuisance yet). `outputToPkl.XSEC_DICT` holds the values of the dataset definitions, to be checked
+against their references. `pdf_uncertainty.py` knows the UL PDF sets (103 / 101 members); a Summer24
+sample with another set stops the datacard step there. `analysis_years.XBB_WP_DICT` (the LP is the
+datacard cut) is provisional: LP 0.25, M / T as the SPANet model.
 
 ## SPANet training inputs
 

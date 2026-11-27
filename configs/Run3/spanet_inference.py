@@ -12,11 +12,13 @@ from cand_helper import zh_helper
 from genmatcher import match_gen_lep, match_gen_tt, match_gen_sig, match_gen_bb_to_zh
 from weight_handler import calc_weight
 from custom_scale_factors import (set_fatjet_mass, sf_mu, sf_partonshower_isr, sf_partonshower_fsr,
-                                  sf_scaleweights, sf_ele_trig, sf_mu_trig, sf_btag_multiwp, btag_sf_columns)
+                                  sf_scaleweights, pdfweight_columns, sf_ele_trig, sf_mu_trig, sf_btag_multiwp,
+                                  btag_sf_columns)
 from get_controlvars import get_controlvars
 from spanet_models import SPANET_CLASSES
 from event_variables import event_variables
 from dctr import apply_dctr_hdamp, set_default_dctr_columns
+from theory_norms import fill_theory_sums
 from fatjet_mass_variations import apply_jms_jmr, jms_jmr_sfs, chunk_rng
 from samples import btag_eff_group
 
@@ -88,8 +90,11 @@ class ZHbbRun3Processor(BaseProcessorABC):
         self.btag_sfs = self.workflow_options.get("btag_sfs") or {}
 
     def process_extra_before_skim(self):
-        # DCTR hdamp weights and their sums over all generated events (dctr.py; off unless configured)
         if self._isMC:
+            # Theory-weight sums over ALL generated events, for the process norms (theory_norms.py,
+            # make_process_norms.py). Runs before the skim, so no event selection is applied.
+            fill_theory_sums(self.events, self.output, self._sample, self._dataset)
+            # DCTR hdamp weights and their sums over all generated events (dctr.py; off unless configured)
             apply_dctr_hdamp(self.events, self.output, self._sample, self._dataset, self.dctr_hdamp)
 
     # ------------------------------------------------------------------ objects
@@ -210,6 +215,9 @@ class ZHbbRun3Processor(BaseProcessorABC):
         if scale is None:
             scale = (_ones(ev),) * 6
         ev['mu_r_up'], ev['mu_r_down'], ev['mu_f_up'], ev['mu_f_down'], ev['mu_rf_up'], ev['mu_rf_down'] = scale
+        # PDF / alpha_s members pdfweight_0..102 (exported for signal and tt+jets, outvars.pdf_vars)
+        for name, values in pdfweight_columns(ev).items():
+            ev[name] = values
 
     def label_process(self):
         """'process' column (+ gen-level flags and top-pT weight where relevant)."""

@@ -27,7 +27,13 @@ sig_vars = ['Zbb', 'Hbb', 'Hnonbb', 'Zqq',
             'matchedGen_ZHbb_bb', 'matchedGen_ZHbb_b', 'matchedGen_ZHbb_nob',
             'genZHpt']
 
-bkg_vars = ['tt_B']
+# tt+jets categories (genmatcher.match_gen_tt, genTtbarId % 100): tt_2b = 52, tt_C = 41-49;
+# tt_2b and tt_C for the tt+2b and tt+C cross-section uncertainties in the datacard (as in Run 2)
+bkg_vars = ['tt_B', 'tt_2b', 'tt_C']
+
+# PDF / alpha_s members (custom_scale_factors.pdfweight_columns), exported for the samples that
+# get PDF shape uncertainties: signal and tt+jets (the 'sig' and 'bkg' column groups)
+pdf_vars = [f'pdfweight_{i}' for i in range(103)]
 
 # Per-event weights (MC). Trigger SFs and b-tag SFs are 1 until they are derived (see README).
 # b-tag: btag_sf and its variations per source (custom_scale_factors.btag_sf_columns, BTAG_SF_SOURCES)

@@ -10,6 +10,8 @@ post-processing scripts.
                      per event from genTtbarId, see genmatcher.match_gen_tt)
   * TTBAR_SPLIT /
     GENMATCH_SPLIT - subsample definitions (turned into Cut objects in inference_common.py)
+  * PICKLE_SIGNAL /
+    PICKLE_BACKGROUND - which (sub)samples outputToPkl.py exports to the analysis pickles
 """
 
 import re
@@ -156,3 +158,13 @@ def extra_column_group(sample):
 
 
 EFT_COLUMNS = ["EFTfitCoefficients", "EFTfitCoefficientIndex1", "EFTfitCoefficientIndex2", "WCnames"]
+
+# ---------------------------------------------------------------- pickling (outputToPkl.py)
+# Both gen-matching categories of every signal sample (TTZToQQ keeps its Z -> bb events: ttZ signal)
+PICKLE_SIGNAL = [f"{s}__{m}" for s in SIGNAL_SAMPLES for m in GENMATCH_SPLIT]
+# tt+B from the dedicated TTbb samples, tt+LF / tt+C from the inclusive ttbar samples (as in Run 2)
+PICKLE_BACKGROUND = (
+    [f"{s}__tt+B" for s in ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu"]]
+    + [f"{s}__{c}" for s in ["TTToSemiLeptonic", "TTTo2L2Nu", "TTToHadronic"] for c in ("tt+LF", "tt+C")]
+    + MINOR_SAMPLES + QCD_SAMPLES
+)

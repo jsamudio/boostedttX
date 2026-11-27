@@ -43,9 +43,11 @@ LUMI_FB = {'2024': 109.82}
 # custom_scale_factors.sf_btag_multiwp) and the efficiency maps cover exactly these, loosest first.
 BTAG_SF_WPS = ["L", "M", "T"]
 
-# GloParT XbbVsQCD working points of the ZH candidate. Not defined centrally for Run 3 yet: to be
-# derived from mistag rates (then e.g. {"2024": {"LP": ..., "MP": ..., "HP": ...}}).
-XBB_WP_DICT = {}
+# GloParT XbbVsQCD working points of the ZH candidate. Not defined centrally for Run 3. PROVISIONAL:
+# LP from matching the Run 2 LP tt+LF / tt+C composition (scan_xbb_wp.py composition: 0.247 / 0.226),
+# M / T as the xbb_wps of the SPANet model run3_refactor (spanet_models.py). The LP is the analysis
+# cut in makeDatacard.cuts (bbvl_wp); the processor applies no Xbb cut in Run 3.
+XBB_WP_DICT = {"2024": {"LP": 0.25, "MP": 0.877, "HP": 0.975}}
 XBB_WP = "LP"
 
 
@@ -65,5 +67,7 @@ def bbvl_wp(era):
 # Pickle directory per analysis year
 PICKLE_DIR = 'pickled/Nominal{year}'
 
-# Luminosity uncertainties per analysis year: to be filled at the datacard stage (Run 3 LUM recommendation)
+# Luminosity uncertainties per analysis year (lnN), {nuisance: {year: value}}, as in Run 2; a nuisance
+# is correlated across the years it has an entry for. TO BE FILLED (LUM POG recommendation for 2024);
+# makeDatacard.py warns while it is empty, e.g. {'lumi_13p6TeV_2024': {'2024': 1.0XX}}
 LUMI_UNCERTAINTIES = {}

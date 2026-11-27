@@ -5,8 +5,11 @@ Driver for the Run 3 (2024) processing:
     inference    pocket-coffea run --cfg inference_conf_<group>.py   (per group, era set, jet variation)
     status       PBS backend: state of the jobs and merges
     resubmit     PBS backend: resubmit failed jobs (+ a new merge)
+    pickle       outputToPkl.py (nominal + jet-variation outputs)     -> pickled/Nominal<year>/
+    norms        make_process_norms.py (nominal outputs)              -> process_norms/process_norms_<year>.json
+    datacard     makeDatacard.py
 
-Pickling and datacards for Run 3 are not ported yet (steps after the trigger, b-tag and Xbb SFs).
+As Run 2, without the btagnorm step (fixed-WP b-tag SFs need no normalization factor).
 
 Outputs are organised as
     <outdir>/nominal/<group>/output_all.coffea
@@ -16,6 +19,7 @@ Examples:
     python run_pipeline.py inference --backend pbs --groups trigeff_ele btageff
     python run_pipeline.py inference --backend pbs --groups signal bkg minor data
     python run_pipeline.py status --backend pbs --groups signal bkg minor data
+    python run_pipeline.py pickle norms datacard --groups signal bkg minor
     python run_pipeline.py inference --dry-run      # print every command without running it
 
 Anything after '--' is passed on to 'pocket-coffea run', e.g.  -- --executor futures --test
@@ -35,7 +39,7 @@ import pbs_tools  # noqa: E402
 from samples import GROUPS  # noqa: E402
 
 MC_GROUPS = ['signal', 'bkg', 'minor']
-STEPS = ['inference', 'status', 'resubmit']
+STEPS = ['inference', 'status', 'resubmit', 'pickle', 'norms', 'datacard']
 PBS_RUN_OPTIONS = "run_options_pbs.yaml"
 
 
@@ -90,15 +94,24 @@ def runs(args, include_data=True):
             yield tag, group, os.path.join(args.outdir, tag, group)
 
 
-def coffea_file(outdir, tag, group):
-    return os.path.join(outdir, tag, group, "output_all.coffea")
-
-
-def existing(paths, dry):
-    found = [p for p in paths if dry or os.path.exists(p)]
-    for p in sorted(set(paths) - set(found)):
-        print(f"  [skip] {p} not found")
-    return found
+def merged_inputs(outdir, pairs, dry):
+    """Merged .coffea files of the output dirs <outdir>/<tag>/<group> for (tag, group) in pairs:
+    merged/<dataset>.coffea or output_all.coffea (pbs_tools.merged_outputs). Dirs with nothing merged
+    are skipped; a partly merged dir, or one with both kinds of output, stops the step."""
+    files = []
+    for tag, group in pairs:
+        path = os.path.join(HERE, outdir, tag, group)
+        if dry:
+            files.append(os.path.join(outdir, tag, group, "<merged outputs>"))
+            continue
+        try:
+            found = pbs_tools.merged_outputs(path)
+        except RuntimeError as err:
+            sys.exit(f"Not ready: {err}")
+        if not found:
+            print(f"  [skip] {os.path.join(outdir, tag, group)}: nothing merged")
+        files += found
+    return files
 
 
 # ---------------------------------------------------------------- steps
@@ -149,10 +162,27 @@ def step_resubmit(args):
             pbs_tools.resubmit(path, include_unfinished=args.include_unfinished)
 
 
+def step_pickle(args):
+    mc_groups = [g for g in args.groups if not GROUPS[g].get('is_data')]
+    nominal = merged_inputs(args.outdir, [('nominal', g) for g in mc_groups], args.dry_run)
+    if nominal:
+        run(python("outputToPkl.py", "-i", *nominal), args)
+    for tag in args.jec_variations:
+        varied = merged_inputs(args.outdir, [(tag, g) for g in mc_groups], args.dry_run)
+        if varied:
+            run(python("outputToPkl.py", "-i", *varied, "--variations", "all", "--skip-nominal"), args)
 
 
+def step_norms(args):
+    # factors of the theory variations, from the full-sample sums in the nominal outputs
+    mc_groups = [g for g in args.groups if not GROUPS[g].get('is_data')]
+    nominal = merged_inputs(args.outdir, [('nominal', g) for g in mc_groups], args.dry_run)
+    if nominal:
+        run(python("make_process_norms.py", "-i", *nominal), args)
 
 
+def step_datacard(args):
+    run(python("makeDatacard.py", *(["--eft-ttbb"] if args.eft_ttbb else [])), args)
 
 
 if __name__ == '__main__':
@@ -175,14 +205,16 @@ if __name__ == '__main__':
                     help='wrap commands in apptainer exec (auto: when not already in a container)')
     ap.add_argument('--include-unfinished', action='store_true',
                     help='resubmit: also jobs left running/idle (e.g. killed by the batch system)')
+    ap.add_argument('--eft-ttbb', action='store_true', help='passed to makeDatacard.py')
     ap.add_argument('--dry-run', action='store_true', help='print the commands only')
     args = ap.parse_args(argv)
     args.pc_args = pc_args
 
-    steps = STEPS if 'all' in args.steps else [s for s in STEPS if s in args.steps]
+    steps = (['inference', 'pickle', 'norms', 'datacard'] if 'all' in args.steps
+             else [s for s in STEPS if s in args.steps])
     if args.backend == 'pbs' and 'inference' in steps and len(steps) > 1:
         print("PBS backend: the inference jobs run asynchronously; only submitting them now.\n"
-              "Run `status` / `resubmit` afterwards.")
+              "Run `status` / `resubmit`, then pickle norms datacard once all outputs are merged.")
         steps = ['inference']
     for step in steps:
         print(f"\n===================== {step} =====================")

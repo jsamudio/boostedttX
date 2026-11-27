@@ -333,7 +333,8 @@ def build_columns(sample_list, category, selection):
     for sample in mc_samples:
         cols = list(mc_cols)
         if selection != "trigeff":
-            extra = {"sig": outvars.sig_vars, "bkg": outvars.bkg_vars}.get(samples.extra_column_group(sample), [])
+            extra = {"sig": outvars.sig_vars + outvars.pdf_vars,
+                     "bkg": outvars.bkg_vars + outvars.pdf_vars}.get(samples.extra_column_group(sample), [])
             if extra:
                 cols.append(ColOut("events", extra))
             if sample in samples.EFT_SAMPLES:
