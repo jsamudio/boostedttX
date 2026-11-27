@@ -68,6 +68,7 @@ def bbvl_wp(era):
 PICKLE_DIR = 'pickled/Nominal{year}'
 
 # Luminosity uncertainties per analysis year (lnN), {nuisance: {year: value}}, as in Run 2; a nuisance
-# is correlated across the years it has an entry for. TO BE FILLED (LUM POG recommendation for 2024);
-# makeDatacard.py warns while it is empty, e.g. {'lumi_13p6TeV_2024': {'2024': 1.0XX}}
-LUMI_UNCERTAINTIES = {}
+# is correlated across the years it has an entry for. 2024 alone: 1.6% (LUM POG, preliminary, Dec. 2025,
+# CERN-CMS-DP-2026-003). A 2022+2023+2024 combination would use the POG's lumi_1/2/3 scheme instead
+# (2024: 1.0020 / 1.0068 / 1.0144). Named apart from the Run 2 lumi_13TeV_* (uncorrelated with them).
+LUMI_UNCERTAINTIES = {'lumi_13p6TeV_2024': {'2024': 1.016}}

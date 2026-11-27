@@ -102,8 +102,7 @@ TTBAR_MODELLING_LNN = {'UE': ('TTBar', 1.01, 0.99), 'hdamp': ('TTBar', 1.049, 0.
 # Numbers still to be set for Run 3 (printed at every run)
 PLACEHOLDERS = ['TTBAR_MODELLING_LNN (UE, hdamp, hdamp_ttbb)',
                 "BKG_XSEC_UNC['VV'] (not in the AN)",
-                'VJETS_SCALE_UNC / VJETS_PDF_UNC (13 TeV values: the AN has no 13.6 TeV V+jets row yet)',
-                'analysis_years.LUMI_UNCERTAINTIES (2024 luminosity uncertainty)']
+                'VJETS_SCALE_UNC / VJETS_PDF_UNC (13 TeV values: the AN has no 13.6 TeV V+jets row yet)']
 
 # tt+2b (in tt_B) and tt+C (in TTBar) cross sections: events of the category scaled by these
 # factors (up, down), as in the previous analysis. Categories: outvars.bkg_vars (tt_2b, tt_C).
