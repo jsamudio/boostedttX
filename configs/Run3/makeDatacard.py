@@ -101,8 +101,7 @@ TTBAR_MODELLING_LNN = {'UE': ('TTBar', 1.01, 0.99), 'hdamp': ('TTBar', 1.049, 0.
                        'hdamp_ttbb': ('tt_B', 1.027, 0.974)}
 # Numbers still to be set for Run 3 (printed at every run)
 PLACEHOLDERS = ['TTBAR_MODELLING_LNN (UE, hdamp, hdamp_ttbb)',
-                "BKG_XSEC_UNC['VV'] (not in the AN)",
-                'VJETS_SCALE_UNC / VJETS_PDF_UNC (13 TeV values: the AN has no 13.6 TeV V+jets row yet)']
+                "BKG_XSEC_UNC['VV'] (not in the AN)"]
 
 # tt+2b (in tt_B) and tt+C (in TTBar) cross sections: events of the category scaled by these
 # factors (up, down), as in the previous analysis. Categories: outvars.bkg_vars (tt_2b, tt_C).
@@ -120,10 +119,12 @@ MUON_SF_KEYS = ['id', 'iso']
 # across years, separate from the ID/iso SF nuisances
 LEPTON_PHASESPACE_UNC = 1.005
 
-# V+jets inclusive cross-section uncertainty. PLACEHOLDERS (Run 2, 13 TeV): inclusive W -> l nu at
-# NNLO (FEWZ 3.1), 20508.9 pb +165.7 -88.2 (scales) +-770.9 (PDF+alpha_s), CMS SM cross-section twiki
-VJETS_SCALE_UNC = (1.008, 0.996)
-VJETS_PDF_UNC   = 1.038
+# V+jets inclusive cross-section uncertainty: inclusive W -> l nu at 13.6 TeV, NNLO QCD (as Run 2),
+# CMS MATRIX v2.1.0 13.6 TeV cross-section twiki: pp -> e- nubar 9045.8 pb +1.2% -1.1% (scale) +-0.8% (PDF),
+# pp -> e+ nu 12170.9 pb +1.0% -1.3% +-0.7%; W- + W+ with the uncertainties added linearly:
+# +1.1% / -1.2% (scale), 0.7% (PDF; MATRIX: replica spread, no alpha_s term). Run 2: FEWZ 3.1, 3.8% PDF+alpha_s
+VJETS_SCALE_UNC = (1.011, 0.988)
+VJETS_PDF_UNC   = 1.007
 
 # Years, pickle paths, Xbb working points and luminosity uncertainties: see analysis_years.py
 

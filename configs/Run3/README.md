@@ -78,7 +78,7 @@ The processor writes for this: `pdfweight_0..102` (signal and tt+jets), `tt_2b` 
 
 `THEORY_LNN` (ttH, ttZ, ttbar scale and PDF, single-top PDF) holds the 13.6 TeV rows of the AN
 systematics tables. Placeholders (printed by `makeDatacard.py` at every run, `PLACEHOLDERS`): `TTBAR_MODELLING_LNN` (UE, hdamp, hdamp_ttbb),
-`BKG_XSEC_UNC` (VV), `VJETS_*_UNC`. Luminosity: 1.6% (`lumi_13p6TeV_2024`, LUM POG 2024 preliminary). `outputToPkl.XSEC_DICT` holds the values of the dataset definitions, to be checked
+`BKG_XSEC_UNC` (VV). V+jets: 13.6 TeV MATRIX W -> l nu (NNLO QCD). Luminosity: 1.6% (`lumi_13p6TeV_2024`, LUM POG 2024 preliminary; 109.82 fb^-1 = brilcalc, eras C-I). `outputToPkl.XSEC_DICT` holds the values of the dataset definitions, to be checked
 against their references. `pdf_uncertainty.py` knows the UL PDF sets (103 / 101 members); a Summer24
 sample with another set stops the datacard step there. `analysis_years.XBB_WP_DICT` (the LP is the
 datacard cut) is provisional: LP 0.25, M / T as the SPANet model.
