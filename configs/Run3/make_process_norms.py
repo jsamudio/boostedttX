@@ -172,6 +172,30 @@ def ttbb_factors(theory_sums, year):
     return weighted_average(entries) if entries else None
 
 
+def ttbb_xsec_check(theory_sums, year):
+    """4FS ttbb cross section that makes its tt+B part equal to the 5FS tt+B cross section, per decay:
+    sigma_5FS * f_ttB(5FS) / f_ttB(4FS), f_ttB = tt+B / all of the theory_sums 'nominal' (the 4FS with the
+    analysis nominal (mu0, mu0), ttbb_scale_ref). Printed next to XSEC_DICT; not used by the chain."""
+    rows = []
+    for sample_4fs, sample_5fs in TTBB_4FS_TO_5FS.items():
+        for dataset_4fs, s4 in theory_sums.get(sample_4fs, {}).items():
+            if year_of(dataset_4fs) != year:
+                continue
+            matches = [d for d in theory_sums.get(sample_5fs, {}) if find_era(d) == find_era(dataset_4fs)]
+            if not matches:
+                continue
+            s5 = theory_sums[sample_5fs][matches[0]]
+            f4 = s4["ttB"]["nominal"] / s4["all"]["nominal"]
+            f5 = s5["ttB"]["nominal"] / s5["all"]["nominal"]
+            sigma5 = XSEC_DICT[xsec_key(sample_5fs, matches[0])]
+            rows.append((dataset_4fs, sigma5 * f5 / f4, XSEC_DICT[xsec_key(sample_4fs, dataset_4fs)], f4, f5))
+    if rows:
+        print(f"\n  4FS ttbb normalization check ({year}): sigma_5FS x f_ttB(5FS) / f_ttB(4FS) vs XSEC_DICT")
+        for d, implied, used, f4, f5 in rows:
+            print(f"    {d:24s} implied {implied:9.4f} pb   XSEC_DICT {used:9.4f} pb   ({implied / used - 1:+.1%})   "
+                  f"f_ttB 4FS {f4:.4f}, 5FS {f5:.4f}")
+
+
 def ttx_xsec_uncertainty(theory_sums, year):
     """lnN values of the total ttX cross section (see the module docstring)."""
     entries = []
@@ -240,6 +264,7 @@ def main():
             if factors:
                 norms[name] = factors
 
+        ttbb_xsec_check(theory_sums, year)
         path = os.path.join(args.outdir, f"process_norms_{year}.json")
         with open(path, "w") as f:
             json.dump({year: norms}, f, indent=2)

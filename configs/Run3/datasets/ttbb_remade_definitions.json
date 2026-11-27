@@ -1,0 +1,52 @@
+{
+    "TTBBto4Q": {
+        "sample": "TTbb_Hadronic",
+        "json_output": "datasets/TTbb_Hadronic.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBB-TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 19.15297
+                }
+            }
+        ]
+    },
+    "TTBBtoLNu2Q": {
+        "sample": "TTbb_SemiLeptonic",
+        "json_output": "datasets/TTbb_SemiLeptonic.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBB-TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+                    "/TTBB-TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2_ext1-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 17.36875
+                }
+            }
+        ]
+    },
+    "TTBBto2L2Nu": {
+        "sample": "TTbb_2L2Nu",
+        "json_output": "datasets/TTbb_2L2Nu.json",
+        "files": [
+            {
+                "das_names": [
+                    "/TTBB-TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+                    "/TTBB-TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2_ext1-v2/NANOAODSIM"
+                ],
+                "metadata": {
+                    "year": "2024",
+                    "isMC": true,
+                    "xsec": 3.74766
+                }
+            }
+        ]
+    }
+}

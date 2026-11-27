@@ -45,7 +45,10 @@ TTBAR_SAMPLES = ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu",
 # datasets/ttbar_variations_definitions.json; they are loaded only when processed (inference_common.py).
 # No hdamp samples exist for the ttbb in 2024 (DCTR reweighting instead, dctr.py).
 TTBAR_VARIATIONS = ["hdampUP", "hdampDOWN", "TuneCP5up", "TuneCP5down"]
-TTBB_VARIATIONS = ["TuneCP5up", "TuneCP5down"]
+# No ttbb variations: the 2024 TTBB tune samples (TTBBto*_TuneCP5Up/Down) are of the first production (wrong
+# theory weights, other scale nominal) and have no remade version; the UE uncertainty is applied to the 5FS
+# ttbar only (AN), as in Run 2.
+TTBB_VARIATIONS = []
 TTBAR_VARIATION_SAMPLES = ([f"{s}_{v}" for s in ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"] for v in TTBAR_VARIATIONS]
                            + [f"{s}_{v}" for s in ["TTbb_Hadronic", "TTbb_SemiLeptonic", "TTbb_2L2Nu"] for v in TTBB_VARIATIONS])
 MINOR_SAMPLES = ["WJets", "DYJets", "SingleTop", "TTX", "VV"]
